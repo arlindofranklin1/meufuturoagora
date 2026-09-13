@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "301921058257",
+    "project_id": "meufuturoagora-79b76",
+    "storage_bucket": "meufuturoagora-79b76.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301921058257:android:4f2c6386a61845eb4db4f0",
+        "android_client_info": {
+          "package_name": "br.com.example.meufuturoagora"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "301921058257-a3089027fehph53ifaapnrhtn4un8qs0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.com.example.meufuturoagora",
+            "certificate_hash": "150ae77ab10f464dcd99c30522b47dbc0d0e7224"
+          }
+        },
+        {
+          "client_id": "301921058257-nnf0e7b6r1feko9e3h23lulaka8f6p97.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.com.example.meufuturoagora",
+            "certificate_hash": "ee6fd617d963359b08c76165e864ed655581ba95"
+          }
+        },
+        {
+          "client_id": "301921058257-fqdmdlufq5m6f8t6j7v81s9s0v5s31k6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7bqvB17eY7rv1sBSo33hmz93W1u_fS3Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "301921058257-fqdmdlufq5m6f8t6j7v81s9s0v5s31k6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

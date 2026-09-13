@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    tools:context=".TelaDetalhesDisciplinaProfessor">
+
+    <!-- TÍTULO -->
+
+    <ImageView
+        android:id="@+id/btnVoltar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="35dp"
+        android:src="@drawable/seta_voltar"
+        android:scaleType="centerInside"
+        android:contentDescription="Voltar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvNomeDisciplina"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="Português"
+        android:textColor="#A51C21"
+        android:textSize="20sp"
+        android:fontFamily="@font/poppins_bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnVoltar"
+        app:layout_constraintBottom_toBottomOf="@id/btnVoltar" />
+
+    <!-- ABAS -->
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutAbas"
+        android:layout_width="0dp"
+        android:layout_height="45dp"
+        android:layout_marginTop="30dp"
+        app:layout_constraintTop_toBottomOf="@id/btnVoltar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/tabAtividades"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Atividades"
+            android:textColor="#A51C21"
+            android:layout_marginStart="20dp"
+            android:textSize="16sp"
+            android:fontFamily="@font/poppins_bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tabAlunos"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/tabAlunos"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Alunos"
+            android:textColor="#171717"
+            android:textSize="16sp"
+            android:fontFamily="@font/poppins_bold"
+            app:layout_constraintStart_toEndOf="@id/tabAtividades"
+            app:layout_constraintEnd_toStartOf="@id/tabFrequencia"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/tabFrequencia"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Frequência"
+            android:textColor="#171717"
+            android:layout_marginEnd="20dp"
+            android:textSize="16sp"
+            android:fontFamily="@font/poppins_bold"
+            app:layout_constraintStart_toEndOf="@id/tabAlunos"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- LINHA DA ABA ATIVA -->
+
+        <View
+            android:id="@+id/linhaAba"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:background="#A51C21"
+            app:layout_constraintStart_toStartOf="@id/tabAtividades"
+            app:layout_constraintEnd_toEndOf="@id/tabAtividades"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- LINHA SEPARADORA -->
+
+    <View
+        android:id="@+id/linhaSeparadora"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#AAAAAA"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutAbas"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- LISTA DE ATIVIDADES -->
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerAtividades"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingTop="5dp"
+        android:paddingBottom="20dp"
+        app:layout_constraintTop_toBottomOf="@id/linhaSeparadora"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- BOTÃO CRIAR ATIVIDADE -->
+
+    <ImageButton
+        android:id="@+id/btnAdicionarAtividade"
+        android:layout_width="58dp"
+        android:layout_height="58dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        android:src="@drawable/ic_mais"
+        android:scaleType="centerInside"
+        android:padding="16dp"
+        android:contentDescription="Criar atividade"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

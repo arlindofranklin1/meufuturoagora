@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <!-- SETA VOLTAR -->
+
+    <ImageView
+        android:id="@+id/btnVoltar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="35dp"
+        android:src="@drawable/seta_voltar"
+        android:scaleType="centerInside"
+        android:contentDescription="Voltar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- TÍTULO -->
+
+    <TextView
+        android:id="@+id/tvTitulo"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="Criar Atividade"
+        android:textColor="#A51C21"
+        android:textSize="20sp"
+        android:fontFamily="@font/poppins_bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnVoltar"
+        app:layout_constraintBottom_toBottomOf="@id/btnVoltar" />
+
+    <!-- FORMULÁRIO -->
+
+    <ScrollView
+        android:id="@+id/scrollFormulario"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="20dp"
+        app:layout_constraintTop_toBottomOf="@id/tvTitulo"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="50dp"
+            android:paddingBottom="30dp">
+
+            <!-- TÍTULO DA ATIVIDADE -->
+
+            <EditText
+                android:id="@+id/edtNomeAtividade"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="Título da atividade"
+                android:paddingStart="13dp"
+                android:paddingEnd="13dp"
+                android:textSize="16sp"
+                android:textColor="#171717"
+                android:textColorHint="#171717"
+                android:fontFamily="@font/poppins_regular"
+                android:background="@drawable/bg_campo_criar_atividade"
+                android:singleLine="true" />
+
+            <!-- DESCRIÇÃO -->
+
+            <EditText
+                android:id="@+id/edtDescricao"
+                android:layout_width="match_parent"
+                android:layout_height="108dp"
+                android:layout_marginTop="8dp"
+                android:hint="Descrição"
+                android:gravity="top|start"
+                android:padding="13dp"
+                android:textSize="16sp"
+                android:textColor="#171717"
+                android:textColorHint="#171717"
+                android:fontFamily="@font/poppins_regular"
+                android:background="@drawable/bg_campo_criar_atividade"
+                android:inputType="textMultiLine" />
+
+            <!-- LINHA PONTUAÇÃO + PRAZO -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:layout_marginTop="9dp"
+                android:orientation="horizontal">
+
+                <!-- PONTUAÇÃO -->
+
+                <EditText
+                    android:id="@+id/edtPontos"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:hint="Pontuação máxima"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:textSize="16sp"
+                    android:textColor="#171717"
+                    android:textColorHint="#171717"
+                    android:fontFamily="@font/poppins_regular"
+                    android:background="@drawable/bg_campo_criar_atividade"
+                    android:inputType="number" />
+
+                <!-- PRAZO -->
+
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
+
+                    <EditText
+                        android:id="@+id/edtPrazo"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:hint="Prazo final"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="35dp"
+                        android:textSize="16sp"
+                        android:textColor="#171717"
+                        android:textColorHint="#171717"
+                        android:fontFamily="@font/poppins_regular"
+                        android:background="@drawable/bg_campo_criar_atividade"
+                        android:focusable="false" />
+
+                    <!-- ÍCONE CALENDÁRIO -->
+
+                    <ImageView
+                        android:id="@+id/imgCalendario"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_gravity="center_vertical|end"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/ic_calendario"
+                        android:contentDescription="Selecionar prazo" />
+
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <!-- DISCIPLINA -->
+
+            <Spinner
+                android:id="@+id/spinnerDisciplina"
+                android:layout_width="match_parent"
+                android:layout_height="39dp"
+                android:layout_marginTop="8dp"
+                android:paddingStart="8dp"
+                android:background="@drawable/bg_campo_criar_atividade" />
+
+            <!-- ARQUIVO -->
+
+            <TextView
+                android:id="@+id/tvArquivo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Arquivo (opcional)"
+                android:textColor="#171717"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_regular" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSelecionarArquivo"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+
+                android:text="Selecionar arquivo"
+                android:textColor="#171717"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_bold"
+                android:textAllCaps="false"
+                android:textAlignment="viewStart"
+
+                android:paddingStart="15dp"
+                android:paddingEnd="15dp"
+
+                android:maxLines="1"
+                android:ellipsize="end"
+
+                android:background="@drawable/bg_botao_arquivo"
+
+                app:backgroundTint="@null"
+                app:icon="@drawable/ic_arquivo"
+                app:iconTint="@null"
+                app:iconGravity="textStart"
+                app:iconSize="25dp"
+                app:iconPadding="12dp"
+                app:strokeWidth="0dp" />
+            <!-- SALVAR -->
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSalvar"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="32dp"
+                android:text="Salvar"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_bold"
+                android:textAllCaps="false"
+                android:backgroundTint="@color/vermelho"
+                app:cornerRadius="15dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

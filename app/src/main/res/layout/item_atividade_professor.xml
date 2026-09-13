@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- CONTEÚDO DA ATIVIDADE -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="15dp">
+
+        <!-- ÍCONE -->
+
+        <FrameLayout
+            android:id="@+id/fundoAtividade"
+            android:layout_width="46dp"
+            android:layout_height="46dp">
+
+            <ImageView
+                android:id="@+id/imgAtividade"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="10dp"
+                android:src="@drawable/ic_atividade"
+                android:scaleType="centerInside"
+                android:contentDescription="Atividade" />
+
+        </FrameLayout>
+
+        <!-- INFORMAÇÕES -->
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:id="@+id/tvNomeAtividade"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Questões do livro"
+                android:textColor="#171717"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvPontuacao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="100 pts"
+                android:textColor="#171717"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular" />
+
+            <TextView
+                android:id="@+id/tvPrazo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Prazo: 20/08/2026"
+                android:textColor="#171717"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular" />
+
+        </LinearLayout>
+
+        <!-- TRÊS PONTINHOS -->
+
+        <ImageView
+            android:id="@+id/btnMenuAtividade"
+            android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_menu_vertical"
+            android:scaleType="centerInside"
+            android:contentDescription="Opções" />
+
+    </LinearLayout>
+
+    <!-- LINHA -->
+
+    <View
+        android:id="@+id/linhaBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:background="#AAAAAA" />
+
+</LinearLayout>

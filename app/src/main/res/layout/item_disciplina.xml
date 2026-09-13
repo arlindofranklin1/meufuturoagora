@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- CONTEÚDO DA DISCIPLINA -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="73dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- CÍRCULO -->
+
+        <View
+            android:id="@+id/circuloCor"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@android:color/transparent" />
+
+        <!-- TEXTOS -->
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:id="@+id/tvNomeDisciplina"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Português"
+                android:textColor="#171717"
+                android:textSize="18sp"
+                android:fontFamily="@font/poppins_bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvQuantidadeAlunos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="48 alunos"
+                android:textColor="#171717"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_regular" />
+
+        </LinearLayout>
+
+        <!-- MENU -->
+
+        <ImageView
+            android:id="@+id/btnMenuDisciplina"
+            android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_menu_vertical"
+            android:scaleType="centerInside"
+            android:contentDescription="Opções" />
+
+    </LinearLayout>
+
+    <!-- LINHA -->
+
+    <View
+        android:id="@+id/linhaBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#AAAAAA" />
+
+</LinearLayout>

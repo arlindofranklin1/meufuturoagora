@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- FUNDO DO CARD -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FBF8FF"/>
+            <corners android:radius="20dp"/>
+        </shape>
+    </item>
+
+    <!-- CURVA -->
+    <item
+        android:gravity="bottom|end">
+
+        <vector
+            android:width="360dp"
+            android:height="150dp"
+            android:viewportWidth="360"
+            android:viewportHeight="150">
+
+            <path
+                android:fillColor="#F0DEFF"
+                android:pathData="
+                    M 205,150
+
+                    C 225,138 245,122 260,102
+                    C 274,83 282,63 296,48
+
+                    C 310,32 327,25 360,29
+
+                    L 360,150
+                    Z" />
+
+        </vector>
+
+    </item>
+
+</layer-list>

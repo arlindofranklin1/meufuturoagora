@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <!-- CONTEÚDO DA TELA -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollConteudo"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="24dp">
+
+
+            <!-- ============================= -->
+            <!-- CABEÇALHO -->
+            <!-- ============================= -->
+
+            <LinearLayout
+                android:id="@+id/headerProfessor"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:background="@drawable/bg_header_professor"
+                android:gravity="center_vertical"
+                android:minHeight="105dp"
+                android:orientation="horizontal"
+                android:paddingStart="20dp"
+                android:paddingTop="50dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="20dp">
+
+                <!-- FOTO / ÍCONE PROFESSOR -->
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/imgProfessor"
+                    android:layout_width="78dp"
+                    android:layout_height="78dp"
+                    android:contentDescription="Ícone do professor"
+                    android:scaleType="centerCrop"
+                    android:padding="3dp"
+                    android:background="#FFFFFF"
+                    app:shapeAppearanceOverlay="@style/CircleImageView"
+                    app:strokeColor="#FFFFFF"
+                    app:strokeWidth="2dp" />
+
+
+                <!-- TEXTOS -->
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvNomeProfessor"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/poppins_bold"
+                        android:maxLines="1"
+                        android:text="Professor João"
+                        android:textColor="#FFFFFF"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/tvSaudacao"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:maxLines="1"
+                        android:text="Olá, Professor(a)!"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvAcontecendo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/poppins_regular"
+                        android:maxLines="1"
+                        android:text="Veja o que está acontecendo."
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+
+                <!-- SINO -->
+
+                <ImageView
+                    android:id="@+id/imgNotificacao"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:contentDescription="Notificações"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_notificacao" />
+
+            </LinearLayout>
+
+
+            <!-- ESPAÇO -->
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="30dp" />
+
+
+            <!-- ============================= -->
+            <!-- CARD DISCIPLINAS -->
+            <!-- ============================= -->
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardDisciplinas"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                app:cardBackgroundColor="#FAF7FF"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="4dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- FUNDO CURVO -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@null"
+                        android:scaleType="fitXY"
+                        android:src="@drawable/bg_card_disciplinas" />
+
+                    <!-- CONTEÚDO -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:paddingStart="36dp"
+                        android:paddingEnd="30dp">
+
+                        <!-- ÍCONE -->
+                        <ImageView
+                            android:id="@+id/imgDisciplinas"
+                            android:layout_width="96dp"
+                            android:layout_height="96dp"
+                            android:layout_marginTop="20dp"
+                            android:contentDescription="Disciplinas"
+                            android:padding="10dp"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_disciplina_roxo"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <!-- TÍTULO -->
+                        <TextView
+                            android:id="@+id/tvDisciplinas"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="25dp"
+                            android:fontFamily="@font/poppins_bold"
+                            android:text="Disciplinas"
+                            android:textColor="#64208F"
+                            android:textSize="24sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/imgDisciplinas"
+                            app:layout_constraintTop_toTopOf="@id/imgDisciplinas" />
+
+                        <!-- SUBTÍTULO -->
+                        <TextView
+                            android:id="@+id/tvDescricaoDisciplinas"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="25dp"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:text="Total de disciplinas ativas"
+                            android:textColor="#777777"
+                            android:textSize="17sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/imgDisciplinas"
+                            app:layout_constraintTop_toBottomOf="@id/tvDisciplinas" />
+
+                        <!-- NÚMERO -->
+                        <TextView
+                            android:id="@+id/tvNumeroDisciplinas"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="15dp"
+                            android:layout_marginBottom="10dp"
+                            android:fontFamily="@font/poppins_bold"
+                            android:text="0"
+                            android:textColor="#64148E"
+                            android:textSize="40sp"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent" />
+
+                        <!-- SETA -->
+                        <ImageView
+                            android:id="@+id/imgSetaDisciplinas"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="2dp"
+                            android:layout_marginBottom="28dp"
+                            android:contentDescription="Entrar em disciplinas"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_seta_roxa"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </FrameLayout>
+
+            </androidx.cardview.widget.CardView>
+
+
+            <!-- ESPAÇO -->
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="14dp" />
+
+
+            <!-- ============================= -->
+            <!-- CARD SOLICITAÇÕES -->
+            <!-- ============================= -->
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardSolicitacoes"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                app:cardBackgroundColor="#F8FFF8"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="4dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- FUNDO CURVO -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@null"
+                        android:scaleType="fitXY"
+                        android:src="@drawable/bg_card_solicitacoes" />
+
+                    <!-- CONTEÚDO -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:paddingStart="36dp"
+                        android:paddingEnd="30dp">
+
+                        <!-- ÍCONE -->
+                        <ImageView
+                            android:id="@+id/imgSolicitacoes"
+                            android:layout_width="96dp"
+                            android:layout_height="96dp"
+                            android:layout_marginTop="20dp"
+                            android:contentDescription="Solicitações"
+                            android:padding="10dp"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_solicitacoes"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <!-- TÍTULO -->
+                        <TextView
+                            android:id="@+id/tvSolicitacoes"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="25dp"
+                            android:fontFamily="@font/poppins_bold"
+                            android:text="Solicitações"
+                            android:textColor="#24943A"
+                            android:textSize="24sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/imgSolicitacoes"
+                            app:layout_constraintTop_toTopOf="@id/imgSolicitacoes" />
+
+                        <!-- SUBTÍTULO -->
+                        <TextView
+                            android:id="@+id/tvDescricaoSolicitacoes"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="25dp"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:text="Solicitações pendentes"
+                            android:textColor="#777777"
+                            android:textSize="17sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/imgSolicitacoes"
+                            app:layout_constraintTop_toBottomOf="@id/tvSolicitacoes" />
+
+                        <!-- NÚMERO -->
+                        <TextView
+                            android:id="@+id/tvNumeroSolicitacoes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="15dp"
+                            android:layout_marginBottom="10dp"
+                            android:fontFamily="@font/poppins_bold"
+                            android:text="0"
+                            android:textColor="#24943A"
+                            android:textSize="40sp"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent" />
+
+                        <!-- SETA -->
+                        <ImageView
+                            android:id="@+id/imgSetaSolicitacoes"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="2dp"
+                            android:layout_marginBottom="28dp"
+                            android:contentDescription="Entrar em solicitações"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_seta_verde"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </FrameLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- ============================= --> <!-- AÇÕES RÁPIDAS --> <!-- ============================= -->
+            <!-- ============================= -->
+            <!-- AÇÕES RÁPIDAS -->
+            <!-- ============================= -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- TÍTULO -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="18dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/ic_raio" />
+
+                    <TextView
+                        android:id="@+id/tvAcoesRapidas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="7dp"
+                        android:fontFamily="@font/poppins_bold"
+                        android:text="Ações rápidas"
+                        android:textColor="#A51C21"
+                        android:textSize="17sp" />
+
+                </LinearLayout>
+
+
+                <!-- ============================= -->
+                <!-- CRIAR TAREFA -->
+                <!-- ============================= -->
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/btnCriarTarefa"
+                    android:layout_width="match_parent"
+                    android:layout_height="90dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginEnd="20dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:backgroundTint="#F4F4F4"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="16dp">
+
+                        <!-- ÍCONE -->
+                        <FrameLayout
+                            android:layout_width="58dp"
+                            android:layout_height="58dp">
+
+                            <ImageView
+                                android:id="@+id/imgCriarTarefa"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="Criar tarefa"
+                                android:scaleType="centerInside"
+                                android:src="@drawable/ic_tarefa" />
+
+                        </FrameLayout>
+
+                        <!-- TEXTOS -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="16dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/poppins_semibold"
+                                android:text="Criar tarefa"
+                                android:textColor="#303030"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:fontFamily="@font/poppins_regular"
+                                android:text="Crie novas tarefas para suas turmas"
+                                android:textColor="#777777"
+                                android:textSize="14sp" />
+
+                        </LinearLayout>
+
+                        <!-- SETA -->
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:contentDescription="Entrar em criar tarefa"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_seta_vermelha" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+
+                <!-- ESPAÇO -->
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="16dp" />
+
+
+                <!-- ============================= -->
+                <!-- VER RANKING -->
+                <!-- ============================= -->
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/btnVerRanking"
+                    android:layout_width="match_parent"
+                    android:layout_height="90dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:clickable="true"
+                    android:layout_marginBottom="20dp"
+                    android:focusable="true"
+                    android:backgroundTint="#F4F4F4"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="16dp">
+
+                        <!-- ÍCONE -->
+                        <FrameLayout
+                            android:layout_width="58dp"
+                            android:layout_height="58dp">
+
+                            <ImageView
+                                android:id="@+id/imgRanking"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="Ranking"
+                                android:scaleType="centerInside"
+                                android:src="@drawable/ic_ranking" />
+
+                        </FrameLayout>
+
+                        <!-- TEXTOS -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="16dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/poppins_semibold"
+                                android:text="Ver ranking"
+                                android:textColor="#303030"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:fontFamily="@font/poppins_regular"
+                                android:text="Acompanhe o desempenho das turmas"
+                                android:textColor="#777777"
+                                android:textSize="14sp" />
+
+                        </LinearLayout>
+
+                        <!-- SETA -->
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:contentDescription="Entrar em ranking"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_seta_vermelha" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView> <!-- ============================ --> <!-- BOTTOM BAR --> <!-- ============================ -->
+    <View
+        android:id="@+id/linhaBottomBar"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:background="#737373"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:minHeight="90dp"
+        app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
+        app:itemHorizontalTranslationEnabled="false"
+        app:itemIconSize="24dp"
+        app:itemIconTint="@null"
+        app:itemTextColor="@color/bottom_navigation_text"
+        app:labelVisibilityMode="labeled"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:menu="@menu/menu_professor" />
+</androidx.constraintlayout.widget.ConstraintLayout>
