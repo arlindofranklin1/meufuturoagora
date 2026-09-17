@@ -113,46 +113,36 @@ public class TelaDisciplinaAluno extends AppCompatActivity {
             return;
         }
 
-        db.collection("alunos")
-                .whereEqualTo("email", usuario.getEmail())
-                .get()
-                .addOnSuccessListener(alunos -> {
+        String alunoId = usuario.getUid();
 
-                    if (alunos.isEmpty()) {
-                        return;
+        db.collection("matriculas")
+                .whereEqualTo("alunoId", alunoId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+
+                    listaDisciplinas.clear();
+                    listaDisciplinasOriginal.clear();
+
+                    for (QueryDocumentSnapshot documento : querySnapshot) {
+
+                        String disciplinaId = documento.getString("disciplinaId");
+                        String disciplinaNome = documento.getString("disciplinaNome");
+
+                        if (disciplinaId != null && disciplinaNome != null) {
+
+                            String cor = gerarCorDisciplina(disciplinaId);
+
+                            Disciplina disciplina = new Disciplina(
+                                    disciplinaId, disciplinaNome, cor
+                            );
+
+                            listaDisciplinas.add(disciplina);
+                            listaDisciplinasOriginal.add(disciplina);
+                        }
                     }
 
-                    String alunoId = alunos.getDocuments().get(0).getId();
-
-                    db.collection("matriculas")
-                            .whereEqualTo("alunoId", alunoId)
-                            .get()
-                            .addOnSuccessListener(querySnapshot -> {
-
-                                listaDisciplinas.clear();
-                                listaDisciplinasOriginal.clear();
-
-                                for (QueryDocumentSnapshot documento : querySnapshot) {
-
-                                    String disciplinaId = documento.getString("disciplinaId");
-                                    String disciplinaNome = documento.getString("disciplinaNome");
-
-                                    if (disciplinaId != null && disciplinaNome != null) {
-
-                                        String cor = gerarCorDisciplina(disciplinaId);
-
-                                        Disciplina disciplina = new Disciplina(
-                                                disciplinaId, disciplinaNome, cor
-                                        );
-
-                                        listaDisciplinas.add(disciplina);
-                                        listaDisciplinasOriginal.add(disciplina);
-                                    }
-                                }
-
-                                adapter.notifyDataSetChanged();
-                                atualizarVazio();
-                            });
+                    adapter.notifyDataSetChanged();
+                    atualizarVazio();
                 });
     }
 

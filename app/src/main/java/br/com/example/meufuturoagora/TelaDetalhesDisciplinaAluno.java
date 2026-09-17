@@ -148,23 +148,13 @@ public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
             return;
         }
 
-        db.collection("alunos")
-                .whereEqualTo("email", usuario.getEmail())
+        alunoId = usuario.getUid();
+
+        db.collection("atividades")
+                .whereEqualTo("disciplinaId", disciplinaId)
+                .whereEqualTo("ativo", true)
                 .get()
-                .addOnSuccessListener(alunos -> {
-
-                    if (alunos.isEmpty()) {
-                        return;
-                    }
-
-                    alunoId = alunos.getDocuments().get(0).getId();
-
-                    db.collection("atividades")
-                            .whereEqualTo("disciplinaId", disciplinaId)
-                            .whereEqualTo("ativo", true)
-                            .get()
-                            .addOnSuccessListener(this::processarAtividades);
-                });
+                .addOnSuccessListener(this::processarAtividades);
     }
 
     private void processarAtividades(com.google.firebase.firestore.QuerySnapshot atividadesSnapshot) {

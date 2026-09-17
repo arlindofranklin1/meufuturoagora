@@ -75,9 +75,6 @@
             android:name=".TelaInicialProfessor"
             android:exported="false" />
         <activity
-            android:name=".TelaLoginAluno"
-            android:exported="false" />
-        <activity
             android:name=".TelaLogin1"
             android:exported="false" />
         <activity

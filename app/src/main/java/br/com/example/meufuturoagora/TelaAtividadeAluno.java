@@ -118,23 +118,13 @@ public class TelaAtividadeAluno extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(this::preencherAtividade);
 
-        db.collection("alunos")
-                .whereEqualTo("email", usuario.getEmail())
+        alunoId = usuario.getUid();
+        documentoEntregaId = atividadeId + "_" + alunoId;
+
+        db.collection("entregas")
+                .document(documentoEntregaId)
                 .get()
-                .addOnSuccessListener(alunos -> {
-
-                    if (alunos.isEmpty()) {
-                        return;
-                    }
-
-                    alunoId = alunos.getDocuments().get(0).getId();
-                    documentoEntregaId = atividadeId + "_" + alunoId;
-
-                    db.collection("entregas")
-                            .document(documentoEntregaId)
-                            .get()
-                            .addOnSuccessListener(this::preencherEntrega);
-                });
+                .addOnSuccessListener(this::preencherEntrega);
     }
 
     private void preencherAtividade(DocumentSnapshot documento) {

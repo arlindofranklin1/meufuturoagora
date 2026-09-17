@@ -17,7 +17,6 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -94,20 +93,16 @@ public class TelaInicialAluno extends AppCompatActivity {
                     .into(imgAluno);
         }
 
-        String email = usuario.getEmail();
+        alunoId = usuario.getUid();
 
         db.collection("alunos")
-                .whereEqualTo("email", email)
+                .document(alunoId)
                 .get()
-                .addOnSuccessListener(querySnapshot -> {
+                .addOnSuccessListener(alunoDoc -> {
 
-                    if (querySnapshot.isEmpty()) {
+                    if (!alunoDoc.exists()) {
                         return;
                     }
-
-                    DocumentSnapshot alunoDoc = querySnapshot.getDocuments().get(0);
-
-                    alunoId = alunoDoc.getId();
 
                     Long pontuacao = alunoDoc.getLong("pontuacao");
                     pontuacaoAluno = pontuacao != null ? pontuacao : 0;

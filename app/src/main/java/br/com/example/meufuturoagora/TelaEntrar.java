@@ -22,8 +22,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.SetOptions;
 import com.google.android.material.card.MaterialCardView;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class TelaEntrar extends AppCompatActivity {
@@ -242,76 +246,89 @@ public class TelaEntrar extends AppCompatActivity {
         String email = user.getEmail();
 
         // O acesso ao aplicativo é restrito: o e-mail precisa estar
-        // pré-cadastrado como professor ou como aluno para entrar.
+        // na lista de professores ou de alunos em UsuariosAutorizados.
 
-        db.collection("professores")
-                .whereEqualTo("email", email)
-                .get()
-                .addOnSuccessListener(professores -> {
+        if (UsuariosAutorizados.ehProfessor(email)) {
 
-                    if (!professores.isEmpty()) {
+            startActivity(new Intent(TelaEntrar.this, TelaInicialProfessor.class));
+            finish();
+            return;
+        }
 
-                        startActivity(new Intent(
-                                TelaEntrar.this,
-                                TelaInicialProfessor.class
-                        ));
+        String turma = UsuariosAutorizados.turmaDoAluno(email);
 
-                        finish();
-                        return;
-                    }
+        if (turma != null) {
 
-                    verificarAluno(email);
-                })
+            prepararContaDoAluno(user, turma);
+            return;
+        }
+
+        acessoNaoAutorizado();
+    }
+
+    private void prepararContaDoAluno(FirebaseUser user, String turma) {
+
+        String uidAluno = user.getUid();
+
+        Map<String, Object> dadosAluno = new HashMap<>();
+        dadosAluno.put("nome", user.getDisplayName() != null ? user.getDisplayName() : "Aluno");
+        dadosAluno.put("email", user.getEmail());
+        dadosAluno.put("turma", turma);
+
+        db.collection("alunos")
+                .document(uidAluno)
+                .set(dadosAluno, SetOptions.merge())
+                .addOnSuccessListener(unused -> matricularNasDisciplinasDaTurma(uidAluno, turma))
                 .addOnFailureListener(e ->
                         Toast.makeText(
                                 this,
-                                "Erro ao verificar e-mail: " + e.getMessage(),
+                                "Erro ao preparar conta do aluno: " + e.getMessage(),
                                 Toast.LENGTH_LONG
                         ).show()
                 );
     }
 
-    private void verificarAluno(String email) {
+    private void matricularNasDisciplinasDaTurma(String alunoId, String turma) {
 
         db.collection("alunos")
-                .whereEqualTo("email", email)
+                .document(alunoId)
                 .get()
-                .addOnSuccessListener(alunos -> {
+                .addOnSuccessListener(alunoDoc -> {
 
-                    if (alunos.isEmpty()) {
+                    String alunoNome = alunoDoc.getString("nome");
 
-                        acessoNaoAutorizado();
-                        return;
-                    }
+                    db.collection("disciplinas")
+                            .whereEqualTo("turma", turma)
+                            .whereEqualTo("ativo", true)
+                            .get()
+                            .addOnSuccessListener(disciplinas -> {
 
-                    com.google.firebase.firestore.DocumentSnapshot alunoDoc =
-                            alunos.getDocuments().get(0);
+                                for (QueryDocumentSnapshot disciplina : disciplinas) {
 
-                    String turma = alunoDoc.getString("turma");
+                                    Map<String, Object> matricula = new HashMap<>();
 
-                    Intent intent;
+                                    matricula.put("disciplinaId", disciplina.getId());
+                                    matricula.put("disciplinaNome", disciplina.getString("nome"));
+                                    matricula.put("alunoId", alunoId);
+                                    matricula.put("alunoNome", alunoNome != null ? alunoNome : "Aluno");
+                                    matricula.put("turma", turma);
 
-                    if (turma == null || turma.isEmpty()) {
+                                    db.collection("matriculas")
+                                            .document(disciplina.getId() + "_" + alunoId)
+                                            .set(matricula);
+                                }
 
-                        // Primeiro acesso: falta escolher a turma
-                        intent = new Intent(TelaEntrar.this, TelaLoginAluno.class);
-                        intent.putExtra("alunoId", alunoDoc.getId());
-
-                    } else {
-
-                        intent = new Intent(TelaEntrar.this, TelaInicialAluno.class);
-                    }
-
-                    startActivity(intent);
-                    finish();
+                                irParaHomeDoAluno();
+                            })
+                            .addOnFailureListener(e -> irParaHomeDoAluno());
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(
-                                this,
-                                "Erro ao verificar e-mail: " + e.getMessage(),
-                                Toast.LENGTH_LONG
-                        ).show()
-                );
+                .addOnFailureListener(e -> irParaHomeDoAluno());
+    }
+
+    private void irParaHomeDoAluno() {
+
+        startActivity(new Intent(TelaEntrar.this, TelaInicialAluno.class));
+        finish();
     }
 
     private void acessoNaoAutorizado() {

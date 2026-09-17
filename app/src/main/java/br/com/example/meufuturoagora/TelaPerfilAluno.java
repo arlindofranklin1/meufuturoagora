@@ -15,7 +15,6 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -58,18 +57,16 @@ public class TelaPerfilAluno extends AppCompatActivity {
                         .into(imgFotoPerfilAluno);
             }
 
-            db.collection("alunos")
-                    .whereEqualTo("email", usuario.getEmail())
-                    .get()
-                    .addOnSuccessListener(querySnapshot -> {
+            alunoId = usuario.getUid();
 
-                        if (querySnapshot.isEmpty()) {
+            db.collection("alunos")
+                    .document(alunoId)
+                    .get()
+                    .addOnSuccessListener(alunoDoc -> {
+
+                        if (!alunoDoc.exists()) {
                             return;
                         }
-
-                        DocumentSnapshot alunoDoc = querySnapshot.getDocuments().get(0);
-
-                        alunoId = alunoDoc.getId();
 
                         String email = alunoDoc.getString("email");
                         String turma = alunoDoc.getString("turma");
