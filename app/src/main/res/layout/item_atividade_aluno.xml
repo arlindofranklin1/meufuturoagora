@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="76dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
+
+        <FrameLayout
+            android:id="@+id/fundoAtividadeAluno"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:background="@drawable/bg_circulo_disciplina">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_atividade"
+                android:contentDescription="@null" />
+
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:id="@+id/tvNomeAtividadeAluno"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Questões do livro"
+                android:textColor="@color/texto_escuro"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvPrazoAtividadeAluno"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Prazo: 20/08/2026"
+                android:textColor="@color/texto_cinza"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvStatusAtividadeAluno"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_pill_vermelho"
+            android:fontFamily="@font/poppins_semibold"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="4dp"
+            android:text="Pendente"
+            android:textColor="@color/vermelho_erro"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/linha_cinza" />
+
+</LinearLayout>

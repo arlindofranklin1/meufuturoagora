@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    tools:context=".RankingActivity">
+
+    <ImageView
+        android:id="@+id/btnVoltar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="35dp"
+        android:contentDescription="Voltar"
+        android:scaleType="centerInside"
+        android:src="@drawable/seta_voltar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:fontFamily="@font/poppins_bold"
+        android:gravity="center"
+        android:text="Ranking geral"
+        android:textColor="@color/roxo_primario"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@id/btnVoltar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnVoltar" />
+
+    <!-- ============================= -->
+    <!-- PÓDIO -->
+    <!-- ============================= -->
+
+    <LinearLayout
+        android:id="@+id/layoutPodio"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:baselineAligned="false"
+        android:gravity="bottom"
+        android:orientation="horizontal"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnVoltar">
+
+        <!-- 2º LUGAR -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgSegundo"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@color/prata_ranking"
+                android:padding="2dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_perfil"
+                app:shapeAppearanceOverlay="@style/CircleImageView"
+                app:strokeColor="@color/prata_ranking"
+                app:strokeWidth="2dp" />
+
+            <TextView
+                android:id="@+id/tvNomeSegundo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="@font/poppins_semibold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="—"
+                android:textColor="@color/texto_escuro"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvPontosSegundo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:text="0 pts"
+                android:textColor="@color/texto_cinza"
+                android:textSize="11sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="8dp"
+                android:background="@color/prata_ranking" />
+
+        </LinearLayout>
+
+        <!-- 1º LUGAR -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_coroa" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgPrimeiro"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:layout_marginTop="2dp"
+                android:background="@color/dourado_ranking"
+                android:padding="2dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_perfil"
+                app:shapeAppearanceOverlay="@style/CircleImageView"
+                app:strokeColor="@color/dourado_ranking"
+                app:strokeWidth="3dp" />
+
+            <TextView
+                android:id="@+id/tvNomePrimeiro"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="@font/poppins_bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="—"
+                android:textColor="@color/texto_escuro"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvPontosPrimeiro"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:text="0 pts"
+                android:textColor="@color/texto_cinza"
+                android:textSize="11sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="66dp"
+                android:layout_marginTop="8dp"
+                android:background="@color/dourado_ranking" />
+
+        </LinearLayout>
+
+        <!-- 3º LUGAR -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgTerceiro"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@color/bronze_ranking"
+                android:padding="2dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_perfil"
+                app:shapeAppearanceOverlay="@style/CircleImageView"
+                app:strokeColor="@color/bronze_ranking"
+                app:strokeWidth="2dp" />
+
+            <TextView
+                android:id="@+id/tvNomeTerceiro"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="@font/poppins_semibold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="—"
+                android:textColor="@color/texto_escuro"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvPontosTerceiro"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:text="0 pts"
+                android:textColor="@color/texto_cinza"
+                android:textSize="11sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="32dp"
+                android:layout_marginTop="8dp"
+                android:background="@color/bronze_ranking" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ============================= -->
+    <!-- LISTA COMPLETA -->
+    <!-- ============================= -->
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerRanking"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutPodio" />
+
+    <TextView
+        android:id="@+id/tvSemDados"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/poppins_regular"
+        android:text="Nenhum aluno pontuou ainda."
+        android:textColor="@color/texto_cinza"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutPodio" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
