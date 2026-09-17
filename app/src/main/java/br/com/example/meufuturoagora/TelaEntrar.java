@@ -75,6 +75,10 @@ public class TelaEntrar extends AppCompatActivity {
             googleButton.setOnClickListener(v -> iniciarLoginGoogle());
         }
 
+        // Acessar como administrador
+        findViewById(R.id.tvAcessarAdministrador).setOnClickListener(v ->
+                startActivity(new Intent(this, TelaAdminLogin.class))
+        );
     }
 
     private void iniciarLoginGoogle() {

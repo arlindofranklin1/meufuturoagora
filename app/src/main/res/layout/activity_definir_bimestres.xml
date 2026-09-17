@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <ImageView
+        android:id="@+id/btnVoltar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="35dp"
+        android:contentDescription="Voltar"
+        android:scaleType="centerInside"
+        android:src="@drawable/seta_voltar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:fontFamily="@font/poppins_bold"
+        android:gravity="center"
+        android:text="Definir bimestres"
+        android:textColor="@color/roxo_primario"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@id/btnVoltar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnVoltar" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnVoltar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="20dp">
+
+            <include layout="@layout/item_definir_bimestre"
+                android:id="@+id/bimestre1" />
+
+            <Space android:layout_width="match_parent" android:layout_height="14dp" />
+
+            <include layout="@layout/item_definir_bimestre"
+                android:id="@+id/bimestre2" />
+
+            <Space android:layout_width="match_parent" android:layout_height="14dp" />
+
+            <include layout="@layout/item_definir_bimestre"
+                android:id="@+id/bimestre3" />
+
+            <Space android:layout_width="match_parent" android:layout_height="14dp" />
+
+            <include layout="@layout/item_definir_bimestre"
+                android:id="@+id/bimestre4" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSalvarBimestres"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="28dp"
+                android:backgroundTint="@color/roxo_primario"
+                android:fontFamily="@font/poppins_bold"
+                android:text="Salvar"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                app:cornerRadius="15dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

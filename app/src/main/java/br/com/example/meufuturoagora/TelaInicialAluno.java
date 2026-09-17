@@ -71,6 +71,8 @@ public class TelaInicialAluno extends AppCompatActivity {
         adapter = new ProximaAtividadeAdapter(listaProximas);
         recyclerProximasAtividades.setAdapter(adapter);
 
+        BimestreUtil.carregarPeriodoAtual(db, findViewById(R.id.tvPeriodoBimestreAluno));
+
         FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
 
         if (usuario == null) {

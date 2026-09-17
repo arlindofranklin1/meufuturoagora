@@ -124,6 +124,12 @@ public class TelaInicialProfessor extends AppCompatActivity {
         }
 
         // =========================
+        // BIMESTRE ATUAL
+        // =========================
+
+        BimestreUtil.carregarPeriodoAtual(db, findViewById(R.id.tvPeriodoBimestre));
+
+        // =========================
         // BOTTOM NAVIGATION
         // =========================
 

@@ -12,6 +12,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MeuFuturoAgora">
         <activity
+            android:name=".DefinirBimestresActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DefinirAnoLetivoActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TelaAdminHome"
+            android:exported="false" />
+        <activity
+            android:name=".TelaAdminLogin"
+            android:exported="false" />
+        <activity
             android:name=".TelaPerfilAluno"
             android:exported="false" />
         <activity

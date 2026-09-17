@@ -133,6 +133,28 @@
 
 
     <!-- ========================= -->
+    <!-- Acessar como administrador -->
+    <!-- ========================= -->
+
+    <TextView
+        android:id="@+id/tvAcessarAdministrador"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="8dp"
+        android:fontFamily="@font/poppins_semibold"
+        android:text="Acessar como administrador"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/googleButton" />
+
+
+    <!-- ========================= -->
     <!-- Logo Trindade -->
     <!-- ========================= -->
 
