@@ -36,7 +36,6 @@ final class UsuariosAutorizados {
 
     static {
         ALUNOS.put("aluno.exemplo@gmail.com", "9º ano");
-        ALUNOS.put("arlindo.franklim@gmail.com", "9º ano");
         ALUNOS.put("barbara.aluna@gmail.com", "6º ano");
         ALUNOS.put("hosanadiniz71@gmail.com", "8º ano");
     }
