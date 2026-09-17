@@ -12,6 +12,42 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MeuFuturoAgora">
         <activity
+            android:name=".TelaPerfilAluno"
+            android:exported="false" />
+        <activity
+            android:name=".TelaAtividadeAluno"
+            android:exported="false" />
+        <activity
+            android:name=".TelaDetalhesDisciplinaAluno"
+            android:exported="false" />
+        <activity
+            android:name=".TelaDisciplinaAluno"
+            android:exported="false" />
+        <activity
+            android:name=".TelaInicialAluno"
+            android:exported="false" />
+        <activity
+            android:name=".AvaliarEntregaActivity"
+            android:exported="false" />
+        <activity
+            android:name=".QuestoesDoLivroActivity"
+            android:exported="false" />
+        <activity
+            android:name=".FrequenciaAulaActivity"
+            android:exported="false" />
+        <activity
+            android:name=".RegistrarFrequenciaActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CadastrarAulaActivity"
+            android:exported="false" />
+        <activity
+            android:name=".RankingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SobreActivity"
+            android:exported="false" />
+        <activity
             android:name=".CriarAtividade"
             android:exported="false" />
         <activity

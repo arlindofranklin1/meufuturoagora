@@ -9,7 +9,7 @@
 
     <!-- FUNDO PRINCIPAL -->
     <path
-        android:fillColor="@color/vermelho"
+        android:fillColor="#411195"
         android:pathData="
             M0,0
             L1080,0
@@ -22,7 +22,7 @@
 
     <!-- CURVA SUPERIOR -->
     <path
-        android:fillColor="#9D0D12"
+        android:fillColor="#2E0C7B"
         android:pathData="
             M690,0
             L1080,0
@@ -33,7 +33,7 @@
 
     <!-- CURVA INFERIOR -->
     <path
-        android:fillColor="#9D0D12"
+        android:fillColor="#2E0C7B"
         android:pathData="
             M0,235
             C90,278 150,282 235,273
@@ -45,7 +45,7 @@
 
     <!-- CURVA INFERIOR MAIS ESCURA -->
     <path
-        android:fillColor="#93080D"
+        android:fillColor="#24085F"
         android:pathData="
             M0,274
             C80,302 155,294 225,288
@@ -54,6 +54,5 @@
             C18,330 0,312 0,290
             L0,274
             Z" />
-
 
 </vector>

@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -57,6 +58,31 @@ public class TelaDetalhesDisciplinaProfessor
 
     private final List<Atividade> listaAtividades =
             new ArrayList<>();
+
+    // =====================================================
+    // ABAS
+    // =====================================================
+
+    private TextView tabAtividades, tabAlunos, tabFrequencia;
+    private View linhaAbaAtividades, linhaAbaAlunos, linhaAbaFrequencia;
+
+    private ImageButton btnAdicionarAtividade;
+
+    // =====================================================
+    // ALUNOS
+    // =====================================================
+
+    private RecyclerView recyclerAlunos;
+    private TextView tvSemAlunosDisciplina;
+
+    private AlunoDisciplinaAdapter adapterAlunos;
+    private final List<String> listaNomesAlunos = new ArrayList<>();
+
+    // =====================================================
+    // FREQUÊNCIA
+    // =====================================================
+
+    private LinearLayout layoutFrequenciaAcoes;
 
     // =====================================================
     // ON CREATE
@@ -121,7 +147,7 @@ public class TelaDetalhesDisciplinaProfessor
         // BOTÃO ADICIONAR ATIVIDADE
         // =================================================
 
-        ImageButton btnAdicionarAtividade =
+        btnAdicionarAtividade =
                 findViewById(
                         R.id.btnAdicionarAtividade
                 );
@@ -201,6 +227,53 @@ public class TelaDetalhesDisciplinaProfessor
         );
 
         // =================================================
+        // ALUNOS
+        // =================================================
+
+        recyclerAlunos = findViewById(R.id.recyclerAlunos);
+        tvSemAlunosDisciplina = findViewById(R.id.tvSemAlunosDisciplina);
+
+        recyclerAlunos.setLayoutManager(new LinearLayoutManager(this));
+        adapterAlunos = new AlunoDisciplinaAdapter(listaNomesAlunos);
+        recyclerAlunos.setAdapter(adapterAlunos);
+
+        // =================================================
+        // FREQUÊNCIA
+        // =================================================
+
+        layoutFrequenciaAcoes = findViewById(R.id.layoutFrequenciaAcoes);
+
+        findViewById(R.id.itemCadastrarAula).setOnClickListener(v -> {
+
+            Intent intent = new Intent(this, CadastrarAulaActivity.class);
+            intent.putExtra("disciplinaId", disciplinaId);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.itemRegistrarFrequencia).setOnClickListener(v -> {
+
+            Intent intent = new Intent(this, RegistrarFrequenciaActivity.class);
+            intent.putExtra("disciplinaId", disciplinaId);
+            startActivity(intent);
+        });
+
+        // =================================================
+        // ABAS
+        // =================================================
+
+        tabAtividades = findViewById(R.id.tabAtividades);
+        tabAlunos = findViewById(R.id.tabAlunos);
+        tabFrequencia = findViewById(R.id.tabFrequencia);
+
+        linhaAbaAtividades = findViewById(R.id.linhaAbaAtividades);
+        linhaAbaAlunos = findViewById(R.id.linhaAbaAlunos);
+        linhaAbaFrequencia = findViewById(R.id.linhaAbaFrequencia);
+
+        tabAtividades.setOnClickListener(v -> mostrarAba(Aba.ATIVIDADES));
+        tabAlunos.setOnClickListener(v -> mostrarAba(Aba.ALUNOS));
+        tabFrequencia.setOnClickListener(v -> mostrarAba(Aba.FREQUENCIA));
+
+        // =================================================
         // BOTÃO VOLTAR
         // =================================================
 
@@ -224,6 +297,88 @@ public class TelaDetalhesDisciplinaProfessor
         // =================================================
 
         carregarAtividades();
+
+        // =================================================
+        // CARREGAR ALUNOS
+        // =================================================
+
+        carregarAlunos();
+    }
+
+    // =====================================================
+    // ABAS
+    // =====================================================
+
+    private enum Aba { ATIVIDADES, ALUNOS, FREQUENCIA }
+
+    private Aba abaAtual = Aba.ATIVIDADES;
+
+    private void mostrarAba(Aba aba) {
+
+        abaAtual = aba;
+
+        recyclerAtividades.setVisibility(aba == Aba.ATIVIDADES ? View.VISIBLE : View.GONE);
+        btnAdicionarAtividade.setVisibility(aba == Aba.ATIVIDADES ? View.VISIBLE : View.GONE);
+
+        boolean mostrarAlunos = aba == Aba.ALUNOS;
+        boolean semAlunos = listaNomesAlunos.isEmpty();
+
+        recyclerAlunos.setVisibility(mostrarAlunos && !semAlunos ? View.VISIBLE : View.GONE);
+        tvSemAlunosDisciplina.setVisibility(mostrarAlunos && semAlunos ? View.VISIBLE : View.GONE);
+
+        layoutFrequenciaAcoes.setVisibility(aba == Aba.FREQUENCIA ? View.VISIBLE : View.GONE);
+
+        int corAtiva = getColor(R.color.roxo_primario);
+        int corInativa = Color.parseColor("#171717");
+
+        tabAtividades.setTextColor(aba == Aba.ATIVIDADES ? corAtiva : corInativa);
+        tabAlunos.setTextColor(aba == Aba.ALUNOS ? corAtiva : corInativa);
+        tabFrequencia.setTextColor(aba == Aba.FREQUENCIA ? corAtiva : corInativa);
+
+        linhaAbaAtividades.setVisibility(aba == Aba.ATIVIDADES ? View.VISIBLE : View.GONE);
+        linhaAbaAlunos.setVisibility(aba == Aba.ALUNOS ? View.VISIBLE : View.GONE);
+        linhaAbaFrequencia.setVisibility(aba == Aba.FREQUENCIA ? View.VISIBLE : View.GONE);
+    }
+
+    // =====================================================
+    // CARREGAR ALUNOS MATRICULADOS
+    // =====================================================
+
+    private void carregarAlunos() {
+
+        if (disciplinaId == null) {
+            return;
+        }
+
+        db.collection("matriculas")
+                .whereEqualTo("disciplinaId", disciplinaId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+
+                    listaNomesAlunos.clear();
+
+                    for (QueryDocumentSnapshot documento : querySnapshot) {
+
+                        String alunoNome = documento.getString("alunoNome");
+
+                        if (alunoNome != null) {
+                            listaNomesAlunos.add(alunoNome);
+                        }
+                    }
+
+                    adapterAlunos.notifyDataSetChanged();
+
+                    if (abaAtual == Aba.ALUNOS) {
+
+                        recyclerAlunos.setVisibility(
+                                listaNomesAlunos.isEmpty() ? View.GONE : View.VISIBLE
+                        );
+
+                        tvSemAlunosDisciplina.setVisibility(
+                                listaNomesAlunos.isEmpty() ? View.VISIBLE : View.GONE
+                        );
+                    }
+                });
     }
 
     // =====================================================
@@ -392,6 +547,10 @@ public class TelaDetalhesDisciplinaProfessor
         if (adapter != null) {
             carregarAtividades();
         }
+
+        if (adapterAlunos != null) {
+            carregarAlunos();
+        }
     }
 
     // =====================================================
@@ -484,6 +643,24 @@ public class TelaDetalhesDisciplinaProfessor
             holder.tvPrazo.setText(
                     "Prazo: " + atividade.prazo
             );
+
+            // =============================================
+            // ABRIR QUESTÕES / ENTREGAS
+            // =============================================
+
+            holder.itemView.setOnClickListener(v -> {
+
+                Intent intent = new Intent(
+                        TelaDetalhesDisciplinaProfessor.this,
+                        QuestoesDoLivroActivity.class
+                );
+
+                intent.putExtra("atividadeId", atividade.id);
+                intent.putExtra("atividadeNome", atividade.nome);
+                intent.putExtra("disciplinaId", disciplinaId);
+
+                startActivity(intent);
+            });
 
             // =============================================
             // MENU DE OPÇÕES
@@ -661,6 +838,52 @@ public class TelaDetalhesDisciplinaProfessor
                         itemView.findViewById(
                                 R.id.tvPrazo
                         );
+            }
+        }
+    }
+
+    // =====================================================
+    // ADAPTER DE ALUNOS
+    // =====================================================
+
+    private class AlunoDisciplinaAdapter
+            extends RecyclerView.Adapter<AlunoDisciplinaAdapter.ViewHolder> {
+
+        private final List<String> nomes;
+
+        public AlunoDisciplinaAdapter(List<String> nomes) {
+            this.nomes = nomes;
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
+            View view = getLayoutInflater().inflate(
+                    R.layout.item_aluno_disciplina, parent, false
+            );
+
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(ViewHolder holder, int position) {
+
+            holder.tvNomeAlunoDisciplina.setText(nomes.get(position));
+        }
+
+        @Override
+        public int getItemCount() {
+            return nomes.size();
+        }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+
+            TextView tvNomeAlunoDisciplina;
+
+            public ViewHolder(View itemView) {
+                super(itemView);
+
+                tvNomeAlunoDisciplina = itemView.findViewById(R.id.tvNomeAlunoDisciplina);
             }
         }
     }

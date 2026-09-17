@@ -15,35 +15,10 @@
     <!-- Elemento 1 -->
     <!-- ========================= -->
 
-    <ImageView
-        android:id="@+id/elemento1ImageView"
-        android:layout_width="215dp"
-        android:layout_height="351dp"
-        android:scaleType="fitCenter"
-        app:srcCompat="@drawable/elemento1_tela_entrar"
-
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-
-        android:layout_marginTop="-5dp" />
-
 
     <!-- ========================= -->
     <!-- Elemento 2 -->
     <!-- ========================= -->
-
-    <ImageView
-        android:id="@+id/elemento2ImageView"
-        android:layout_width="246dp"
-        android:layout_height="322dp"
-        android:scaleType="fitCenter"
-        android:translationY="29dp"
-        app:srcCompat="@drawable/elemento2_tela_entrar"
-
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
 
 
     <!-- ========================= -->
@@ -85,16 +60,16 @@
     <ImageView
         android:id="@+id/logoMeuFuturoAgoraImageView"
         android:layout_width="310dp"
-        android:layout_height="135dp"
+        android:layout_height="180dp"
         android:scaleType="fitCenter"
-        app:srcCompat="@drawable/logo_meufuturoagora"
+
+        app:srcCompat="@drawable/logo_meufuturoagora_branca"
 
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/googleButton"
 
-        android:translationY="-40dp" />
+        android:layout_marginBottom="15dp" />
 
 
     <!-- ========================= -->
@@ -119,7 +94,7 @@
 
         android:layout_marginStart="65dp"
         android:layout_marginEnd="65dp"
-        android:layout_marginTop="555dp">
+        android:layout_marginTop="480dp">
 
 
         <LinearLayout
@@ -146,7 +121,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
 
-                android:fontFamily="@font/sf_bold"
+                android:fontFamily="@font/poppins_bold"
                 android:text="Entrar com o Google"
                 android:textColor="#000000"
                 android:textSize="22sp"
@@ -160,18 +135,6 @@
     <!-- ========================= -->
     <!-- Logo Trindade -->
     <!-- ========================= -->
-
-    <ImageView
-        android:id="@+id/trindadeImageView"
-        android:layout_width="225dp"
-        android:layout_height="145dp"
-        android:scaleType="fitCenter"
-        app:srcCompat="@drawable/trindade_logo"
-
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
- />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -25,7 +25,6 @@ public class TelaInicialProfessor extends AppCompatActivity {
 
     private TextView tvNomeProfessor;
     private TextView tvNumeroDisciplinas;
-    private TextView tvNumeroSolicitacoes;
     private CardView cardDisciplinas;
 
     private FirebaseFirestore db;
@@ -54,9 +53,6 @@ public class TelaInicialProfessor extends AppCompatActivity {
                 R.id.tvNumeroDisciplinas
         );
 
-        tvNumeroSolicitacoes = findViewById(
-                R.id.tvNumeroSolicitacoes
-        );
 
         // =========================
         // USUÁRIO LOGADO
@@ -125,12 +121,6 @@ public class TelaInicialProfessor extends AppCompatActivity {
             // =========================
 
             carregarQuantidadeDisciplinas(uidProfessor);
-
-            // =========================
-            // CARREGAR SOLICITAÇÕES
-            // =========================
-
-            carregarQuantidadeSolicitacoes(uidProfessor);
         }
 
         // =========================
@@ -192,6 +182,22 @@ public class TelaInicialProfessor extends AppCompatActivity {
 
             startActivity(intent);
         });
+
+        // =========================
+        // AÇÕES RÁPIDAS
+        // =========================
+
+        CardView btnCriarTarefa = findViewById(R.id.btnCriarTarefa);
+
+        btnCriarTarefa.setOnClickListener(v -> startActivity(
+                new Intent(TelaInicialProfessor.this, CriarAtividade.class)
+        ));
+
+        CardView btnVerRanking = findViewById(R.id.btnVerRanking);
+
+        btnVerRanking.setOnClickListener(v -> startActivity(
+                new Intent(TelaInicialProfessor.this, RankingActivity.class)
+        ));
     }
 
 
@@ -238,41 +244,6 @@ public class TelaInicialProfessor extends AppCompatActivity {
                     );
 
                     tvNumeroDisciplinas.setText("ERRO");
-                });
-    }
-
-
-    // =====================================================
-    // QUANTIDADE DE SOLICITAÇÕES PENDENTES
-    // =====================================================
-
-    private void carregarQuantidadeSolicitacoes(
-            String uidProfessor
-    ) {
-
-        db.collection("solicitações")
-                .whereEqualTo(
-                        "professorId",
-                        uidProfessor
-                )
-                .whereEqualTo(
-                        "status",
-                        "pendente"
-                )
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-
-                    int quantidade =
-                            querySnapshot.size();
-
-                    tvNumeroSolicitacoes.setText(
-                            String.valueOf(quantidade)
-                    );
-
-                })
-                .addOnFailureListener(e -> {
-
-                    tvNumeroSolicitacoes.setText("0");
                 });
     }
 }

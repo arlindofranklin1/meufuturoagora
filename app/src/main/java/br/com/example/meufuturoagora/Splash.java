@@ -69,8 +69,8 @@ public class Splash extends AppCompatActivity {
         // Usuário está logado
         String email = user.getEmail();
 
-        // Procura o e-mail na coleção professor
-        db.collection("professor")
+        // Procura o e-mail na coleção professores
+        db.collection("professores")
                 .whereEqualTo("email", email)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {

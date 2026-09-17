@@ -30,7 +30,7 @@
         android:layout_height="50dp"
         android:gravity="center"
         android:text="Português"
-        android:textColor="#A51C21"
+        android:textColor="@color/roxo_primario"
         android:textSize="20sp"
         android:fontFamily="@font/poppins_bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -55,7 +55,7 @@
             android:layout_height="match_parent"
             android:gravity="center"
             android:text="Atividades"
-            android:textColor="#A51C21"
+            android:textColor="@color/roxo_primario"
             android:layout_marginStart="20dp"
             android:textSize="16sp"
             android:fontFamily="@font/poppins_bold"
@@ -96,12 +96,32 @@
         <!-- LINHA DA ABA ATIVA -->
 
         <View
-            android:id="@+id/linhaAba"
+            android:id="@+id/linhaAbaAtividades"
             android:layout_width="0dp"
             android:layout_height="2dp"
-            android:background="#A51C21"
+            android:background="@color/roxo_primario"
             app:layout_constraintStart_toStartOf="@id/tabAtividades"
             app:layout_constraintEnd_toEndOf="@id/tabAtividades"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <View
+            android:id="@+id/linhaAbaAlunos"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:background="@color/roxo_primario"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="@id/tabAlunos"
+            app:layout_constraintEnd_toEndOf="@id/tabAlunos"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <View
+            android:id="@+id/linhaAbaFrequencia"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:background="@color/roxo_primario"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="@id/tabFrequencia"
+            app:layout_constraintEnd_toEndOf="@id/tabFrequencia"
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -132,6 +152,128 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- LISTA DE ALUNOS -->
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerAlunos"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="10dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/linhaSeparadora"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/tvSemAlunosDisciplina"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/poppins_regular"
+        android:text="Nenhum aluno matriculado ainda."
+        android:textColor="@color/texto_cinza"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/linhaSeparadora"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- AÇÕES DE FREQUÊNCIA -->
+
+    <LinearLayout
+        android:id="@+id/layoutFrequenciaAcoes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="15dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/linhaSeparadora"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/itemCadastrarAula"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_calendario" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/poppins_semibold"
+                android:text="Cadastrar aula"
+                android:textColor="@color/texto_escuro"
+                android:textSize="16sp" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:rotation="180"
+                android:src="@drawable/seta_voltar" />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/linha_cinza" />
+
+        <LinearLayout
+            android:id="@+id/itemRegistrarFrequencia"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_check_circle" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/poppins_semibold"
+                android:text="Registrar frequência"
+                android:textColor="@color/texto_escuro"
+                android:textSize="16sp" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:rotation="180"
+                android:src="@drawable/seta_voltar" />
+
+        </LinearLayout>
+
+    </LinearLayout>
 
     <!-- BOTÃO CRIAR ATIVIDADE -->
 

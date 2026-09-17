@@ -3,6 +3,7 @@
 
     <item
         android:drawable="@drawable/ic_disciplina_ativo"
+        android:tint="@color/roxo_primario"
         android:state_checked="true" />
 
     <item

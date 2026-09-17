@@ -21,7 +21,7 @@
             android:viewportHeight="150">
 
             <path
-                android:fillColor="#F0DEFF"
+                android:fillColor="#D2B9FF"
                 android:pathData="
                     M 205,150
 

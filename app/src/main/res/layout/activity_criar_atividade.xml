@@ -30,7 +30,7 @@
         android:layout_height="50dp"
         android:gravity="center"
         android:text="Criar Atividade"
-        android:textColor="#A51C21"
+        android:textColor="@color/roxo_primario"
         android:textSize="20sp"
         android:fontFamily="@font/poppins_bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -111,7 +111,7 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
-                    android:hint="Pontuação máxima"
+                    android:hint="Pontuação máxima (até 10)"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:textSize="16sp"
@@ -119,7 +119,8 @@
                     android:textColorHint="#171717"
                     android:fontFamily="@font/poppins_regular"
                     android:background="@drawable/bg_campo_criar_atividade"
-                    android:inputType="number" />
+                    android:inputType="number"
+                    android:maxLength="2" />
 
                 <!-- PRAZO -->
 
@@ -219,7 +220,7 @@
                 android:textSize="16sp"
                 android:fontFamily="@font/poppins_bold"
                 android:textAllCaps="false"
-                android:backgroundTint="@color/vermelho"
+                android:backgroundTint="@color/roxo_primario"
                 app:cornerRadius="15dp" />
 
         </LinearLayout>

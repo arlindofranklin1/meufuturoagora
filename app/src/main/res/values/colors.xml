@@ -3,4 +3,19 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="vermelho">#A11A1C</color>
+
+    <color name="roxo_primario">#521BB3</color>
+    <color name="laranja_primario">#E45832</color>
+    <color name="vermelho_titulo">#A51C21</color>
+
+    <color name="texto_cinza">#777777</color>
+    <color name="texto_escuro">#171717</color>
+    <color name="fundo_cinza_claro">#F4F4F4</color>
+    <color name="linha_cinza">#AAAAAA</color>
+
+    <color name="verde_sucesso">#2ECC71</color>
+    <color name="vermelho_erro">#E74C3C</color>
+    <color name="dourado_ranking">#F5B400</color>
+    <color name="prata_ranking">#B0B7C3</color>
+    <color name="bronze_ranking">#C77B3E</color>
 </resources>

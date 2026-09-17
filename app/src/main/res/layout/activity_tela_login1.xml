@@ -28,9 +28,9 @@
             android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/sf_bold"
+            android:fontFamily="@font/poppins_bold"
             android:text="Criar conta"
-            android:textColor="#A11A1C"
+            android:textColor="@color/roxo_primario"
             android:textSize="24sp" />
 
         <!-- Subtítulo -->
@@ -39,8 +39,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="@font/sf_medium"
+            android:fontFamily="@font/poppins_regular"
             android:text="Escolha o tipo de conta"
+            android:textColor="@color/texto_escuro"
             android:textSize="18sp" />
 
         <!-- Card Professor -->
@@ -54,7 +55,7 @@
             android:foreground="?attr/selectableItemBackground"
             app:cardBackgroundColor="@android:color/white"
             app:cardCornerRadius="16dp"
-            app:strokeColor="#333333"
+            app:strokeColor="#E5E5E5"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -82,20 +83,19 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/sf_bold"
+                        android:fontFamily="@font/poppins_bold"
                         android:text="Professor"
-                        android:textColor="#B71C1C"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
+                        android:textColor="@color/roxo_primario"
+                        android:textSize="20sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
-                        android:fontFamily="@font/sf_medium"
+                        android:fontFamily="@font/poppins_regular"
                         android:text="Gerencie disciplinas,&#10;atividades e alunos"
-                        android:textColor="#222222"
-                        android:textSize="16sp" />
+                        android:textColor="@color/texto_escuro"
+                        android:textSize="15sp" />
 
                 </LinearLayout>
 
@@ -114,7 +114,7 @@
             android:foreground="?attr/selectableItemBackground"
             app:cardBackgroundColor="@android:color/white"
             app:cardCornerRadius="16dp"
-            app:strokeColor="#333333"
+            app:strokeColor="#E5E5E5"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -142,20 +142,19 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/sf_bold"
+                        android:fontFamily="@font/poppins_bold"
                         android:text="Aluno"
-                        android:textColor="#B71C1C"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
+                        android:textColor="@color/laranja_primario"
+                        android:textSize="20sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
-                        android:fontFamily="@font/sf_medium"
+                        android:fontFamily="@font/poppins_regular"
                         android:text="Participe das disciplinas,&#10;realize tarefas e ganhe&#10;pontos"
-                        android:textColor="#222222"
-                        android:textSize="16sp" />
+                        android:textColor="@color/texto_escuro"
+                        android:textSize="15sp" />
 
                 </LinearLayout>
 

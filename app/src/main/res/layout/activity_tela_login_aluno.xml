@@ -42,9 +42,9 @@
             android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/sf_bold"
+            android:fontFamily="@font/poppins_bold"
             android:text="Criar conta"
-            android:textColor="#A11A1C"
+            android:textColor="@color/roxo_primario"
             android:textSize="24sp" />
 
         <!-- Subtítulo -->
@@ -53,8 +53,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="@font/sf_medium"
+            android:fontFamily="@font/poppins_regular"
             android:text="Preencha seus dados"
+            android:textColor="@color/texto_escuro"
             android:textSize="18sp" />
 
         <!-- Card -->
@@ -66,7 +67,7 @@
             app:cardBackgroundColor="@android:color/white"
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
-            app:strokeColor="#333333"
+            app:strokeColor="#E5E5E5"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -99,12 +100,12 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="31dp"
-            android:fontFamily="@font/sf_bold"
+            android:fontFamily="@font/poppins_bold"
             android:text="Solicitar entrada"
             android:textAllCaps="false"
             android:textColor="@android:color/white"
             android:textSize="16sp"
-            app:backgroundTint="#A11A1C"
+            app:backgroundTint="@color/roxo_primario"
             app:cornerRadius="10dp"
             app:elevation="4dp" />
 

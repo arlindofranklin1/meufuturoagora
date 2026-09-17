@@ -659,6 +659,15 @@ public class CriarAtividade extends AppCompatActivity {
             return;
         }
 
+        if (pontos < 1 || pontos > 10) {
+
+            edtPontos.setError(
+                    "A pontuação máxima deve ser entre 1 e 10"
+            );
+
+            return;
+        }
+
         // =============================
         // MAPA DA ATIVIDADE
         // =============================

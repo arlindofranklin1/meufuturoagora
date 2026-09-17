@@ -237,60 +237,87 @@ public class TelaEntrar extends AppCompatActivity {
 
         String email = user.getEmail();
 
-        Toast.makeText(
-                this,
-                "E-mail logado: " + email,
-                Toast.LENGTH_LONG
-        ).show();
+        // O acesso ao aplicativo é restrito: o e-mail precisa estar
+        // pré-cadastrado como professor ou como aluno para entrar.
 
         db.collection("professores")
                 .whereEqualTo("email", email)
                 .get()
-                .addOnSuccessListener(querySnapshot -> {
+                .addOnSuccessListener(professores -> {
 
-                    Toast.makeText(
-                            this,
-                            "Documentos encontrados: " + querySnapshot.size(),
-                            Toast.LENGTH_LONG
-                    ).show();
-
-                    if (!querySnapshot.isEmpty()) {
-
-                        Toast.makeText(
-                                this,
-                                "Professor encontrado!",
-                                Toast.LENGTH_LONG
-                        ).show();
+                    if (!professores.isEmpty()) {
 
                         startActivity(new Intent(
                                 TelaEntrar.this,
                                 TelaInicialProfessor.class
                         ));
+
                         finish();
-
-                    } else {
-
-                        Toast.makeText(
-                                this,
-                                "E-mail não encontrado em professor",
-                                Toast.LENGTH_LONG
-                        ).show();
-
-                        startActivity(new Intent(
-                                TelaEntrar.this,
-                                TelaLoginAluno.class
-                        ));
-                        finish();
+                        return;
                     }
+
+                    verificarAluno(email);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(
                                 this,
-                                "Erro Firestore: " + e.getMessage(),
+                                "Erro ao verificar e-mail: " + e.getMessage(),
                                 Toast.LENGTH_LONG
                         ).show()
                 );
     }
 
+    private void verificarAluno(String email) {
 
+        db.collection("alunos")
+                .whereEqualTo("email", email)
+                .get()
+                .addOnSuccessListener(alunos -> {
+
+                    if (alunos.isEmpty()) {
+
+                        acessoNaoAutorizado();
+                        return;
+                    }
+
+                    com.google.firebase.firestore.DocumentSnapshot alunoDoc =
+                            alunos.getDocuments().get(0);
+
+                    String turma = alunoDoc.getString("turma");
+
+                    Intent intent;
+
+                    if (turma == null || turma.isEmpty()) {
+
+                        // Primeiro acesso: falta escolher a turma
+                        intent = new Intent(TelaEntrar.this, TelaLoginAluno.class);
+                        intent.putExtra("alunoId", alunoDoc.getId());
+
+                    } else {
+
+                        intent = new Intent(TelaEntrar.this, TelaInicialAluno.class);
+                    }
+
+                    startActivity(intent);
+                    finish();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(
+                                this,
+                                "Erro ao verificar e-mail: " + e.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
+    }
+
+    private void acessoNaoAutorizado() {
+
+        Toast.makeText(
+                this,
+                "Seu e-mail não está autorizado a acessar o aplicativo. Fale com a coordenação da escola.",
+                Toast.LENGTH_LONG
+        ).show();
+
+        mAuth.signOut();
+    }
 }
