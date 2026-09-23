@@ -300,7 +300,7 @@ public class CriarAtividade extends AppCompatActivity {
 
                         Toast.makeText(
                                 this,
-                                "Atividade não encontrada.",
+                                "Trilha não encontrada.",
                                 Toast.LENGTH_SHORT
                         ).show();
 
@@ -405,7 +405,7 @@ public class CriarAtividade extends AppCompatActivity {
 
                     Toast.makeText(
                             this,
-                            "Erro ao carregar atividade.",
+                            "Erro ao carregar trilha.",
                             Toast.LENGTH_SHORT
                     ).show();
                 });
@@ -588,7 +588,7 @@ public class CriarAtividade extends AppCompatActivity {
         if (nome.isEmpty()) {
 
             edtNomeAtividade.setError(
-                    "Digite o título da atividade"
+                    "Digite o título da trilha"
             );
 
             return;
@@ -859,7 +859,7 @@ public class CriarAtividade extends AppCompatActivity {
 
                             Toast.makeText(
                                     this,
-                                    "Atividade criada!",
+                                    "Trilha criada!",
                                     Toast.LENGTH_SHORT
                             ).show();
 
@@ -870,7 +870,7 @@ public class CriarAtividade extends AppCompatActivity {
 
                     Toast.makeText(
                             this,
-                            "Erro ao criar atividade: "
+                            "Erro ao criar trilha: "
                                     + e.getMessage(),
                             Toast.LENGTH_LONG
                     ).show();
@@ -893,7 +893,7 @@ public class CriarAtividade extends AppCompatActivity {
 
                             Toast.makeText(
                                     this,
-                                    "Atividade atualizada!",
+                                    "Trilha atualizada!",
                                     Toast.LENGTH_SHORT
                             ).show();
 
@@ -904,7 +904,7 @@ public class CriarAtividade extends AppCompatActivity {
 
                     Toast.makeText(
                             this,
-                            "Erro ao atualizar atividade: "
+                            "Erro ao atualizar trilha: "
                                     + e.getMessage(),
                             Toast.LENGTH_LONG
                     ).show();

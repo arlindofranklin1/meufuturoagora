@@ -32,6 +32,14 @@ public class TelaAdminHome extends AppCompatActivity {
                 startActivity(new Intent(this, DefinirBimestresActivity.class))
         );
 
+        findViewById(R.id.itemCadastrarUsuario).setOnClickListener(v ->
+                startActivity(new Intent(this, CadastrarUsuarioActivity.class))
+        );
+
+        findViewById(R.id.itemListaUsuarios).setOnClickListener(v ->
+                startActivity(new Intent(this, ListaUsuariosActivity.class))
+        );
+
         findViewById(R.id.itemEncerrarBimestre).setOnClickListener(v -> confirmarEncerramento());
 
         findViewById(R.id.itemSairAdmin).setOnClickListener(v -> {

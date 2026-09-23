@@ -38,7 +38,7 @@
                 android:id="@+id/tvQuantidadeAlunos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Toque para ver atividades"
+                android:text="Toque para ver trilhas"
                 android:textColor="@color/texto_cinza"
                 android:textSize="14sp"
                 android:fontFamily="@font/poppins_regular" />

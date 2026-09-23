@@ -116,7 +116,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="32dp"
-                android:backgroundTint="@color/roxo_primario"
+                android:backgroundTint="@color/roxo_acao"
                 android:fontFamily="@font/poppins_bold"
                 android:text="Salvar"
                 android:textAllCaps="false"

@@ -328,7 +328,7 @@ public class TelaDetalhesDisciplinaProfessor
 
         layoutFrequenciaAcoes.setVisibility(aba == Aba.FREQUENCIA ? View.VISIBLE : View.GONE);
 
-        int corAtiva = getColor(R.color.roxo_primario);
+        int corAtiva = getColor(R.color.roxo_acao);
         int corInativa = Color.parseColor("#171717");
 
         tabAtividades.setTextColor(aba == Aba.ATIVIDADES ? corAtiva : corInativa);
@@ -481,7 +481,7 @@ public class TelaDetalhesDisciplinaProfessor
 
                     Toast.makeText(
                             this,
-                            "Erro ao carregar atividades.",
+                            "Erro ao carregar trilhas.",
                             Toast.LENGTH_SHORT
                     ).show();
                 });
@@ -494,9 +494,9 @@ public class TelaDetalhesDisciplinaProfessor
     private void confirmarExclusao(String atividadeId) {
 
         new AlertDialog.Builder(this)
-                .setTitle("Excluir atividade")
+                .setTitle("Excluir trilha")
                 .setMessage(
-                        "Tem certeza que deseja excluir esta atividade?"
+                        "Tem certeza que deseja excluir esta trilha?"
                 )
                 .setNegativeButton(
                         "Cancelar",
@@ -519,7 +519,7 @@ public class TelaDetalhesDisciplinaProfessor
 
                     Toast.makeText(
                             this,
-                            "Atividade excluída!",
+                            "Trilha excluída!",
                             Toast.LENGTH_SHORT
                     ).show();
 
@@ -529,7 +529,7 @@ public class TelaDetalhesDisciplinaProfessor
 
                     Toast.makeText(
                             this,
-                            "Erro ao excluir atividade.",
+                            "Erro ao excluir trilha.",
                             Toast.LENGTH_SHORT
                     ).show();
                 });

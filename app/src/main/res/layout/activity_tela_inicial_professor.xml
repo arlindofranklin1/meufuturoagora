@@ -414,7 +414,7 @@
                                 android:layout_width="32dp"
                                 android:layout_height="32dp"
                                 android:layout_gravity="center"
-                                android:contentDescription="Criar tarefa"
+                                android:contentDescription="Criar trilha"
                                 android:scaleType="centerInside"
                                 android:src="@drawable/ic_tarefa" />
 
@@ -432,7 +432,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="@font/poppins_semibold"
-                                android:text="Criar tarefa"
+                                android:text="Criar trilha"
                                 android:textColor="#303030"
                                 android:textSize="16sp" />
 
@@ -441,7 +441,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="1dp"
                                 android:fontFamily="@font/poppins_regular"
-                                android:text="Crie novas tarefas para suas turmas"
+                                android:text="Crie novas trilhas para suas turmas"
                                 android:textColor="#777777"
                                 android:textSize="14sp" />
 
@@ -451,7 +451,7 @@
                         <ImageView
                             android:layout_width="28dp"
                             android:layout_height="28dp"
-                            android:contentDescription="Entrar em criar tarefa"
+                            android:contentDescription="Entrar em criar trilha"
                             android:scaleType="centerInside"
                             android:src="@drawable/ic_seta_roxa" />
 
@@ -567,7 +567,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@android:color/white"
-        android:minHeight="90dp"
+        android:minHeight="64dp"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconSize="24dp"
@@ -577,5 +577,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:menu="@menu/menu_professor" />
+        app:menu="@menu/menu_aluno" />
 </androidx.constraintlayout.widget.ConstraintLayout>

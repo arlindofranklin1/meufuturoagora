@@ -9,10 +9,12 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class TelaAdminLogin extends AppCompatActivity {
 
+    private FirebaseAuth auth;
     private FirebaseFirestore db;
     private EditText edtSenhaAdmin;
 
@@ -22,6 +24,7 @@ public class TelaAdminLogin extends AppCompatActivity {
 
         setContentView(R.layout.activity_tela_admin_login);
 
+        auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
         ImageView btnVoltarAdmin = findViewById(R.id.btnVoltarAdmin);
@@ -42,6 +45,28 @@ public class TelaAdminLogin extends AppCompatActivity {
             edtSenhaAdmin.setError("Digite a senha");
             return;
         }
+
+        // As regras do Firestore exigem um usuário autenticado (request.auth
+        // != null) pra qualquer leitura. Quem acessa o admin sem antes ter
+        // feito login com Google ainda não tem essa autenticação, então
+        // entramos de forma anônima só pra satisfazer a regra.
+        if (auth.getCurrentUser() != null) {
+
+            consultarSenha(senha);
+
+        } else {
+
+            auth.signInAnonymously()
+                    .addOnSuccessListener(result -> consultarSenha(senha))
+                    .addOnFailureListener(e -> Toast.makeText(
+                            this,
+                            "Erro ao autenticar: " + e.getMessage(),
+                            Toast.LENGTH_LONG
+                    ).show());
+        }
+    }
+
+    private void consultarSenha(String senha) {
 
         db.collection("administrador")
                 .whereEqualTo("senha", senha)

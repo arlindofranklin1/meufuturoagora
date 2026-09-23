@@ -12,6 +12,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MeuFuturoAgora">
         <activity
+            android:name=".CriarDisciplinaActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ConfiguracoesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ListaUsuariosActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CadastrarUsuarioActivity"
+            android:exported="false" />
+        <activity
             android:name=".DefinirBimestresActivity"
             android:exported="false" />
         <activity

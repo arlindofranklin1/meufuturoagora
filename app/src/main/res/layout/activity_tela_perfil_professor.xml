@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
@@ -30,100 +31,47 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="200dp"
                 android:background="@drawable/bg_header_professor"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:paddingTop="55dp"
-                android:paddingBottom="28dp">
+                android:paddingTop="28dp"
+                android:paddingBottom="20dp">
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/imgFotoPerfil"
-                    android:layout_width="86dp"
-                    android:layout_height="86dp"
+                    android:layout_width="76dp"
+                    android:layout_height="76dp"
                     android:background="#FFFFFF"
                     android:contentDescription="Foto de perfil"
                     android:padding="3dp"
                     android:scaleType="centerCrop"
+                    android:src="@drawable/ic_perfil"
                     app:shapeAppearanceOverlay="@style/CircleImageView"
                     app:strokeColor="#FFFFFF"
-                    app:strokeWidth="2dp"
-                    android:src="@drawable/ic_perfil" />
+                    app:strokeWidth="2dp" />
 
                 <TextView
                     android:id="@+id/tvNomePerfil"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="8dp"
                     android:fontFamily="@font/poppins_bold"
                     android:text="Professor João"
                     android:textColor="#FFFFFF"
-                    android:textSize="20sp" />
+                    android:textSize="19sp" />
 
                 <TextView
                     android:id="@+id/tvEmailPerfil"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="1dp"
                     android:fontFamily="@font/poppins_regular"
                     android:text="professor@email.com"
                     android:textColor="#F2E9FF"
-                    android:textSize="14sp" />
+                    android:textSize="13sp" />
 
             </LinearLayout>
-
-            <!-- ============================= -->
-            <!-- PREFERÊNCIAS -->
-            <!-- ============================= -->
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="24dp"
-                android:fontFamily="@font/poppins_bold"
-                android:text="Preferências"
-                android:textColor="@color/roxo_primario"
-                android:textSize="15sp" />
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="20dp"
-                app:cardBackgroundColor="@color/fundo_cinza_claro"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="60dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="10dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/poppins_semibold"
-                        android:text="Notificações"
-                        android:textColor="@color/texto_escuro"
-                        android:textSize="15sp" />
-
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchNotificacoes"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        app:thumbTint="@android:color/white"
-                        app:trackTint="@color/roxo_primario" />
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
 
             <!-- ============================= -->
             <!-- OUTROS -->
@@ -155,7 +103,7 @@
                     android:orientation="vertical">
 
                     <LinearLayout
-                        android:id="@+id/itemSobre"
+                        android:id="@+id/itemConfiguracoes"
                         android:layout_width="match_parent"
                         android:layout_height="56dp"
                         android:background="?attr/selectableItemBackground"
@@ -169,8 +117,8 @@
                         <ImageView
                             android:layout_width="22dp"
                             android:layout_height="22dp"
-                            android:contentDescription="Sobre"
-                            android:src="@drawable/ic_info"
+                            android:contentDescription="Configurações"
+                            android:src="@drawable/ic_configuracoes"
                             app:tint="@color/roxo_primario" />
 
                         <TextView
@@ -179,7 +127,7 @@
                             android:layout_marginStart="14dp"
                             android:layout_weight="1"
                             android:fontFamily="@font/poppins_semibold"
-                            android:text="Sobre"
+                            android:text="Configurações"
                             android:textColor="@color/texto_escuro"
                             android:textSize="15sp" />
 
@@ -192,44 +140,6 @@
 
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginEnd="16dp"
-                        android:background="#DADADA" />
-
-                    <LinearLayout
-                        android:id="@+id/itemSair"
-                        android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="Sair da conta"
-                            android:src="@drawable/ic_sair"
-                            app:tint="@color/vermelho_erro" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/poppins_semibold"
-                            android:text="Sair da conta"
-                            android:textColor="@color/vermelho_erro"
-                            android:textSize="15sp" />
-
-                    </LinearLayout>
-
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
@@ -238,6 +148,7 @@
 
     </androidx.core.widget.NestedScrollView>
 
+    <!-- Linha acima da barra inferior -->
     <View
         android:id="@+id/linhaBottomBar"
         android:layout_width="0dp"
@@ -254,7 +165,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@android:color/white"
-        android:minHeight="90dp"
+        android:minHeight="64dp"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconSize="24dp"
@@ -264,6 +175,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:menu="@menu/menu_professor" />
+        app:menu="@menu/menu_aluno" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

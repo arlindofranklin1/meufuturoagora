@@ -16,7 +16,7 @@
     <!-- ============================ -->
 
     <TextView
-        android:layout_marginTop="35dp"
+        android:layout_marginTop="50dp"
         android:id="@+id/tvTituloDisciplinas"
         android:layout_width="wrap_content"
         android:gravity="center"
@@ -128,6 +128,24 @@
 
 
     <!-- ============================ -->
+    <!-- BOTÃO CRIAR DISCIPLINA -->
+    <!-- ============================ -->
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnCriarDisciplina"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        android:contentDescription="Criar disciplina"
+        android:src="@drawable/ic_mais"
+        app:backgroundTint="@color/roxo_acao"
+        app:tint="@android:color/white"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+
+    <!-- ============================ -->
     <!-- LINHA DA BOTTOM BAR -->
     <!-- ============================ -->
 
@@ -138,33 +156,25 @@
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
         android:background="#737373"
-
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-
-    <!-- ============================ -->
-    <!-- BOTTOM BAR -->
-    <!-- ============================ -->
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:minHeight="90dp"
         android:background="@android:color/white"
-
-        app:itemIconSize="24dp"
-        app:itemTextColor="@color/bottom_navigation_text"
+        android:minHeight="64dp"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"
-        app:labelVisibilityMode="labeled"
+        app:itemIconSize="24dp"
         app:itemIconTint="@null"
-        app:menu="@menu/menu_professor"
-
+        app:itemTextColor="@color/bottom_navigation_text"
+        app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:menu="@menu/menu_aluno" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

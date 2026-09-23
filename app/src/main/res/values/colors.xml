@@ -4,7 +4,8 @@
     <color name="white">#FFFFFFFF</color>
     <color name="vermelho">#A11A1C</color>
 
-    <color name="roxo_primario">#521BB3</color>
+    <color name="roxo_primario">#6C1FE8</color>
+    <color name="roxo_acao">#4A16C4</color>
     <color name="laranja_primario">#E45832</color>
     <color name="vermelho_titulo">#A51C21</color>
 

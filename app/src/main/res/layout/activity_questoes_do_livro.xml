@@ -79,7 +79,7 @@
             android:id="@+id/linhaAbaDescricao"
             android:layout_width="0dp"
             android:layout_height="2dp"
-            android:background="@color/roxo_primario"
+            android:background="@color/roxo_acao"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@id/tabDescricao"
             app:layout_constraintStart_toStartOf="@id/tabDescricao" />
@@ -88,7 +88,7 @@
             android:id="@+id/linhaAbaEntregas"
             android:layout_width="0dp"
             android:layout_height="2dp"
-            android:background="@color/roxo_primario"
+            android:background="@color/roxo_acao"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@id/tabEntregas"
@@ -132,7 +132,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/poppins_regular"
-                android:text="Descrição da atividade."
+                android:text="Descrição da trilha."
                 android:textColor="@color/texto_escuro"
                 android:textSize="15sp" />
 

@@ -89,6 +89,7 @@ public class TelaInicialAluno extends AppCompatActivity {
                     .load(foto)
                     .placeholder(R.drawable.ic_perfil)
                     .error(R.drawable.ic_perfil)
+                    .override(200, 200)
                     .circleCrop()
                     .into(imgAluno);
         }

@@ -3,12 +3,10 @@ package br.com.example.meufuturoagora;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
@@ -53,6 +51,7 @@ public class TelaPerfilAluno extends AppCompatActivity {
                         .load(foto)
                         .placeholder(R.drawable.ic_perfil)
                         .error(R.drawable.ic_perfil)
+                        .override(200, 200)
                         .circleCrop()
                         .into(imgFotoPerfilAluno);
             }
@@ -69,7 +68,7 @@ public class TelaPerfilAluno extends AppCompatActivity {
                         }
 
                         String email = alunoDoc.getString("email");
-                        String turma = alunoDoc.getString("turma");
+                        String turma = alunoDoc.getString("turmaNome");
                         Long pontuacao = alunoDoc.getLong("pontuacao");
 
                         tvEmailPerfilAluno.setText(email != null ? email : usuario.getEmail());
@@ -89,25 +88,10 @@ public class TelaPerfilAluno extends AppCompatActivity {
         // CONFIGURAÇÕES
         // =========================
 
-        LinearLayout layoutOutrosAluno = findViewById(R.id.layoutOutrosAluno);
-
         ImageView btnConfiguracoesAluno = findViewById(R.id.btnConfiguracoesAluno);
 
-        btnConfiguracoesAluno.setOnClickListener(v -> layoutOutrosAluno.setVisibility(
-                layoutOutrosAluno.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE
-        ));
-
-        findViewById(R.id.itemSobreAluno).setOnClickListener(v ->
-                startActivity(new Intent(this, SobreActivity.class))
-        );
-
-        findViewById(R.id.itemSairAluno).setOnClickListener(v ->
-                new AlertDialog.Builder(this)
-                        .setTitle("Sair da conta")
-                        .setMessage("Tem certeza que deseja sair?")
-                        .setNegativeButton("Cancelar", null)
-                        .setPositiveButton("Sair", (dialog, which) -> sairDaConta())
-                        .show()
+        btnConfiguracoesAluno.setOnClickListener(v ->
+                startActivity(new Intent(this, ConfiguracoesActivity.class))
         );
 
         // =========================
@@ -199,17 +183,4 @@ public class TelaPerfilAluno extends AppCompatActivity {
                 );
     }
 
-    private void sairDaConta() {
-
-        FirebaseAuth.getInstance().signOut();
-
-        Intent intent = new Intent(this, TelaEntrar.class);
-
-        intent.setFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK
-        );
-
-        startActivity(intent);
-        finish();
-    }
 }

@@ -96,7 +96,7 @@ public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
 
         abaAtual = aba;
 
-        int corAtiva = getColor(R.color.roxo_primario);
+        int corAtiva = getColor(R.color.roxo_acao);
         int corInativa = getColor(R.color.texto_escuro);
 
         tabTodos.setTextColor(aba == Aba.TODOS ? corAtiva : corInativa);
@@ -197,7 +197,7 @@ public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
 
                         listaCompleta.add(new AtividadeAluno(
                                 atividadeId,
-                                nome != null ? nome : "Atividade",
+                                nome != null ? nome : "Trilha",
                                 prazo != null ? prazo : "",
                                 status,
                                 nota

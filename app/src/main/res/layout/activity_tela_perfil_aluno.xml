@@ -32,11 +32,11 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="210dp"
                     android:background="@drawable/bg_header_professor"
                     android:gravity="center_horizontal"
                     android:orientation="vertical"
-                    android:paddingTop="55dp"
+                    android:paddingTop="28dp"
                     android:paddingBottom="24dp">
 
                     <com.google.android.material.imageview.ShapeableImageView
@@ -93,7 +93,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
-                android:layout_marginTop="-18dp"
+                android:layout_marginTop="30dp"
                 android:layout_marginEnd="20dp"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="18dp"
@@ -380,115 +380,6 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- OUTROS -->
-
-            <LinearLayout
-                android:id="@+id/layoutOutrosAluno"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
-                    android:layout_marginTop="22dp"
-                    android:fontFamily="@font/poppins_bold"
-                    android:text="Outros"
-                    android:textColor="@color/roxo_primario"
-                    android:textSize="15sp" />
-
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginEnd="20dp"
-                    app:cardBackgroundColor="@color/fundo_cinza_claro"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:id="@+id/itemSobreAluno"
-                            android:layout_width="match_parent"
-                            android:layout_height="56dp"
-                            android:background="?attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="Sobre"
-                                android:src="@drawable/ic_info"
-                                app:tint="@color/roxo_primario" />
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="14dp"
-                                android:layout_weight="1"
-                                android:fontFamily="@font/poppins_semibold"
-                                android:text="Sobre"
-                                android:textColor="@color/texto_escuro"
-                                android:textSize="15sp" />
-
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="16dp"
-                            android:layout_marginEnd="16dp"
-                            android:background="#DADADA" />
-
-                        <LinearLayout
-                            android:id="@+id/itemSairAluno"
-                            android:layout_width="match_parent"
-                            android:layout_height="56dp"
-                            android:background="?attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="Sair da conta"
-                                android:src="@drawable/ic_sair"
-                                app:tint="@color/vermelho_erro" />
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="14dp"
-                                android:layout_weight="1"
-                                android:fontFamily="@font/poppins_semibold"
-                                android:text="Sair da conta"
-                                android:textColor="@color/vermelho_erro"
-                                android:textSize="15sp" />
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                </androidx.cardview.widget.CardView>
-
-            </LinearLayout>
-
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
@@ -509,7 +400,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@android:color/white"
-        android:minHeight="90dp"
+        android:minHeight="64dp"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconSize="24dp"

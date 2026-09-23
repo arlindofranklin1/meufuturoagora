@@ -260,7 +260,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="7dp"
                     android:fontFamily="@font/poppins_bold"
-                    android:text="Próximas atividades"
+                    android:text="Próximas trilhas"
                     android:textColor="@color/roxo_primario"
                     android:textSize="17sp" />
 
@@ -281,7 +281,7 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="12dp"
                 android:fontFamily="@font/poppins_regular"
-                android:text="Nenhuma atividade pendente."
+                android:text="Nenhuma trilha pendente."
                 android:textColor="@color/texto_cinza"
                 android:textSize="14sp"
                 android:visibility="gone" />
@@ -355,7 +355,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@android:color/white"
-        android:minHeight="90dp"
+        android:minHeight="64dp"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconSize="24dp"

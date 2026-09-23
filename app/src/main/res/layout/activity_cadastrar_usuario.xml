@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <ImageView
+        android:id="@+id/btnVoltar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="35dp"
+        android:contentDescription="Voltar"
+        android:scaleType="centerInside"
+        android:src="@drawable/seta_voltar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:fontFamily="@font/poppins_bold"
+        android:gravity="center"
+        android:text="Cadastrar usuário"
+        android:textColor="@color/roxo_primario"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@id/btnVoltar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnVoltar" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="20dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnVoltar">
+
+        <RadioGroup
+            android:id="@+id/radioGroupTipo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioProfessor"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:fontFamily="@font/poppins_semibold"
+                android:text="Professor"
+                android:textColor="@color/texto_escuro" />
+
+            <RadioButton
+                android:id="@+id/radioAluno"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/poppins_semibold"
+                android:text="Aluno"
+                android:textColor="@color/texto_escuro" />
+
+            <RadioButton
+                android:id="@+id/radioTurma"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/poppins_semibold"
+                android:text="Turma"
+                android:textColor="@color/texto_escuro" />
+
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/edtNomeUsuario"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_campo_criar_atividade"
+            android:fontFamily="@font/poppins_regular"
+            android:hint="Nome"
+            android:inputType="textPersonName|textCapWords"
+            android:paddingStart="13dp"
+            android:paddingEnd="13dp"
+            android:textColor="#171717"
+            android:textColorHint="#171717"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/edtEmailUsuario"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_campo_criar_atividade"
+            android:fontFamily="@font/poppins_regular"
+            android:hint="E-mail (conta Google)"
+            android:inputType="textEmailAddress"
+            android:paddingStart="13dp"
+            android:paddingEnd="13dp"
+            android:textColor="#171717"
+            android:textColorHint="#171717"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/edtAnoTurma"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_campo_criar_atividade"
+            android:fontFamily="@font/poppins_regular"
+            android:hint="Ano (ex: 6)"
+            android:inputType="number"
+            android:maxLength="2"
+            android:paddingStart="13dp"
+            android:paddingEnd="13dp"
+            android:textColor="#171717"
+            android:textColorHint="#171717"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/containerTurma"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_campo_criar_atividade"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <Spinner
+                android:id="@+id/spinnerTurma"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:paddingStart="9dp"
+                android:paddingEnd="9dp" />
+
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSalvarUsuario"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="@color/roxo_acao"
+            android:fontFamily="@font/poppins_bold"
+            android:text="Salvar"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            app:cornerRadius="15dp" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -93,7 +93,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
                         android:fontFamily="@font/poppins_regular"
-                        android:text="Gerencie disciplinas,&#10;atividades e alunos"
+                        android:text="Gerencie disciplinas,&#10;trilhas e alunos"
                         android:textColor="@color/texto_escuro"
                         android:textSize="15sp" />
 
@@ -152,7 +152,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
                         android:fontFamily="@font/poppins_regular"
-                        android:text="Participe das disciplinas,&#10;realize tarefas e ganhe&#10;pontos"
+                        android:text="Participe das disciplinas,&#10;realize trilhas e ganhe&#10;pontos"
                         android:textColor="@color/texto_escuro"
                         android:textSize="15sp" />
 

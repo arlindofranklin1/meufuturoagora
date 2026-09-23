@@ -29,7 +29,7 @@
         android:layout_width="0dp"
         android:layout_height="50dp"
         android:gravity="center"
-        android:text="Criar Atividade"
+        android:text="Criar Trilha"
         android:textColor="@color/roxo_primario"
         android:textSize="20sp"
         android:fontFamily="@font/poppins_bold"
@@ -68,7 +68,7 @@
                 android:id="@+id/edtNomeAtividade"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:hint="Título da atividade"
+                android:hint="Título da trilha"
                 android:paddingStart="13dp"
                 android:paddingEnd="13dp"
                 android:textSize="16sp"
@@ -220,7 +220,7 @@
                 android:textSize="16sp"
                 android:fontFamily="@font/poppins_bold"
                 android:textAllCaps="false"
-                android:backgroundTint="@color/roxo_primario"
+                android:backgroundTint="@color/roxo_acao"
                 app:cornerRadius="15dp" />
 
         </LinearLayout>

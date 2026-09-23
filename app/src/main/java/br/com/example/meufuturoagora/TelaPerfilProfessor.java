@@ -1,26 +1,20 @@
 package br.com.example.meufuturoagora;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 public class TelaPerfilProfessor extends AppCompatActivity {
-
-    private static final String PREFS_NOME = "preferencias_app";
-    private static final String CHAVE_NOTIFICACOES = "notificacoes_ativas";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,53 +52,20 @@ public class TelaPerfilProfessor extends AppCompatActivity {
                         .load(foto)
                         .placeholder(R.drawable.ic_perfil)
                         .error(R.drawable.ic_perfil)
+                        .override(200, 200)
                         .circleCrop()
                         .into(imgFotoPerfil);
             }
         }
 
         // =========================
-        // PREFERÊNCIA DE NOTIFICAÇÕES
+        // CONFIGURAÇÕES
         // =========================
 
-        SharedPreferences preferencias =
-                getSharedPreferences(PREFS_NOME, MODE_PRIVATE);
+        LinearLayout itemConfiguracoes = findViewById(R.id.itemConfiguracoes);
 
-        MaterialSwitch switchNotificacoes = findViewById(R.id.switchNotificacoes);
-
-        switchNotificacoes.setChecked(
-                preferencias.getBoolean(CHAVE_NOTIFICACOES, true)
-        );
-
-        switchNotificacoes.setOnCheckedChangeListener((buttonView, isChecked) ->
-                preferencias.edit()
-                        .putBoolean(CHAVE_NOTIFICACOES, isChecked)
-                        .apply()
-        );
-
-        // =========================
-        // SOBRE
-        // =========================
-
-        LinearLayout itemSobre = findViewById(R.id.itemSobre);
-
-        itemSobre.setOnClickListener(v ->
-                startActivity(new Intent(this, SobreActivity.class))
-        );
-
-        // =========================
-        // SAIR DA CONTA
-        // =========================
-
-        LinearLayout itemSair = findViewById(R.id.itemSair);
-
-        itemSair.setOnClickListener(v ->
-                new AlertDialog.Builder(this)
-                        .setTitle("Sair da conta")
-                        .setMessage("Tem certeza que deseja sair?")
-                        .setNegativeButton("Cancelar", null)
-                        .setPositiveButton("Sair", (dialog, which) -> sairDaConta())
-                        .show()
+        itemConfiguracoes.setOnClickListener(v ->
+                startActivity(new Intent(this, ConfiguracoesActivity.class))
         );
 
         // =========================
@@ -138,19 +99,5 @@ public class TelaPerfilProfessor extends AppCompatActivity {
 
             return false;
         });
-    }
-
-    private void sairDaConta() {
-
-        FirebaseAuth.getInstance().signOut();
-
-        Intent intent = new Intent(this, TelaEntrar.class);
-
-        intent.setFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK
-        );
-
-        startActivity(intent);
-        finish();
     }
 }

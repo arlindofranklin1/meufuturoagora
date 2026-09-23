@@ -30,7 +30,7 @@
                 android:padding="10dp"
                 android:src="@drawable/ic_atividade"
                 android:scaleType="centerInside"
-                android:contentDescription="Atividade" />
+                android:contentDescription="Trilha" />
 
         </FrameLayout>
 

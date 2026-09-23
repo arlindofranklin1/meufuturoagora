@@ -246,39 +246,99 @@ public class TelaEntrar extends AppCompatActivity {
         String email = user.getEmail();
 
         // O acesso ao aplicativo é restrito: o e-mail precisa estar
-        // na lista de professores ou de alunos em UsuariosAutorizados.
+        // cadastrado e ativo em "professores" ou em "alunos" no Firestore.
 
-        if (UsuariosAutorizados.ehProfessor(email)) {
+        db.collection("professores")
+                .whereEqualTo("email", email)
+                .whereEqualTo("ativo", true)
+                .get()
+                .addOnSuccessListener(professores -> {
 
-            startActivity(new Intent(TelaEntrar.this, TelaInicialProfessor.class));
-            finish();
-            return;
-        }
+                    if (!professores.isEmpty()) {
 
-        String turma = UsuariosAutorizados.turmaDoAluno(email);
+                        startActivity(new Intent(TelaEntrar.this, TelaInicialProfessor.class));
+                        finish();
+                        return;
+                    }
 
-        if (turma != null) {
-
-            prepararContaDoAluno(user, turma);
-            return;
-        }
-
-        acessoNaoAutorizado();
+                    verificarAluno(user, email);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(
+                                this,
+                                "Erro ao verificar e-mail: " + e.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
     }
 
-    private void prepararContaDoAluno(FirebaseUser user, String turma) {
+    private void verificarAluno(FirebaseUser user, String email) {
+
+        db.collection("alunos")
+                .whereEqualTo("email", email)
+                .whereEqualTo("ativo", true)
+                .get()
+                .addOnSuccessListener(autorizacoes -> {
+
+                    if (autorizacoes.isEmpty()) {
+                        acessoNaoAutorizado();
+                        return;
+                    }
+
+                    com.google.firebase.firestore.DocumentSnapshot autorizacao =
+                            autorizacoes.getDocuments().get(0);
+
+                    String turmaId = autorizacao.getString("turmaId");
+                    String turmaNome = autorizacao.getString("turmaNome");
+
+                    if (turmaId == null) {
+                        acessoNaoAutorizado();
+                        return;
+                    }
+
+                    prepararContaDoAluno(user, turmaId, turmaNome);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(
+                                this,
+                                "Erro ao verificar e-mail: " + e.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
+    }
+
+    private void prepararContaDoAluno(FirebaseUser user, String turmaId, String turmaNome) {
 
         String uidAluno = user.getUid();
 
-        Map<String, Object> dadosAluno = new HashMap<>();
-        dadosAluno.put("nome", user.getDisplayName() != null ? user.getDisplayName() : "Aluno");
-        dadosAluno.put("email", user.getEmail());
-        dadosAluno.put("turma", turma);
-
         db.collection("alunos")
                 .document(uidAluno)
-                .set(dadosAluno, SetOptions.merge())
-                .addOnSuccessListener(unused -> matricularNasDisciplinasDaTurma(uidAluno, turma))
+                .get()
+                .addOnSuccessListener(alunoDoc -> {
+
+                    Map<String, Object> dadosAluno = new HashMap<>();
+                    dadosAluno.put("nome", user.getDisplayName() != null ? user.getDisplayName() : "Aluno");
+                    dadosAluno.put("email", user.getEmail());
+                    dadosAluno.put("turmaId", turmaId);
+                    dadosAluno.put("turmaNome", turmaNome != null ? turmaNome : "");
+                    dadosAluno.put("ativo", true);
+
+                    if (!alunoDoc.exists() || alunoDoc.getLong("pontuacao") == null) {
+                        dadosAluno.put("pontuacao", 0L);
+                    }
+
+                    db.collection("alunos")
+                            .document(uidAluno)
+                            .set(dadosAluno, SetOptions.merge())
+                            .addOnSuccessListener(unused -> matricularNasDisciplinasDaTurma(uidAluno, turmaId, turmaNome))
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(
+                                            this,
+                                            "Erro ao preparar conta do aluno: " + e.getMessage(),
+                                            Toast.LENGTH_LONG
+                                    ).show()
+                            );
+                })
                 .addOnFailureListener(e ->
                         Toast.makeText(
                                 this,
@@ -288,7 +348,7 @@ public class TelaEntrar extends AppCompatActivity {
                 );
     }
 
-    private void matricularNasDisciplinasDaTurma(String alunoId, String turma) {
+    private void matricularNasDisciplinasDaTurma(String alunoId, String turmaId, String turmaNome) {
 
         db.collection("alunos")
                 .document(alunoId)
@@ -298,7 +358,7 @@ public class TelaEntrar extends AppCompatActivity {
                     String alunoNome = alunoDoc.getString("nome");
 
                     db.collection("disciplinas")
-                            .whereEqualTo("turma", turma)
+                            .whereEqualTo("turmaId", turmaId)
                             .whereEqualTo("ativo", true)
                             .get()
                             .addOnSuccessListener(disciplinas -> {
@@ -311,7 +371,8 @@ public class TelaEntrar extends AppCompatActivity {
                                     matricula.put("disciplinaNome", disciplina.getString("nome"));
                                     matricula.put("alunoId", alunoId);
                                     matricula.put("alunoNome", alunoNome != null ? alunoNome : "Aluno");
-                                    matricula.put("turma", turma);
+                                    matricula.put("turmaId", turmaId);
+                                    matricula.put("turmaNome", turmaNome != null ? turmaNome : "");
 
                                     db.collection("matriculas")
                                             .document(disciplina.getId() + "_" + alunoId)

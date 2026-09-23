@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:background="@color/fundo_cinza_claro"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp">
+
+    <TextView
+        android:id="@+id/tvTituloGrupo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="@font/poppins_semibold"
+        android:text="Grupo"
+        android:textColor="@color/texto_escuro"
+        android:textSize="15sp" />
+
+    <ImageView
+        android:id="@+id/imgSetaGrupo"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:contentDescription="Expandir"
+        android:rotation="180"
+        android:src="@drawable/seta_voltar" />
+
+</LinearLayout>

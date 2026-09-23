@@ -96,11 +96,11 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
         );
 
         tabDescricao.setTextColor(getColor(
-                descricao ? R.color.roxo_primario : R.color.texto_escuro
+                descricao ? R.color.roxo_acao : R.color.texto_escuro
         ));
 
         tabEntregas.setTextColor(getColor(
-                !descricao ? R.color.roxo_primario : R.color.texto_escuro
+                !descricao ? R.color.roxo_acao : R.color.texto_escuro
         ));
 
         linhaAbaDescricao.setVisibility(descricao ? View.VISIBLE : View.GONE);
@@ -129,7 +129,7 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(this::preencherAtividade)
                 .addOnFailureListener(e -> Toast.makeText(
-                        this, "Erro ao carregar atividade.", Toast.LENGTH_SHORT
+                        this, "Erro ao carregar trilha.", Toast.LENGTH_SHORT
                 ).show());
     }
 
@@ -298,7 +298,7 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
 
                     Toast.makeText(
                             QuestoesDoLivroActivity.this,
-                            "Este aluno ainda não entregou a atividade.",
+                            "Este aluno ainda não entregou a trilha.",
                             Toast.LENGTH_SHORT
                     ).show();
 

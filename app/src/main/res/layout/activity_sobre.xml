@@ -82,7 +82,7 @@
                         android:layout_marginStart="14dp"
                         android:layout_weight="1"
                         android:fontFamily="@font/poppins_regular"
-                        android:text="O Meu Futuro Agora é um aplicativo desenvolvido para a Escola Trindade Verna, em Santa Luzia-PB, com o objetivo de incentivar o interesse pelos estudos por meio da gamificação. Os alunos realizam atividades, acompanham seu desempenho e acumulam pontos no ranking, tornando a aprendizagem mais dinâmica e motivadora."
+                        android:text="O Meu Futuro Agora é um aplicativo desenvolvido para a Escola Trindade Verna, em Santa Luzia-PB, com o objetivo de incentivar o interesse pelos estudos por meio da gamificação. Os alunos realizam trilhas, acompanham seu desempenho e acumulam pontos no ranking, tornando a aprendizagem mais dinâmica e motivadora."
                         android:textColor="@color/texto_escuro"
                         android:textSize="14sp" />
 

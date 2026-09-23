@@ -112,10 +112,12 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
         );
 
         // =========================
-        // CARREGAR DISCIPLINAS
+        // CRIAR DISCIPLINA
         // =========================
 
-        carregarDisciplinas();
+        findViewById(R.id.btnCriarDisciplina).setOnClickListener(v ->
+                startActivity(new Intent(this, CriarDisciplinaActivity.class))
+        );
 
         // =========================
         // BOTTOM NAVIGATION
@@ -167,6 +169,12 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
 
             return false;
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        carregarDisciplinas();
     }
 
     // =====================================================
