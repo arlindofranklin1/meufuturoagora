@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -75,7 +74,7 @@ public class TelaPerfilAluno extends AppCompatActivity {
                         tvTurmaPerfilAluno.setText(turma != null ? turma : "");
                         tvTurmaContaPerfilAluno.setText(turma != null ? turma : "—");
 
-                        ((TextView) findViewById(R.id.tvPontuacaoTotalPerfil)).setText(
+                        ((TextView) findViewById(R.id.tvPontuacaoTotalAluno)).setText(
                                 String.valueOf(pontuacao != null ? pontuacao : 0)
                         );
 
@@ -144,7 +143,7 @@ public class TelaPerfilAluno extends AppCompatActivity {
 
                         if (documento.getId().equals(alunoId)) {
 
-                            ((TextView) findViewById(R.id.tvPosicaoRankingPerfil))
+                            ((TextView) findViewById(R.id.tvPosicaoRankingAluno))
                                     .setText(posicao + "º");
                             return;
                         }

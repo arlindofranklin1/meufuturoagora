@@ -125,7 +125,7 @@
                         android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/tvPontuacaoTotalPerfil"
+                            android:id="@+id/tvPontuacaoTotalAluno"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/poppins_bold"
@@ -156,7 +156,7 @@
                         android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/tvPosicaoRankingPerfil"
+                            android:id="@+id/tvPosicaoRankingAluno"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/poppins_bold"
@@ -265,7 +265,7 @@
 
                         <!-- PERÍODO -->
                         <TextView
-                            android:id="@+id/tvPeriodoBimestre"
+                            android:id="@+id/tvPeriodoBimestreAluno"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="15dp"

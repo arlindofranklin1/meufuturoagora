@@ -16,7 +16,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 public class TelaInicialProfessor extends AppCompatActivity {
 
@@ -128,7 +127,7 @@ public class TelaInicialProfessor extends AppCompatActivity {
         // BIMESTRE ATUAL
         // =========================
 
-        BimestreUtil.carregarPeriodoAtual(db, findViewById(R.id.tvPeriodoBimestre));
+        BimestreUtil.carregarPeriodoAtual(db, findViewById(R.id.tvPeriodoBimestreAluno));
 
         // =========================
         // BOTTOM NAVIGATION
