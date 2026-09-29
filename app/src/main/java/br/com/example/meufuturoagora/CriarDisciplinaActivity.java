@@ -36,6 +36,9 @@ public class CriarDisciplinaActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_criar_disciplina);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
+
         db = FirebaseFirestore.getInstance();
 
         ImageView btnVoltar = findViewById(R.id.btnVoltar);
@@ -115,6 +118,7 @@ public class CriarDisciplinaActivity extends AppCompatActivity {
         dados.put("professorId", usuario.getUid());
         dados.put("professorNome", usuario.getDisplayName() != null ? usuario.getDisplayName() : "Professor");
         dados.put("ativo", true);
+        dados.put("criadoEm", com.google.firebase.firestore.FieldValue.serverTimestamp());
 
         db.collection("disciplinas")
                 .add(dados)

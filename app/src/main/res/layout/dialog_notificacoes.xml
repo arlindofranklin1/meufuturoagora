@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialogo_arredondado"
+    android:padding="20dp">
+
+    <!-- ============================= -->
+    <!-- TÍTULO + LIXEIRA -->
+    <!-- ============================= -->
+
+    <TextView
+        android:id="@+id/tvTituloNotificacoes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/poppins_bold"
+        android:text="Notificações"
+        android:textColor="@color/roxo_primario"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@id/btnLimparNotificacoes"
+        app:layout_constraintEnd_toStartOf="@id/btnLimparNotificacoes"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnLimparNotificacoes" />
+
+    <ImageView
+        android:id="@+id/btnLimparNotificacoes"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Esvaziar notificações"
+        android:padding="8dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_lixeira"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- ============================= -->
+    <!-- LISTA -->
+    <!-- ============================= -->
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerNotificacoes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:overScrollMode="never"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_max="420dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnLimparNotificacoes" />
+
+    <TextView
+        android:id="@+id/tvSemNotificacoes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/poppins_regular"
+        android:gravity="center"
+        android:paddingTop="24dp"
+        android:paddingBottom="24dp"
+        android:text="Nenhuma notificação por aqui ainda."
+        android:textColor="@color/texto_cinza"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnLimparNotificacoes" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barreiraLista"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="recyclerNotificacoes,tvSemNotificacoes" />
+
+    <!-- ============================= -->
+    <!-- FECHAR -->
+    <!-- ============================= -->
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFecharNotificacoes"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/roxo_primario"
+        android:fontFamily="@font/poppins_bold"
+        android:text="Fechar"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        app:cornerRadius="14dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/barreiraLista" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

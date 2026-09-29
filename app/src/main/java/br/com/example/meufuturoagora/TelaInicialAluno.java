@@ -70,7 +70,29 @@ public class TelaInicialAluno extends AppCompatActivity {
         adapter = new ProximaAtividadeAdapter(listaProximas);
         recyclerProximasAtividades.setAdapter(adapter);
 
-        BimestreUtil.carregarPeriodoAtual(db, findViewById(R.id.tvPeriodoBimestreAluno));
+        BimestreUtil.carregarPeriodoAtual(
+                db,
+                findViewById(R.id.tvTituloBimestre),
+                findViewById(R.id.tvPeriodoBimestre)
+        );
+
+        // Notificações de novidades (respeita o switch das configurações)
+        NotificacaoUtil.iniciar(this, NotificacaoUtil.PERFIL_ALUNO);
+
+        // Sino: abre a lista de notificações; bolinha laranja = tem notificação não vista
+        View bolinhaNotificacao = findViewById(R.id.bolinhaNotificacao);
+        NotificacaoHistorico.vincularBolinha(this, bolinhaNotificacao);
+        findViewById(R.id.btnNotificacoes).setOnClickListener(v ->
+                NotificacoesDialog.mostrar(this, bolinhaNotificacao)
+        );
+
+        findViewById(R.id.btnMeuDesempenho).setOnClickListener(v -> startActivity(
+                new Intent(this, DesempenhoActivity.class)
+                        .putExtra(
+                                DesempenhoActivity.EXTRA_PERFIL,
+                                DesempenhoActivity.PERFIL_ALUNO
+                        )
+        ));
 
         FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -96,7 +118,9 @@ public class TelaInicialAluno extends AppCompatActivity {
 
         alunoId = usuario.getUid();
 
-        db.collection("alunos")
+        // Mantém a pontuação em dia com as notas e faltas (inclusive as antigas)
+        // e só depois mostra a pontuação e a posição no ranking
+        PontuacaoUtil.recalcular(db, alunoId, () -> db.collection("alunos")
                 .document(alunoId)
                 .get()
                 .addOnSuccessListener(alunoDoc -> {
@@ -113,13 +137,15 @@ public class TelaInicialAluno extends AppCompatActivity {
                     carregarPosicaoRanking();
                     carregarProximasAtividades();
                     carregarFrequencia();
-                });
+                }));
 
         // =========================
         // BOTTOM NAVIGATION
         // =========================
 
         BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
+
+        InsetsUtil.aplicarInsetsBottomNav(bottomNavigation);
 
         bottomNavigation.setItemIconTintList(null);
         bottomNavigation.setSelectedItemId(R.id.nav_inicio);
@@ -139,7 +165,8 @@ public class TelaInicialAluno extends AppCompatActivity {
 
             } else if (id == R.id.nav_ranking) {
 
-                startActivity(new Intent(this, RankingActivity.class));
+                startActivity(new Intent(this, RankingActivity.class)
+                        .putExtra(RankingActivity.EXTRA_PERFIL, RankingActivity.PERFIL_ALUNO));
                 return true;
 
             } else if (id == R.id.nav_perfil) {
@@ -160,24 +187,7 @@ public class TelaInicialAluno extends AppCompatActivity {
 
     private void carregarPosicaoRanking() {
 
-        db.collection("alunos")
-                .orderBy("pontuacao", Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-
-                    int posicao = 1;
-
-                    for (QueryDocumentSnapshot documento : querySnapshot) {
-
-                        if (documento.getId().equals(alunoId)) {
-
-                            tvPosicaoRankingAluno.setText(posicao + "º");
-                            return;
-                        }
-
-                        posicao++;
-                    }
-                });
+        RankingActivity.carregarPosicaoNaTurma(db, alunoId, tvPosicaoRankingAluno);
     }
 
     private void carregarFrequencia() {
@@ -257,25 +267,62 @@ public class TelaInicialAluno extends AppCompatActivity {
 
                                     if (nome != null) {
 
-                                        listaProximas.add(new ProximaAtividade(
+                                        ProximaAtividade proxima = new ProximaAtividade(
                                                 nome,
                                                 disciplinaNome,
                                                 prazo != null ? prazo : ""
-                                        ));
+                                        );
+
+                                        proxima.id = documento.getId();
+                                        proxima.criadoEm = documento.getTimestamp("criadoEm");
+
+                                        listaProximas.add(proxima);
                                     }
                                 }
 
-                                ordenarPorPrazo(listaProximas);
+                                // Mostra só as 2 trilhas adicionadas mais recentemente
+                                ordenarMaisRecentes(listaProximas);
 
-                                if (listaProximas.size() > 5) {
+                                if (listaProximas.size() > 2) {
 
-                                    listaProximas.subList(5, listaProximas.size()).clear();
+                                    listaProximas.subList(2, listaProximas.size()).clear();
                                 }
 
                                 adapter.notifyDataSetChanged();
                                 atualizarListaVazia();
                             });
                 });
+    }
+
+    // Mais recentes primeiro (data de criação). Trilhas antigas, sem essa data,
+    // ficam depois, ordenadas pelo prazo mais distante.
+    private void ordenarMaisRecentes(List<ProximaAtividade> lista) {
+
+        SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+
+        Collections.sort(lista, (a, b) -> {
+
+            if (a.criadoEm != null && b.criadoEm != null) {
+                return b.criadoEm.compareTo(a.criadoEm);
+            }
+
+            if (a.criadoEm != null) {
+                return -1;
+            }
+
+            if (b.criadoEm != null) {
+                return 1;
+            }
+
+            Date dataA = tentarConverter(formato, a.prazo);
+            Date dataB = tentarConverter(formato, b.prazo);
+
+            if (dataA == null || dataB == null) {
+                return 0;
+            }
+
+            return dataB.compareTo(dataA);
+        });
     }
 
     private void ordenarPorPrazo(List<ProximaAtividade> lista) {
@@ -315,9 +362,11 @@ public class TelaInicialAluno extends AppCompatActivity {
 
     public static class ProximaAtividade {
 
+        String id;
         String nome;
         String disciplinaNome;
         String prazo;
+        com.google.firebase.Timestamp criadoEm;
 
         public ProximaAtividade(String nome, String disciplinaNome, String prazo) {
             this.nome = nome;
@@ -353,6 +402,15 @@ public class TelaInicialAluno extends AppCompatActivity {
             holder.tvNomeProximaAtividade.setText(atividade.nome);
             holder.tvDisciplinaProximaAtividade.setText(atividade.disciplinaNome);
             holder.tvPrazoProximaAtividade.setText(atividade.prazo);
+
+            // Toque abre a trilha
+            holder.itemView.setOnClickListener(v -> {
+
+                Intent intent = new Intent(TelaInicialAluno.this, TelaAtividadeAluno.class);
+                intent.putExtra("atividadeId", atividade.id);
+                intent.putExtra("atividadeNome", atividade.nome);
+                startActivity(intent);
+            });
         }
 
         @Override

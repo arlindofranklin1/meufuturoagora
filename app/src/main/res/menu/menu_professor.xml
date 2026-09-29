@@ -12,6 +12,11 @@
         android:title="Disciplinas" />
 
     <item
+        android:id="@+id/nav_ranking"
+        android:icon="@drawable/ic_ranking_selector"
+        android:title="Ranking" />
+
+    <item
         android:id="@+id/nav_perfil"
         android:icon="@drawable/ic_perfil_selector"
         android:title="Perfil" />

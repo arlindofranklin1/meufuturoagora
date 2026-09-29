@@ -15,7 +15,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginStart="18dp"
-        android:layout_marginTop="35dp"
+        android:layout_marginTop="40dp"
         android:src="@drawable/seta_voltar"
         android:scaleType="centerInside"
         android:contentDescription="Voltar"
@@ -208,6 +208,35 @@
                 app:iconSize="25dp"
                 app:iconPadding="12dp"
                 app:strokeWidth="0dp" />
+
+            <!-- LINK -->
+
+            <TextView
+                android:id="@+id/tvLink"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Link (opcional)"
+                android:textColor="#171717"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_regular" />
+
+            <EditText
+                android:id="@+id/edtLink"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:hint="https://..."
+                android:paddingStart="13dp"
+                android:paddingEnd="13dp"
+                android:textSize="16sp"
+                android:textColor="#171717"
+                android:textColorHint="#171717"
+                android:fontFamily="@font/poppins_regular"
+                android:background="@drawable/bg_campo_criar_atividade"
+                android:inputType="textUri"
+                android:singleLine="true" />
+
             <!-- SALVAR -->
 
             <com.google.android.material.button.MaterialButton
@@ -220,7 +249,7 @@
                 android:textSize="16sp"
                 android:fontFamily="@font/poppins_bold"
                 android:textAllCaps="false"
-                android:backgroundTint="@color/roxo_acao"
+                android:backgroundTint="@color/roxo_primario"
                 app:cornerRadius="15dp" />
 
         </LinearLayout>

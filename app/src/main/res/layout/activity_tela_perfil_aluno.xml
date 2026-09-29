@@ -32,12 +32,12 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="210dp"
+                    android:layout_height="220dp"
                     android:background="@drawable/bg_header_professor"
                     android:gravity="center_horizontal"
                     android:orientation="vertical"
-                    android:paddingTop="28dp"
-                    android:paddingBottom="24dp">
+                    android:paddingTop="40dp"
+                    android:paddingBottom="20dp">
 
                     <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/imgFotoPerfilAluno"
@@ -79,7 +79,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_gravity="end|top"
-                    android:layout_marginTop="45dp"
+                    android:layout_marginTop="40dp"
                     android:layout_marginEnd="20dp"
                     android:contentDescription="Configurações"
                     android:src="@drawable/ic_configuracoes"
@@ -87,13 +87,14 @@
 
             </FrameLayout>
 
+            <!-- ============================= -->
             <!-- CARD PONTUAÇÃO -->
+            <!-- ============================= -->
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
-                android:layout_marginTop="30dp"
                 android:layout_marginEnd="20dp"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="18dp"
@@ -102,6 +103,8 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card_pontuacao"
+                    android:layout_marginTop="10dp"
                     android:orientation="horizontal"
                     android:padding="16dp">
 
@@ -119,7 +122,7 @@
                             android:fontFamily="@font/poppins_bold"
                             android:text="0"
                             android:textColor="@color/roxo_primario"
-                            android:textSize="22sp" />
+                            android:textSize="24sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -127,7 +130,7 @@
                             android:fontFamily="@font/poppins_regular"
                             android:text="Pontuação total"
                             android:textColor="@color/texto_cinza"
-                            android:textSize="12sp" />
+                            android:textSize="17sp" />
 
                     </LinearLayout>
 
@@ -150,7 +153,7 @@
                             android:fontFamily="@font/poppins_bold"
                             android:text="—"
                             android:textColor="@color/roxo_primario"
-                            android:textSize="22sp" />
+                            android:textSize="24sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -158,7 +161,7 @@
                             android:fontFamily="@font/poppins_regular"
                             android:text="Posição no ranking"
                             android:textColor="@color/texto_cinza"
-                            android:textSize="12sp" />
+                            android:textSize="17sp" />
 
                     </LinearLayout>
 
@@ -166,7 +169,7 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- GRID DE ESTATÍSTICAS -->
+            <!-- ESTATÍSTICAS -->
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -181,7 +184,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    app:cardBackgroundColor="@color/fundo_cinza_claro"
+                    app:cardBackgroundColor="#D9C6FF"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="0dp">
 
@@ -198,7 +201,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/poppins_bold"
                             android:text="0"
-                            android:textColor="@color/roxo_primario"
+                            android:textColor="#4A16C4"
                             android:textSize="18sp" />
 
                         <TextView
@@ -206,8 +209,9 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/poppins_regular"
                             android:gravity="center"
+                            android:lines="2"
                             android:text="Disciplinas"
-                            android:textColor="@color/texto_cinza"
+                            android:textColor="#4A16C4"
                             android:textSize="11sp" />
 
                     </LinearLayout>
@@ -220,7 +224,7 @@
                     android:layout_marginStart="6dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    app:cardBackgroundColor="@color/fundo_cinza_claro"
+                    app:cardBackgroundColor="#F7A8DC"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="0dp">
 
@@ -237,7 +241,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/poppins_bold"
                             android:text="0"
-                            android:textColor="@color/roxo_primario"
+                            android:textColor="#A3167A"
                             android:textSize="18sp" />
 
                         <TextView
@@ -245,8 +249,9 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/poppins_regular"
                             android:gravity="center"
+                            android:lines="2"
                             android:text="Concluídas"
-                            android:textColor="@color/texto_cinza"
+                            android:textColor="#A3167A"
                             android:textSize="11sp" />
 
                     </LinearLayout>
@@ -258,7 +263,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    app:cardBackgroundColor="@color/fundo_cinza_claro"
+                    app:cardBackgroundColor="#FFC0A8"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="0dp">
 
@@ -275,7 +280,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/poppins_bold"
                             android:text="0"
-                            android:textColor="@color/roxo_primario"
+                            android:textColor="#B3261E"
                             android:textSize="18sp" />
 
                         <TextView
@@ -283,8 +288,9 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/poppins_regular"
                             android:gravity="center"
+                            android:lines="2"
                             android:text="Faltas"
-                            android:textColor="@color/texto_cinza"
+                            android:textColor="#B3261E"
                             android:textSize="11sp" />
 
                     </LinearLayout>
@@ -399,12 +405,15 @@
         android:id="@+id/bottomNavigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:paddingBottomSystemWindowInsets="false"
         android:background="@android:color/white"
         android:minHeight="64dp"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconSize="24dp"
         app:itemIconTint="@null"
+        app:itemTextAppearanceActive="@style/BottomNavigationText"
+        app:itemTextAppearanceInactive="@style/BottomNavigationText"
         app:itemTextColor="@color/bottom_navigation_text"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"

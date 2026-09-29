@@ -9,7 +9,7 @@
     tools:context=".TelaDisciplinaAluno">
 
     <TextView
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="35dp"
         android:id="@+id/tvTituloDisciplinas"
         android:layout_width="wrap_content"
         android:gravity="center"
@@ -118,9 +118,12 @@
         android:id="@+id/bottomNavigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:paddingBottomSystemWindowInsets="false"
         android:minHeight="64dp"
         android:background="@android:color/white"
         app:itemIconSize="24dp"
+        app:itemTextAppearanceActive="@style/BottomNavigationText"
+        app:itemTextAppearanceInactive="@style/BottomNavigationText"
         app:itemTextColor="@color/bottom_navigation_text"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"

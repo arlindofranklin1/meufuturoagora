@@ -13,6 +13,9 @@ public class SobreActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_sobre);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
+
         ImageView btnVoltar = findViewById(R.id.btnVoltar);
 
         btnVoltar.setOnClickListener(v -> finish());

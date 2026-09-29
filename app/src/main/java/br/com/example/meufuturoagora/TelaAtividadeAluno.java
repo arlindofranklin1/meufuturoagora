@@ -21,8 +21,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +28,6 @@ import java.util.Map;
 public class TelaAtividadeAluno extends AppCompatActivity {
 
     private FirebaseFirestore db;
-    private FirebaseStorage storage;
 
     private String atividadeId;
     private String alunoId;
@@ -39,6 +36,7 @@ public class TelaAtividadeAluno extends AppCompatActivity {
     private String arquivoProfessorUrl;
     private Uri arquivoAlunoUri;
     private String nomeArquivoAluno;
+    private String linkProfessor;
 
     private ActivityResultLauncher<String> selecionarArquivoLauncher;
 
@@ -55,8 +53,10 @@ public class TelaAtividadeAluno extends AppCompatActivity {
 
         setContentView(R.layout.activity_tela_atividade_aluno);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
+
         db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
 
         atividadeId = getIntent().getStringExtra("atividadeId");
         String atividadeNome = getIntent().getStringExtra("atividadeNome");
@@ -84,11 +84,33 @@ public class TelaAtividadeAluno extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.itemLinkProfessor).setOnClickListener(v -> {
+
+            if (linkProfessor != null && !linkProfessor.isEmpty()) {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(linkProfessor)));
+            }
+        });
+
         selecionarArquivoLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
 
                     if (uri != null) {
+
+                        long tamanho = ArquivoUtil.obterTamanho(
+                                getContentResolver(), uri
+                        );
+
+                        if (tamanho > ArquivoUtil.LIMITE_TAMANHO_BYTES) {
+
+                            Toast.makeText(
+                                    this,
+                                    "O arquivo deve ter até 3 MB.",
+                                    Toast.LENGTH_LONG
+                            ).show();
+
+                            return;
+                        }
 
                         arquivoAlunoUri = uri;
                         nomeArquivoAluno = obterNomeArquivo(uri);
@@ -140,6 +162,7 @@ public class TelaAtividadeAluno extends AppCompatActivity {
         String arquivoNome = documento.getString("arquivoNome");
 
         arquivoProfessorUrl = documento.getString("arquivoUrl");
+        linkProfessor = documento.getString("link");
 
         if (nome != null) {
             ((TextView) findViewById(R.id.tvTituloAtividadeAluno)).setText(nome);
@@ -152,6 +175,18 @@ public class TelaAtividadeAluno extends AppCompatActivity {
         tvNomeAnexoProfessor.setText(
                 arquivoNome != null && !arquivoNome.isEmpty() ? arquivoNome : "Nenhum anexo"
         );
+
+        View itemLinkProfessor = findViewById(R.id.itemLinkProfessor);
+
+        if (linkProfessor != null && !linkProfessor.isEmpty()) {
+
+            itemLinkProfessor.setVisibility(View.VISIBLE);
+            ((TextView) findViewById(R.id.tvLinkProfessor)).setText(linkProfessor);
+
+        } else {
+
+            itemLinkProfessor.setVisibility(View.GONE);
+        }
 
         ((TextView) findViewById(R.id.tvPontuacaoMaximaAluno)).setText(
                 (pontos != null ? pontos : 0) + " pts"
@@ -227,12 +262,27 @@ public class TelaAtividadeAluno extends AppCompatActivity {
             return;
         }
 
+        String comentario = edtComentarioAluno.getText().toString().trim();
+
+        // Não permite entrega vazia: precisa de comentário ou de arquivo
+        if (comentario.isEmpty() && arquivoAlunoUri == null) {
+
+            Toast.makeText(
+                    this,
+                    "Escreva um comentário ou anexe um arquivo para fazer a entrega.",
+                    Toast.LENGTH_LONG
+            ).show();
+            return;
+        }
+
         Map<String, Object> entrega = new HashMap<>();
 
         entrega.put("atividadeId", atividadeId);
         entrega.put("alunoId", alunoId);
-        entrega.put("comentarioAluno", edtComentarioAluno.getText().toString().trim());
+        entrega.put("comentarioAluno", comentario);
         entrega.put("avaliado", false);
+        // Usado para notificar o professor sobre a nova entrega
+        entrega.put("enviadoEm", com.google.firebase.firestore.FieldValue.serverTimestamp());
 
         if (arquivoAlunoUri != null) {
 
@@ -246,26 +296,35 @@ public class TelaAtividadeAluno extends AppCompatActivity {
 
     private void enviarArquivo(Map<String, Object> entrega) {
 
-        StorageReference referencia = storage.getReference()
-                .child("entregas")
-                .child(atividadeId)
-                .child(System.currentTimeMillis() + "_" + nomeArquivoAluno);
-
         Toast.makeText(this, "Enviando arquivo...", Toast.LENGTH_SHORT).show();
 
-        referencia.putFile(arquivoAlunoUri)
-                .addOnSuccessListener(taskSnapshot ->
-                        referencia.getDownloadUrl().addOnSuccessListener(uri -> {
+        CloudinaryUtil.enviar(
+                getContentResolver(),
+                arquivoAlunoUri,
+                nomeArquivoAluno,
+                "entregas/" + atividadeId,
+                new CloudinaryUtil.Callback() {
 
-                            entrega.put("arquivoNome", nomeArquivoAluno);
-                            entrega.put("arquivoUrl", uri.toString());
+                    @Override
+                    public void onSucesso(String url) {
 
-                            salvarEntrega(entrega);
-                        })
-                )
-                .addOnFailureListener(e -> Toast.makeText(
-                        this, "Erro ao enviar arquivo: " + e.getMessage(), Toast.LENGTH_LONG
-                ).show());
+                        entrega.put("arquivoNome", nomeArquivoAluno);
+                        entrega.put("arquivoUrl", url);
+
+                        salvarEntrega(entrega);
+                    }
+
+                    @Override
+                    public void onErro(String mensagem) {
+
+                        Toast.makeText(
+                                TelaAtividadeAluno.this,
+                                "Erro ao enviar arquivo: " + mensagem,
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                }
+        );
     }
 
     private void salvarEntrega(Map<String, Object> entrega) {

@@ -7,29 +7,18 @@
     android:background="@drawable/degrade_background">
 
     <ImageView
-        android:id="@+id/btnVoltarAdmin"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="18dp"
-        android:layout_marginTop="35dp"
-        android:contentDescription="Voltar"
-        android:scaleType="centerInside"
-        android:src="@drawable/seta_voltar"
-        app:tint="#FFFFFF"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ImageView
-        android:id="@+id/imgIconeAdmin"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
+        android:id="@+id/imgLogoAdmin"
+        android:layout_width="260dp"
+        android:layout_height="150dp"
         android:contentDescription="@null"
-        android:src="@drawable/icone_app"
+        android:scaleType="fitCenter"
+        android:src="@drawable/logo_meufuturoagora_branca"
         app:layout_constraintBottom_toTopOf="@id/tvTituloAdmin"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.32" />
+        app:layout_constraintVertical_bias="0.5"
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <TextView
         android:id="@+id/tvTituloAdmin"
@@ -41,9 +30,10 @@
         android:text="ADMINISTRADOR"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@id/cardSenhaAdmin"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imgIconeAdmin" />
+        app:layout_constraintTop_toBottomOf="@id/imgLogoAdmin" />
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardSenhaAdmin"
@@ -55,6 +45,7 @@
         app:cardBackgroundColor="#FFFFFF"
         app:cardCornerRadius="14dp"
         app:cardElevation="4dp"
+        app:layout_constraintBottom_toTopOf="@id/btnAcessarAdmin"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvTituloAdmin">
@@ -90,9 +81,28 @@
         android:textColor="@color/roxo_primario"
         android:textSize="16sp"
         app:cornerRadius="14dp"
+        app:layout_constraintBottom_toTopOf="@id/tvVoltarLoginPadrao"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardSenhaAdmin"
-        app:layout_constraintVertical_bias="0" />
+        app:layout_constraintTop_toBottomOf="@id/cardSenhaAdmin" />
+
+    <!-- Volta para o login com Google (alunos e professores) -->
+    <TextView
+        android:id="@+id/tvVoltarLoginPadrao"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:fontFamily="@font/poppins_semibold"
+        android:padding="8dp"
+        android:text="Entrar com Google"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnAcessarAdmin" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    tools:context=".DesempenhoActivity">
+
+    <!-- ============================= -->
+    <!-- TOPO -->
+    <!-- ============================= -->
+
+    <ImageView
+        android:id="@+id/btnVoltar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="40dp"
+        android:contentDescription="Voltar"
+        android:scaleType="centerInside"
+        android:src="@drawable/seta_voltar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvTituloDesempenho"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:fontFamily="@font/poppins_bold"
+        android:gravity="center"
+        android:text="Desempenho"
+        android:textColor="@color/roxo_primario"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@id/btnVoltar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnVoltar" />
+
+    <!-- ============================= -->
+    <!-- ABAS DOS BIMESTRES -->
+    <!-- ============================= -->
+
+    <LinearLayout
+        android:id="@+id/layoutAbasBimestre"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingEnd="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnVoltar">
+
+        <TextView
+            android:id="@+id/abaBimestre1"
+            style="@style/AbaBimestre"
+            android:text="1º" />
+
+        <TextView
+            android:id="@+id/abaBimestre2"
+            style="@style/AbaBimestre"
+            android:text="2º" />
+
+        <TextView
+            android:id="@+id/abaBimestre3"
+            style="@style/AbaBimestre"
+            android:text="3º" />
+
+        <TextView
+            android:id="@+id/abaBimestre4"
+            style="@style/AbaBimestre"
+            android:text="4º" />
+
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutAbasBimestre">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="20dp">
+
+            <!-- ============================= -->
+            <!-- CARD DO BIMESTRE -->
+            <!-- ============================= -->
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="#F9F5FF"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="4dp"
+                app:cardUseCompatPadding="true">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- CÍRCULO DECORATIVO -->
+                    <View
+                        android:id="@+id/decoracaoCard"
+                        android:layout_width="230dp"
+                        android:layout_height="190dp"
+                        android:layout_gravity="end|bottom"
+                        android:layout_marginEnd="-64dp"
+                        android:layout_marginBottom="-124dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <FrameLayout
+                                android:id="@+id/circuloIconeDesempenho"
+                                android:layout_width="52dp"
+                                android:layout_height="52dp">
+
+                                <ImageView
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_desempenho"
+                                    app:tint="#6C1FE8" />
+
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="14dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvTituloBimestre"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:text="1º bimestre"
+                                    android:textColor="@color/roxo_primario"
+                                    android:textSize="20sp" />
+
+                                <TextView
+                                    android:id="@+id/tvResumoDesempenho"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_regular"
+                                    android:text="Pontos e faltas de cada aluno"
+                                    android:textColor="@color/texto_cinza"
+                                    android:textSize="14sp" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvPeriodoBimestreDesempenho"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="@font/poppins_semibold"
+                            android:text="—"
+                            android:textColor="@color/texto_escuro"
+                            android:textSize="14sp" />
+
+                    </LinearLayout>
+
+                </FrameLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- ============================= -->
+            <!-- RESUMO DO ALUNO -->
+            <!-- ============================= -->
+
+            <LinearLayout
+                android:id="@+id/layoutResumoAluno"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/cardPontosBimestre"
+                        style="@style/CardResumoDesempenho">
+
+                        <TextView
+                            android:id="@+id/tvPontosBimestre"
+                            style="@style/ValorResumoDesempenho"
+                            android:text="0 pts"
+                            android:textColor="@color/roxo_primario" />
+
+                        <TextView
+                            style="@style/LegendaResumoDesempenho"
+                            android:text="Pontos"
+                            android:textColor="@color/roxo_primario" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/cardFaltasBimestre"
+                        style="@style/CardResumoDesempenho"
+                        android:layout_marginStart="10dp">
+
+                        <TextView
+                            android:id="@+id/tvFaltasBimestre"
+                            style="@style/ValorResumoDesempenho"
+                            android:text="0"
+                            android:textColor="#B3261E" />
+
+                        <TextView
+                            style="@style/LegendaResumoDesempenho"
+                            android:text="Faltas"
+                            android:textColor="#B3261E" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/cardJustificadasBimestre"
+                        style="@style/CardResumoDesempenho"
+                        android:layout_marginStart="10dp">
+
+                        <TextView
+                            android:id="@+id/tvJustificadasBimestre"
+                            style="@style/ValorResumoDesempenho"
+                            android:text="0"
+                            android:textColor="#A3167A" />
+
+                        <TextView
+                            style="@style/LegendaResumoDesempenho"
+                            android:text="Faltas\njustificadas"
+                            android:textColor="#A3167A" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:fontFamily="@font/poppins_bold"
+                    android:paddingBottom="8dp"
+                    android:text="Pontos por disciplina"
+                    android:textColor="@color/roxo_primario"
+                    android:textSize="15sp" />
+
+            </LinearLayout>
+
+            <!-- ============================= -->
+            <!-- CABEÇALHO DO PROFESSOR -->
+            <!-- ============================= -->
+
+            <LinearLayout
+                android:id="@+id/layoutCabecalhoProfessor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/poppins_bold"
+                    android:text="Aluno"
+                    android:textColor="@color/roxo_primario"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:layout_width="70dp"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_bold"
+                    android:gravity="end"
+                    android:text="Pontos"
+                    android:textColor="@color/roxo_primario"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:layout_width="110dp"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_bold"
+                    android:gravity="end"
+                    android:text="Faltas"
+                    android:textColor="@color/roxo_primario"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DCDCDC" />
+
+            <!-- ============================= -->
+            <!-- LISTA -->
+            <!-- ============================= -->
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerDesempenho"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false" />
+
+            <ProgressBar
+                android:id="@+id/progressDesempenho"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:indeterminateTint="@color/roxo_primario" />
+
+            <TextView
+                android:id="@+id/tvSemDadosDesempenho"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="center"
+                android:text="Nenhum dado neste bimestre."
+                android:textColor="@color/texto_cinza"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

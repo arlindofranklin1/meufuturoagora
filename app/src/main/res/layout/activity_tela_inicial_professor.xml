@@ -104,16 +104,37 @@
 
                 </LinearLayout>
 
+                <!-- SINO (com bolinha de notificação não vista) -->
 
-                <!-- SINO -->
-
-                <ImageView
-                    android:id="@+id/imgNotificacao"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                <FrameLayout
+                    android:id="@+id/btnNotificacoes"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
                     android:contentDescription="Notificações"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_notificacao" />
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/imgNotificacao"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="center"
+                        android:importantForAccessibility="no"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/ic_notificacao" />
+
+                    <View
+                        android:id="@+id/bolinhaNotificacao"
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="3dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/bg_bolinha_notificacao"
+                        android:visibility="gone" />
+
+                </FrameLayout>
 
             </LinearLayout>
 
@@ -242,11 +263,11 @@
 
 
             <!-- ============================= -->
-            <!-- CARD SOLICITAÇÕES -->
+            <!-- CARD BIMESTRE -->
             <!-- ============================= -->
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/cardSolicitacoes"
+                android:id="@+id/cardBimestre"
                 android:layout_width="match_parent"
                 android:layout_height="180dp"
                 android:layout_marginStart="20dp"
@@ -265,7 +286,7 @@
                         android:layout_height="match_parent"
                         android:contentDescription="@null"
                         android:scaleType="fitXY"
-                        android:src="@drawable/bg_card_solicitacoes" />
+                        android:src="@drawable/bg_card_bimestre" />
 
                     <!-- CONTEÚDO -->
                     <androidx.constraintlayout.widget.ConstraintLayout
@@ -276,11 +297,11 @@
 
                         <!-- ÍCONE -->
                         <ImageView
-                            android:id="@+id/imgSolicitacoes"
+                            android:id="@+id/imgBimestre"
                             android:layout_width="96dp"
                             android:layout_height="96dp"
                             android:layout_marginTop="20dp"
-                            android:contentDescription="Solicitações"
+                            android:contentDescription="Bimestre"
                             android:padding="10dp"
                             android:scaleType="centerInside"
                             android:src="@drawable/ic_diario_laranja"
@@ -291,7 +312,7 @@
 
                         <!-- SUBTÍTULO -->
                         <TextView
-                            android:id="@+id/tvSolicitacoes"
+                            android:id="@+id/tvTituloBimestre"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="25dp"
@@ -301,11 +322,11 @@
                             android:textSize="24sp"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintHorizontal_bias="1.0"
-                            app:layout_constraintStart_toEndOf="@id/imgSolicitacoes"
-                            app:layout_constraintTop_toTopOf="@id/imgSolicitacoes" />
+                            app:layout_constraintStart_toEndOf="@id/imgBimestre"
+                            app:layout_constraintTop_toTopOf="@id/imgBimestre" />
 
                         <TextView
-                            android:id="@+id/tvDescricaoSolicitacoes"
+                            android:id="@+id/tvDescricaoBimestre"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="25dp"
@@ -315,12 +336,12 @@
                             android:textColor="#777777"
                             android:textSize="17sp"
                             app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toEndOf="@id/imgSolicitacoes"
-                            app:layout_constraintTop_toBottomOf="@id/tvSolicitacoes" />
+                            app:layout_constraintStart_toEndOf="@id/imgBimestre"
+                            app:layout_constraintTop_toBottomOf="@id/tvTituloBimestre" />
 
                         <!-- PERÍODO -->
                         <TextView
-                            android:id="@+id/tvPeriodoBimestreAluno"
+                            android:id="@+id/tvPeriodoBimestre"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="15dp"
@@ -548,6 +569,86 @@
 
                 </androidx.cardview.widget.CardView>
 
+                <!-- ============================= -->
+                <!-- DESEMPENHO POR BIMESTRE -->
+                <!-- ============================= -->
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/btnDesempenho"
+                    android:layout_width="match_parent"
+                    android:layout_height="90dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:clickable="true"
+                    android:layout_marginBottom="20dp"
+                    android:focusable="true"
+                    android:backgroundTint="#F4F4F4"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="16dp">
+
+                        <!-- ÍCONE -->
+                        <FrameLayout
+                            android:layout_width="58dp"
+                            android:layout_height="58dp">
+
+                            <ImageView
+                                android:layout_width="38dp"
+                                android:layout_height="38dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="Desempenho"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/ic_desempenho"
+                                app:tint="@color/roxo_primario" />
+
+                        </FrameLayout>
+
+                        <!-- TEXTOS -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="16dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/poppins_semibold"
+                                android:text="Desempenho por bimestre"
+                                android:textColor="#303030"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:fontFamily="@font/poppins_regular"
+                                android:text="Pontos e faltas dos alunos em cada bimestre"
+                                android:textColor="#777777"
+                                android:textSize="14sp" />
+
+                        </LinearLayout>
+
+                        <!-- SETA -->
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:contentDescription="Entrar em desempenho"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_seta_roxa" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView> <!-- ============================ --> <!-- BOTTOM BAR --> <!-- ============================ -->
@@ -566,12 +667,15 @@
         android:id="@+id/bottomNavigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:paddingBottomSystemWindowInsets="false"
         android:background="@android:color/white"
         android:minHeight="64dp"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconSize="24dp"
         app:itemIconTint="@null"
+        app:itemTextAppearanceActive="@style/BottomNavigationText"
+        app:itemTextAppearanceInactive="@style/BottomNavigationText"
         app:itemTextColor="@color/bottom_navigation_text"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"

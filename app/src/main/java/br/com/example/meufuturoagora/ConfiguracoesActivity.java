@@ -14,14 +14,17 @@ import com.google.firebase.auth.FirebaseAuth;
 
 public class ConfiguracoesActivity extends AppCompatActivity {
 
-    private static final String PREFS_NOME = "preferencias_app";
-    private static final String CHAVE_NOTIFICACOES = "notificacoes_ativas";
+    private static final String PREFS_NOME = NotificacaoUtil.PREFS_NOME;
+    private static final String CHAVE_NOTIFICACOES = NotificacaoUtil.CHAVE_NOTIFICACOES;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_configuracoes);
+
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
 
         ImageView btnVoltar = findViewById(R.id.btnVoltar);
         btnVoltar.setOnClickListener(v -> finish());
@@ -38,11 +41,19 @@ public class ConfiguracoesActivity extends AppCompatActivity {
                 preferencias.getBoolean(CHAVE_NOTIFICACOES, true)
         );
 
-        switchNotificacoes.setOnCheckedChangeListener((buttonView, isChecked) ->
-                preferencias.edit()
-                        .putBoolean(CHAVE_NOTIFICACOES, isChecked)
-                        .apply()
-        );
+        switchNotificacoes.setOnCheckedChangeListener((buttonView, isChecked) -> {
+
+            preferencias.edit()
+                    .putBoolean(CHAVE_NOTIFICACOES, isChecked)
+                    .apply();
+
+            // Desligado: para de aparecer na barra do celular, mas a lista do sino continua
+            if (isChecked) {
+
+                NotificacaoUtil.pedirPermissao(this);
+                NotificacaoUtil.agendar(this);
+            }
+        });
 
         // =========================
         // SOBRE

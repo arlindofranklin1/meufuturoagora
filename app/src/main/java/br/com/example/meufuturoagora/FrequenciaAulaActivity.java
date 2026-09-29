@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -24,12 +25,15 @@ import java.util.Map;
 
 public class FrequenciaAulaActivity extends AppCompatActivity {
 
-    private static final String[] STATUS_OPCOES = {"Presente", "Falta"};
+    private static final String[] STATUS_OPCOES = {"Presente", "Falta", "Falta justificada"};
 
     private FirebaseFirestore db;
 
     private String aulaId;
     private String disciplinaId;
+
+    // Data da aula (dd/MM/yyyy): a perda de pontos por falta é contada por dia
+    private String dataAula;
 
     private RecyclerView recyclerAlunosFrequencia;
     private TextView tvSemAlunos;
@@ -42,6 +46,9 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_frequencia_aula);
+
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
 
         db = FirebaseFirestore.getInstance();
 
@@ -69,7 +76,51 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
         MaterialButton btnSalvarFrequencia = findViewById(R.id.btnSalvarFrequencia);
         btnSalvarFrequencia.setOnClickListener(v -> salvarFrequencia());
 
+        carregarDataAula();
         carregarAlunosMatriculados();
+    }
+
+    private void carregarDataAula() {
+
+        if (aulaId == null) {
+            return;
+        }
+
+        db.collection("aulas")
+                .document(aulaId)
+                .get()
+                .addOnSuccessListener(documento -> dataAula = documento.getString("data"));
+    }
+
+    // Mostra a frequência já salva desta aula, para não voltar tudo para "Presente"
+    private void carregarFrequenciaSalva() {
+
+        if (aulaId == null) {
+            return;
+        }
+
+        db.collection("frequencias")
+                .whereEqualTo("aulaId", aulaId)
+                .get()
+                .addOnSuccessListener(registros -> {
+
+                    Map<String, String> statusPorAluno = new HashMap<>();
+
+                    for (QueryDocumentSnapshot registro : registros) {
+                        statusPorAluno.put(registro.getString("alunoId"), registro.getString("status"));
+                    }
+
+                    for (AlunoFrequencia aluno : listaAlunos) {
+
+                        String status = statusPorAluno.get(aluno.alunoId);
+
+                        if (status != null) {
+                            aluno.status = status;
+                        }
+                    }
+
+                    adapter.notifyDataSetChanged();
+                });
     }
 
     private void carregarAlunosMatriculados() {
@@ -85,6 +136,8 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
 
                     listaAlunos.clear();
 
+                    List<String> idsAlunos = new ArrayList<>();
+
                     for (QueryDocumentSnapshot documento : querySnapshot) {
 
                         String alunoId = documento.getString("alunoId");
@@ -93,6 +146,7 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
                         if (alunoId != null && alunoNome != null) {
 
                             listaAlunos.add(new AlunoFrequencia(alunoId, alunoNome));
+                            idsAlunos.add(alunoId);
                         }
                     }
 
@@ -102,10 +156,44 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
                     recyclerAlunosFrequencia.setVisibility(
                             listaAlunos.isEmpty() ? View.GONE : View.VISIBLE
                     );
+
+                    carregarFotosAlunos(idsAlunos);
+                    carregarFrequenciaSalva();
                 })
                 .addOnFailureListener(e -> Toast.makeText(
                         this, "Erro ao carregar alunos.", Toast.LENGTH_SHORT
                 ).show());
+    }
+
+    // Busca a foto de cada aluno na coleção "alunos" (em lotes de até 10,
+    // limite do whereIn do Firestore) e preenche na lista já exibida.
+    private void carregarFotosAlunos(List<String> idsAlunos) {
+
+        for (int i = 0; i < idsAlunos.size(); i += 10) {
+
+            List<String> lote = idsAlunos.subList(i, Math.min(i + 10, idsAlunos.size()));
+
+            db.collection("alunos")
+                    .whereIn(FieldPath.documentId(), lote)
+                    .get()
+                    .addOnSuccessListener(alunosSnapshot -> {
+
+                        Map<String, String> fotosPorId = new HashMap<>();
+
+                        for (QueryDocumentSnapshot documento : alunosSnapshot) {
+                            fotosPorId.put(documento.getId(), documento.getString("fotoUrl"));
+                        }
+
+                        for (AlunoFrequencia aluno : listaAlunos) {
+
+                            if (fotosPorId.containsKey(aluno.alunoId)) {
+                                aluno.fotoUrl = fotosPorId.get(aluno.alunoId);
+                            }
+                        }
+
+                        adapter.notifyDataSetChanged();
+                    });
+        }
     }
 
     private void salvarFrequencia() {
@@ -126,9 +214,19 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
             registro.put("alunoNome", aluno.alunoNome);
             registro.put("status", aluno.status);
 
+            if (dataAula != null) {
+                registro.put("data", dataAula);
+            }
+
+            String alunoId = aluno.alunoId;
+
+            // Depois de gravar, confere a perda de 5 pontos do dia (falta sem justificativa)
             db.collection("frequencias")
-                    .document(aulaId + "_" + aluno.alunoId)
-                    .set(registro);
+                    .document(aulaId + "_" + alunoId)
+                    .set(registro)
+                    .addOnSuccessListener(unused ->
+                            PenalidadeFaltaUtil.recalcular(db, alunoId, dataAula)
+                    );
         }
 
         Toast.makeText(this, "Frequência salva!", Toast.LENGTH_SHORT).show();
@@ -139,6 +237,7 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
 
         String alunoId;
         String alunoNome;
+        String fotoUrl;
         String status = "Presente";
 
         public AlunoFrequencia(String alunoId, String alunoNome) {
@@ -172,6 +271,8 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
             AlunoFrequencia aluno = alunos.get(position);
 
             holder.tvNomeAlunoFrequencia.setText(aluno.alunoNome);
+            holder.imgAlunoFrequencia.setImageResource(R.drawable.ic_perfil);
+            FotoUtil.carregar(FrequenciaAulaActivity.this, aluno.fotoUrl, holder.imgAlunoFrequencia);
 
             ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
                     FrequenciaAulaActivity.this,
@@ -186,7 +287,7 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
             holder.spinnerStatusFrequencia.setAdapter(spinnerAdapter);
 
             holder.spinnerStatusFrequencia.setSelection(
-                    aluno.status.equals("Falta") ? 1 : 0
+                    Math.max(0, java.util.Arrays.asList(STATUS_OPCOES).indexOf(aluno.status))
             );
 
             holder.spinnerStatusFrequencia.setOnItemSelectedListener(
@@ -220,12 +321,14 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
 
             TextView tvNomeAlunoFrequencia;
             Spinner spinnerStatusFrequencia;
+            ImageView imgAlunoFrequencia;
 
             public ViewHolder(View itemView) {
                 super(itemView);
 
                 tvNomeAlunoFrequencia = itemView.findViewById(R.id.tvNomeAlunoFrequencia);
                 spinnerStatusFrequencia = itemView.findViewById(R.id.spinnerStatusFrequencia);
+                imgAlunoFrequencia = itemView.findViewById(R.id.imgAlunoFrequencia);
             }
         }
     }

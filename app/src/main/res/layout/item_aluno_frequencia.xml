@@ -12,6 +12,7 @@
         android:orientation="horizontal">
 
         <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgAlunoFrequencia"
             android:layout_width="38dp"
             android:layout_height="38dp"
             android:scaleType="centerCrop"
@@ -33,7 +34,7 @@
 
         <Spinner
             android:id="@+id/spinnerStatusFrequencia"
-            android:layout_width="110dp"
+            android:layout_width="150dp"
             android:layout_height="36dp"
             android:background="@drawable/bg_campo_criar_atividade" />
 

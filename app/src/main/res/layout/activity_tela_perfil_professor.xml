@@ -29,52 +29,201 @@
             <!-- CABEÇALHO -->
             <!-- ============================= -->
 
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp"
+                    android:background="@drawable/bg_header_professor"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingTop="40dp"
+                    android:paddingBottom="20dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/imgFotoPerfil"
+                        android:layout_width="76dp"
+                        android:layout_height="76dp"
+                        android:background="#FFFFFF"
+                        android:contentDescription="Foto de perfil"
+                        android:padding="3dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_perfil"
+                        app:shapeAppearanceOverlay="@style/CircleImageView"
+                        app:strokeColor="#FFFFFF"
+                        app:strokeWidth="2dp" />
+
+                    <TextView
+                        android:id="@+id/tvNomePerfil"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="@font/poppins_bold"
+                        android:text="Professor João"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp" />
+
+                    <TextView
+                        android:id="@+id/tvEmailPerfil"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="professor@email.com"
+                        android:textColor="#F2E9FF"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/btnConfiguracoesProfessor"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="end|top"
+                    android:layout_marginTop="40dp"
+                    android:layout_marginEnd="20dp"
+                    android:contentDescription="Configurações"
+                    android:src="@drawable/ic_configuracoes"
+                    app:tint="#FFFFFF" />
+
+            </FrameLayout>
+
+            <!-- ============================= -->
+            <!-- ESTATÍSTICAS -->
+            <!-- ============================= -->
+
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:background="@drawable/bg_header_professor"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:paddingTop="28dp"
-                android:paddingBottom="20dp">
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="20dp"
+                android:orientation="horizontal">
 
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/imgFotoPerfil"
-                    android:layout_width="76dp"
-                    android:layout_height="76dp"
-                    android:background="#FFFFFF"
-                    android:contentDescription="Foto de perfil"
-                    android:padding="3dp"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_perfil"
-                    app:shapeAppearanceOverlay="@style/CircleImageView"
-                    app:strokeColor="#FFFFFF"
-                    app:strokeWidth="2dp" />
-
-                <TextView
-                    android:id="@+id/tvNomePerfil"
-                    android:layout_width="wrap_content"
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppins_bold"
-                    android:text="Professor João"
-                    android:textColor="#FFFFFF"
-                    android:textSize="19sp" />
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#D9C6FF"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp">
 
-                <TextView
-                    android:id="@+id/tvEmailPerfil"
-                    android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvQtdDisciplinasPerfilProfessor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_bold"
+                            android:text="0"
+                            android:textColor="#4A16C4"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:lines="2"
+                            android:text="Disciplinas"
+                            android:textColor="#4A16C4"
+                            android:textSize="11sp" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:fontFamily="@font/poppins_regular"
-                    android:text="professor@email.com"
-                    android:textColor="#F2E9FF"
-                    android:textSize="13sp" />
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#F7A8DC"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvQtdTrilhasEnviadasPerfilProfessor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_bold"
+                            android:text="0"
+                            android:textColor="#A3167A"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:lines="2"
+                            android:text="Trilhas enviadas"
+                            android:textColor="#A3167A"
+                            android:textSize="11sp" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#FFC0A8"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvQtdAulasRegistradasPerfilProfessor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_bold"
+                            android:text="0"
+                            android:textColor="#B3261E"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:lines="2"
+                            android:text="Aulas registradas"
+                            android:textColor="#B3261E"
+                            android:textSize="11sp" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
 
             </LinearLayout>
 
             <!-- ============================= -->
-            <!-- OUTROS -->
+            <!-- DADOS DA CONTA -->
             <!-- ============================= -->
 
             <TextView
@@ -83,7 +232,7 @@
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="22dp"
                 android:fontFamily="@font/poppins_bold"
-                android:text="Outros"
+                android:text="Dados da conta"
                 android:textColor="@color/roxo_primario"
                 android:textSize="15sp" />
 
@@ -100,45 +249,63 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                    <LinearLayout
-                        android:id="@+id/itemConfiguracoes"
-                        android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:text="Nome"
+                        android:textColor="@color/texto_cinza"
+                        android:textSize="12sp" />
 
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="Configurações"
-                            android:src="@drawable/ic_configuracoes"
-                            app:tint="@color/roxo_primario" />
+                    <TextView
+                        android:id="@+id/tvNomeContaPerfilProfessor"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="Professor(a)"
+                        android:textColor="@color/texto_escuro"
+                        android:textSize="15sp" />
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/poppins_semibold"
-                            android:text="Configurações"
-                            android:textColor="@color/texto_escuro"
-                            android:textSize="15sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:text="Email"
+                        android:textColor="@color/texto_cinza"
+                        android:textSize="12sp" />
 
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:contentDescription="@null"
-                            android:rotation="180"
-                            android:src="@drawable/seta_voltar" />
+                    <TextView
+                        android:id="@+id/tvEmailContaPerfilProfessor"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="professor@email.com"
+                        android:textColor="@color/texto_escuro"
+                        android:textSize="15sp" />
 
-                    </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:text="Tipo de conta"
+                        android:textColor="@color/texto_cinza"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="Professor"
+                        android:textColor="@color/texto_escuro"
+                        android:textSize="15sp" />
 
                 </LinearLayout>
 
@@ -164,12 +331,15 @@
         android:id="@+id/bottomNavigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:paddingBottomSystemWindowInsets="false"
         android:background="@android:color/white"
         android:minHeight="64dp"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconSize="24dp"
         app:itemIconTint="@null"
+        app:itemTextAppearanceActive="@style/BottomNavigationText"
+        app:itemTextAppearanceInactive="@style/BottomNavigationText"
         app:itemTextColor="@color/bottom_navigation_text"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -28,16 +28,21 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
     private EditText edtNota;
     private EditText edtComentarioProfessor;
 
+    private String alunoId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_avaliar_entrega);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
+
         db = FirebaseFirestore.getInstance();
 
         String atividadeId = getIntent().getStringExtra("atividadeId");
-        String alunoId = getIntent().getStringExtra("alunoId");
+        alunoId = getIntent().getStringExtra("alunoId");
         String alunoNome = getIntent().getStringExtra("alunoNome");
 
         documentoId = atividadeId + "_" + alunoId;
@@ -144,11 +149,16 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
                 edtComentarioProfessor.getText().toString().trim()
         );
         avaliacao.put("avaliado", true);
+        // Usado para notificar o aluno sobre a avaliação
+        avaliacao.put("avaliadoEm", com.google.firebase.firestore.FieldValue.serverTimestamp());
 
         db.collection("entregas")
                 .document(documentoId)
                 .set(avaliacao, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(unused -> {
+
+                    // Atualiza a pontuação do aluno no ranking com a nova nota
+                    PontuacaoUtil.recalcular(db, alunoId);
 
                     Toast.makeText(this, "Avaliação salva!", Toast.LENGTH_SHORT).show();
                     finish();

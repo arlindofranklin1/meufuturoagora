@@ -22,8 +22,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -35,12 +33,12 @@ import java.util.Map;
 public class CriarAtividade extends AppCompatActivity {
 
     private FirebaseFirestore db;
-    private FirebaseStorage storage;
 
     private EditText edtNomeAtividade;
     private EditText edtDescricao;
     private EditText edtPontos;
     private EditText edtPrazo;
+    private EditText edtLink;
 
     private Spinner spinnerDisciplina;
 
@@ -77,13 +75,15 @@ public class CriarAtividade extends AppCompatActivity {
 
         setContentView(R.layout.activity_criar_atividade);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
+
         // =============================
         // FIREBASE
         // =============================
 
         db = FirebaseFirestore.getInstance();
 
-        storage = FirebaseStorage.getInstance();
 
         // =============================
         // RECEBER DADOS DA TELA ANTERIOR
@@ -118,6 +118,9 @@ public class CriarAtividade extends AppCompatActivity {
         edtPrazo =
                 findViewById(R.id.edtPrazo);
 
+        edtLink =
+                findViewById(R.id.edtLink);
+
         spinnerDisciplina =
                 findViewById(R.id.spinnerDisciplina);
 
@@ -140,6 +143,21 @@ public class CriarAtividade extends AppCompatActivity {
                         uri -> {
 
                             if (uri != null) {
+
+                                long tamanho = ArquivoUtil.obterTamanho(
+                                        getContentResolver(), uri
+                                );
+
+                                if (tamanho > ArquivoUtil.LIMITE_TAMANHO_BYTES) {
+
+                                    Toast.makeText(
+                                            this,
+                                            "O arquivo deve ter até 3 MB.",
+                                            Toast.LENGTH_LONG
+                                    ).show();
+
+                                    return;
+                                }
 
                                 arquivoSelecionadoUri = uri;
 
@@ -381,6 +399,18 @@ public class CriarAtividade extends AppCompatActivity {
                     }
 
                     // =============================
+                    // LINK
+                    // =============================
+
+                    String link =
+                            documento.getString("link");
+
+                    if (link != null) {
+
+                        edtLink.setText(link);
+                    }
+
+                    // =============================
                     // ARQUIVO
                     // =============================
 
@@ -581,6 +611,19 @@ public class CriarAtividade extends AppCompatActivity {
                         .toString()
                         .trim();
 
+        String link =
+                edtLink
+                        .getText()
+                        .toString()
+                        .trim();
+
+        if (!link.isEmpty()
+                && !link.startsWith("http://")
+                && !link.startsWith("https://")) {
+
+            link = "https://" + link;
+        }
+
         // =============================
         // VALIDAÇÕES
         // =============================
@@ -696,6 +739,11 @@ public class CriarAtividade extends AppCompatActivity {
         );
 
         atividade.put(
+                "link",
+                link
+        );
+
+        atividade.put(
                 "disciplinaId",
                 idDisciplina
         );
@@ -753,20 +801,6 @@ public class CriarAtividade extends AppCompatActivity {
                         "disciplinaId"
                 );
 
-        // =============================
-        // LOCAL DO ARQUIVO NO STORAGE
-        // =============================
-
-        StorageReference referenciaArquivo =
-                storage.getReference()
-                        .child("atividades")
-                        .child(idDisciplina)
-                        .child(
-                                System.currentTimeMillis()
-                                        + "_"
-                                        + nomeArquivo
-                        );
-
         Toast.makeText(
                 this,
                 "Enviando arquivo...",
@@ -774,74 +808,63 @@ public class CriarAtividade extends AppCompatActivity {
         ).show();
 
         // =============================
-        // UPLOAD
+        // UPLOAD (CLOUDINARY)
         // =============================
 
-        referenciaArquivo
-                .putFile(arquivoSelecionadoUri)
-                .addOnSuccessListener(
-                        taskSnapshot -> {
+        CloudinaryUtil.enviar(
+                getContentResolver(),
+                arquivoSelecionadoUri,
+                nomeArquivo,
+                "atividades/" + idDisciplina,
+                new CloudinaryUtil.Callback() {
 
-                            // =============================
-                            // PEGAR URL
-                            // =============================
+                    @Override
+                    public void onSucesso(String url) {
 
-                            referenciaArquivo
-                                    .getDownloadUrl()
-                                    .addOnSuccessListener(
-                                            uri -> {
+                        // =============================
+                        // SALVAR DADOS DO ARQUIVO
+                        // =============================
 
-                                                // =============================
-                                                // SALVAR DADOS DO ARQUIVO
-                                                // =============================
+                        atividade.put(
+                                "arquivoNome",
+                                nomeArquivo
+                        );
 
-                                                atividade.put(
-                                                        "arquivoNome",
-                                                        nomeArquivo
-                                                );
+                        atividade.put(
+                                "arquivoUrl",
+                                url
+                        );
 
-                                                atividade.put(
-                                                        "arquivoUrl",
-                                                        uri.toString()
-                                                );
+                        // =============================
+                        // SALVAR ATIVIDADE
+                        // =============================
 
-                                                // =============================
-                                                // SALVAR ATIVIDADE
-                                                // =============================
+                        if (modoEdicao) {
 
-                                                if (modoEdicao) {
+                            atualizarAtividade(
+                                    atividade
+                            );
 
-                                                    atualizarAtividade(
-                                                            atividade
-                                                    );
+                        } else {
 
-                                                } else {
-
-                                                    criarNovaAtividade(
-                                                            atividade
-                                                    );
-                                                }
-                                            }
-                                    )
-                                    .addOnFailureListener(e -> {
-
-                                        Toast.makeText(
-                                                this,
-                                                "Não foi possível obter o arquivo.",
-                                                Toast.LENGTH_SHORT
-                                        ).show();
-                                    });
+                            criarNovaAtividade(
+                                    atividade
+                            );
                         }
-                )
-                .addOnFailureListener(e -> {
+                    }
 
-                    Toast.makeText(
-                            this,
-                            "Erro ao enviar arquivo: "
-                                    + e.getMessage(),
-                            Toast.LENGTH_LONG
-                    ).show();
-                });
+                    @Override
+                    public void onErro(String mensagem) {
+
+                        Toast.makeText(
+                                CriarAtividade.this,
+                                "Erro ao enviar arquivo: "
+                                        + mensagem,
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                }
+        );
     }
 
     // =========================================================
@@ -851,6 +874,12 @@ public class CriarAtividade extends AppCompatActivity {
     private void criarNovaAtividade(
             Map<String, Object> atividade
     ) {
+
+        // Usado para notificar os alunos sobre a nova atividade
+        atividade.put(
+                "criadoEm",
+                com.google.firebase.firestore.FieldValue.serverTimestamp()
+        );
 
         db.collection("atividades")
                 .add(atividade)

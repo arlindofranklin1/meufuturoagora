@@ -47,6 +47,9 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_questoes_do_livro);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
+
         db = FirebaseFirestore.getInstance();
 
         atividadeId = getIntent().getStringExtra("atividadeId");
@@ -96,11 +99,11 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
         );
 
         tabDescricao.setTextColor(getColor(
-                descricao ? R.color.roxo_acao : R.color.texto_escuro
+                descricao ? R.color.roxo_primario : R.color.texto_escuro
         ));
 
         tabEntregas.setTextColor(getColor(
-                !descricao ? R.color.roxo_acao : R.color.texto_escuro
+                !descricao ? R.color.roxo_primario : R.color.texto_escuro
         ));
 
         linhaAbaDescricao.setVisibility(descricao ? View.VISIBLE : View.GONE);
@@ -207,6 +210,7 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
                             .addOnSuccessListener(entregas -> {
 
                                 Map<String, Boolean> enviouMapa = new HashMap<>();
+                                Map<String, Boolean> avaliadoMapa = new HashMap<>();
 
                                 for (QueryDocumentSnapshot documento : entregas) {
 
@@ -214,21 +218,31 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
 
                                     if (alunoId != null) {
                                         enviouMapa.put(alunoId, true);
+                                        avaliadoMapa.put(
+                                                alunoId,
+                                                Boolean.TRUE.equals(documento.getBoolean("avaliado"))
+                                        );
                                     }
                                 }
 
                                 listaEntregas.clear();
+
+                                List<String> idsAlunos = new ArrayList<>();
 
                                 for (String[] aluno : alunos) {
 
                                     listaEntregas.add(new Entrega(
                                             aluno[0],
                                             aluno[1],
-                                            Boolean.TRUE.equals(enviouMapa.get(aluno[0]))
+                                            Boolean.TRUE.equals(enviouMapa.get(aluno[0])),
+                                            Boolean.TRUE.equals(avaliadoMapa.get(aluno[0]))
                                     ));
+
+                                    idsAlunos.add(aluno[0]);
                                 }
 
                                 adapter.notifyDataSetChanged();
+                                carregarFotosAlunos(idsAlunos);
 
                                 boolean vazio = listaEntregas.isEmpty();
                                 boolean abaEntregasAtiva =
@@ -244,16 +258,50 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
                 });
     }
 
+    // Busca a foto de cada aluno na coleção "alunos" (em lotes de até 10,
+    // limite do whereIn do Firestore) e preenche na lista já exibida.
+    private void carregarFotosAlunos(List<String> idsAlunos) {
+
+        for (int i = 0; i < idsAlunos.size(); i += 10) {
+
+            List<String> lote = idsAlunos.subList(i, Math.min(i + 10, idsAlunos.size()));
+
+            db.collection("alunos")
+                    .whereIn(com.google.firebase.firestore.FieldPath.documentId(), lote)
+                    .get()
+                    .addOnSuccessListener(alunosSnapshot -> {
+
+                        Map<String, String> fotosPorId = new HashMap<>();
+
+                        for (QueryDocumentSnapshot documento : alunosSnapshot) {
+                            fotosPorId.put(documento.getId(), documento.getString("fotoUrl"));
+                        }
+
+                        for (Entrega entrega : listaEntregas) {
+
+                            if (fotosPorId.containsKey(entrega.alunoId)) {
+                                entrega.fotoUrl = fotosPorId.get(entrega.alunoId);
+                            }
+                        }
+
+                        adapter.notifyDataSetChanged();
+                    });
+        }
+    }
+
     public static class Entrega {
 
         String alunoId;
         String alunoNome;
+        String fotoUrl;
         boolean entregue;
+        boolean avaliado;
 
-        public Entrega(String alunoId, String alunoNome, boolean entregue) {
+        public Entrega(String alunoId, String alunoNome, boolean entregue, boolean avaliado) {
             this.alunoId = alunoId;
             this.alunoNome = alunoNome;
             this.entregue = entregue;
+            this.avaliado = avaliado;
         }
     }
 
@@ -278,10 +326,12 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
             Entrega entrega = entregas.get(position);
 
             holder.tvNomeAlunoEntrega.setText(entrega.alunoNome);
+            holder.imgAlunoEntrega.setImageResource(R.drawable.ic_perfil);
+            FotoUtil.carregar(QuestoesDoLivroActivity.this, entrega.fotoUrl, holder.imgAlunoEntrega);
 
             if (entrega.entregue) {
 
-                holder.tvStatusEntrega.setText("Entregue");
+                holder.tvStatusEntrega.setText(entrega.avaliado ? "Avaliado" : "Entregue");
                 holder.tvStatusEntrega.setBackgroundResource(R.drawable.bg_pill_verde);
                 holder.tvStatusEntrega.setTextColor(getColor(R.color.verde_sucesso));
 
@@ -327,12 +377,14 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
 
             TextView tvNomeAlunoEntrega;
             TextView tvStatusEntrega;
+            ImageView imgAlunoEntrega;
 
             public ViewHolder(View itemView) {
                 super(itemView);
 
                 tvNomeAlunoEntrega = itemView.findViewById(R.id.tvNomeAlunoEntrega);
                 tvStatusEntrega = itemView.findViewById(R.id.tvStatusEntrega);
+                imgAlunoEntrega = itemView.findViewById(R.id.imgAlunoEntrega);
             }
         }
     }

@@ -4,10 +4,15 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.WriteBatch;
@@ -87,6 +92,16 @@ public class TelaAdminHome extends AppCompatActivity {
                                 for (QueryDocumentSnapshot frequencia : frequencias) {
                                     batch.delete(frequencia.getReference());
                                 }
+
+                                // A partir de agora a pontuação só conta notas e faltas novas
+                                Map<String, Object> marco = new HashMap<>();
+                                marco.put("pontuacaoZeradaEm", FieldValue.serverTimestamp());
+
+                                batch.set(
+                                        db.collection("configuracoes").document("geral"),
+                                        marco,
+                                        SetOptions.merge()
+                                );
 
                                 batch.commit()
                                         .addOnSuccessListener(unused -> Toast.makeText(

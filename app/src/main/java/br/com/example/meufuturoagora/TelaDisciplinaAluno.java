@@ -43,6 +43,9 @@ public class TelaDisciplinaAluno extends AppCompatActivity {
 
         setContentView(R.layout.activity_tela_disciplina_aluno);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsTopo(this);
+
         db = FirebaseFirestore.getInstance();
 
         recyclerDisciplinas = findViewById(R.id.recyclerDisciplinas);
@@ -74,6 +77,8 @@ public class TelaDisciplinaAluno extends AppCompatActivity {
 
         BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
 
+        InsetsUtil.aplicarInsetsBottomNav(bottomNavigation);
+
         bottomNavigation.setItemIconTintList(null);
         bottomNavigation.setSelectedItemId(R.id.nav_disciplinas);
 
@@ -92,7 +97,8 @@ public class TelaDisciplinaAluno extends AppCompatActivity {
 
             } else if (id == R.id.nav_ranking) {
 
-                startActivity(new Intent(this, RankingActivity.class));
+                startActivity(new Intent(this, RankingActivity.class)
+                        .putExtra(RankingActivity.EXTRA_PERFIL, RankingActivity.PERFIL_ALUNO));
                 return true;
 
             } else if (id == R.id.nav_perfil) {

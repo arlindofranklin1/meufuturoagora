@@ -9,11 +9,14 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -54,6 +57,9 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
 
         setContentView(
                 R.layout.activity_tela_disciplina_professor);
+
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsTopo(this);
 
         // =========================
         // FIRESTORE
@@ -126,6 +132,8 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
         BottomNavigationView bottomNavigation =
                 findViewById(R.id.bottomNavigation);
 
+        InsetsUtil.aplicarInsetsBottomNav(bottomNavigation);
+
         bottomNavigation.setItemIconTintList(null);
 
         bottomNavigation.setSelectedItemId(
@@ -152,6 +160,22 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
                 return true;
 
             } else if (id == R.id.nav_disciplinas) {
+
+                return true;
+
+            } else if (id == R.id.nav_ranking) {
+
+                Intent intent = new Intent(
+                        TelaDisciplinaProfessor.this,
+                        RankingActivity.class
+                );
+
+                intent.putExtra(
+                        RankingActivity.EXTRA_PERFIL,
+                        RankingActivity.PERFIL_PROFESSOR
+                );
+
+                startActivity(intent);
 
                 return true;
 
@@ -406,11 +430,41 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
             // Botão de três pontinhos
             holder.btnMenuDisciplina.setOnClickListener(v -> {
 
-                Toast.makeText(
-                        TelaDisciplinaProfessor.this,
-                        "Opções de " + disciplina.nome,
-                        Toast.LENGTH_SHORT
-                ).show();
+                PopupMenu popupMenu =
+                        new PopupMenu(
+                                TelaDisciplinaProfessor.this,
+                                holder.btnMenuDisciplina
+                        );
+
+                popupMenu.getMenu().add(
+                        "Editar"
+                );
+
+                popupMenu.getMenu().add(
+                        "Excluir"
+                );
+
+                popupMenu.setOnMenuItemClickListener(
+                        item -> {
+
+                            String opcao =
+                                    item.getTitle()
+                                            .toString();
+
+                            if (opcao.equals("Editar")) {
+
+                                mostrarDialogEditar(disciplina);
+
+                            } else if (opcao.equals("Excluir")) {
+
+                                confirmarExclusao(disciplina);
+                            }
+
+                            return true;
+                        }
+                );
+
+                popupMenu.show();
             });
         }
 
@@ -453,6 +507,148 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
                         );
             }
         }
+    }
+
+    // =====================================================
+    // EDITAR DISCIPLINA
+    // =====================================================
+
+    private void mostrarDialogEditar(Disciplina disciplina) {
+
+        EditText edtNome = new EditText(this);
+
+        edtNome.setText(disciplina.nome);
+        edtNome.setSelection(disciplina.nome.length());
+        edtNome.setSingleLine(true);
+        edtNome.setHint("Nome da disciplina");
+
+        int padding = (int) (20 * getResources()
+                .getDisplayMetrics().density);
+
+        FrameLayout container = new FrameLayout(this);
+        container.setPadding(padding, padding / 2, padding, 0);
+        container.addView(edtNome);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Editar disciplina")
+                .setView(container)
+                .setNegativeButton(
+                        "Cancelar",
+                        null
+                )
+                .setPositiveButton(
+                        "Salvar",
+                        null
+                )
+                .create();
+
+        dialog.setOnShowListener(d ->
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                        .setOnClickListener(v -> {
+
+                            String novoNome =
+                                    edtNome.getText()
+                                            .toString()
+                                            .trim();
+
+                            if (novoNome.isEmpty()) {
+
+                                edtNome.setError(
+                                        "Informe o nome da disciplina"
+                                );
+
+                                return;
+                            }
+
+                            if (!novoNome.equals(disciplina.nome)) {
+                                editarDisciplina(disciplina, novoNome);
+                            }
+
+                            dialog.dismiss();
+                        })
+        );
+
+        dialog.show();
+    }
+
+    private void editarDisciplina(
+            Disciplina disciplina,
+            String novoNome
+    ) {
+
+        db.collection("disciplinas")
+                .document(disciplina.id)
+                .update("nome", novoNome)
+                .addOnSuccessListener(unused -> {
+
+                    Toast.makeText(
+                            this,
+                            "Disciplina atualizada!",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    carregarDisciplinas();
+                })
+                .addOnFailureListener(e -> {
+
+                    Toast.makeText(
+                            this,
+                            "Erro ao atualizar disciplina.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                });
+    }
+
+    // =====================================================
+    // EXCLUIR DISCIPLINA
+    // =====================================================
+
+    private void confirmarExclusao(Disciplina disciplina) {
+
+        new AlertDialog.Builder(this)
+                .setTitle("Excluir disciplina")
+                .setMessage(
+                        "Tem certeza que deseja excluir a disciplina \""
+                                + disciplina.nome + "\"?"
+                )
+                .setNegativeButton(
+                        "Cancelar",
+                        null
+                )
+                .setPositiveButton(
+                        "Excluir",
+                        (dialog, which) ->
+                                excluirDisciplina(disciplina)
+                )
+                .show();
+    }
+
+    private void excluirDisciplina(Disciplina disciplina) {
+
+        // Exclusão lógica: a disciplina deixa de aparecer em
+        // todas as telas (que filtram por "ativo"), mas as
+        // atividades e aulas vinculadas continuam preservadas.
+        db.collection("disciplinas")
+                .document(disciplina.id)
+                .update("ativo", false)
+                .addOnSuccessListener(unused -> {
+
+                    Toast.makeText(
+                            this,
+                            "Disciplina excluída!",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    carregarDisciplinas();
+                })
+                .addOnFailureListener(e -> {
+
+                    Toast.makeText(
+                            this,
+                            "Erro ao excluir disciplina.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                });
     }
 
     // =====================================================

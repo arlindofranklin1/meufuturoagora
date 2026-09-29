@@ -26,7 +26,9 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.google.android.material.card.MaterialCardView;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -256,6 +258,7 @@ public class TelaEntrar extends AppCompatActivity {
 
                     if (!professores.isEmpty()) {
 
+                        atualizarFotoProfessor(user, professores.getDocuments().get(0).getId());
                         startActivity(new Intent(TelaEntrar.this, TelaInicialProfessor.class));
                         finish();
                         return;
@@ -272,31 +275,61 @@ public class TelaEntrar extends AppCompatActivity {
                 );
     }
 
+    private void atualizarFotoProfessor(FirebaseUser user, String documentoId) {
+
+        Map<String, Object> dados = new HashMap<>();
+
+        dados.put(
+                "fotoUrl",
+                user.getPhotoUrl() != null ? user.getPhotoUrl().toString() : ""
+        );
+
+        db.collection("professores")
+                .document(documentoId)
+                .set(dados, SetOptions.merge());
+    }
+
     private void verificarAluno(FirebaseUser user, String email) {
+
+        String uidAluno = user.getUid();
 
         db.collection("alunos")
                 .whereEqualTo("email", email)
-                .whereEqualTo("ativo", true)
                 .get()
-                .addOnSuccessListener(autorizacoes -> {
+                .addOnSuccessListener(registros -> {
 
-                    if (autorizacoes.isEmpty()) {
+                    // O cadastro feito pelo administrador tem um id aleatório; a conta do aluno
+                    // usa o uid do Google. Se a conta já existe, ela vale; senão, vale o cadastro.
+                    com.google.firebase.firestore.DocumentSnapshot registro = null;
+                    List<String> cadastrosParaJuntar = new ArrayList<>();
+
+                    for (com.google.firebase.firestore.DocumentSnapshot documento : registros.getDocuments()) {
+
+                        if (documento.getId().equals(uidAluno)) {
+                            registro = documento;
+                        } else {
+                            cadastrosParaJuntar.add(documento.getId());
+                        }
+                    }
+
+                    if (registro == null && !registros.isEmpty()) {
+                        registro = registros.getDocuments().get(0);
+                    }
+
+                    if (registro == null || !Boolean.TRUE.equals(registro.getBoolean("ativo"))) {
                         acessoNaoAutorizado();
                         return;
                     }
 
-                    com.google.firebase.firestore.DocumentSnapshot autorizacao =
-                            autorizacoes.getDocuments().get(0);
-
-                    String turmaId = autorizacao.getString("turmaId");
-                    String turmaNome = autorizacao.getString("turmaNome");
+                    String turmaId = registro.getString("turmaId");
+                    String turmaNome = registro.getString("turmaNome");
 
                     if (turmaId == null) {
                         acessoNaoAutorizado();
                         return;
                     }
 
-                    prepararContaDoAluno(user, turmaId, turmaNome);
+                    prepararContaDoAluno(user, turmaId, turmaNome, cadastrosParaJuntar);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(
@@ -307,7 +340,8 @@ public class TelaEntrar extends AppCompatActivity {
                 );
     }
 
-    private void prepararContaDoAluno(FirebaseUser user, String turmaId, String turmaNome) {
+    private void prepararContaDoAluno(FirebaseUser user, String turmaId, String turmaNome,
+                                      List<String> cadastrosParaJuntar) {
 
         String uidAluno = user.getUid();
 
@@ -319,6 +353,10 @@ public class TelaEntrar extends AppCompatActivity {
                     Map<String, Object> dadosAluno = new HashMap<>();
                     dadosAluno.put("nome", user.getDisplayName() != null ? user.getDisplayName() : "Aluno");
                     dadosAluno.put("email", user.getEmail());
+                    dadosAluno.put(
+                            "fotoUrl",
+                            user.getPhotoUrl() != null ? user.getPhotoUrl().toString() : ""
+                    );
                     dadosAluno.put("turmaId", turmaId);
                     dadosAluno.put("turmaNome", turmaNome != null ? turmaNome : "");
                     dadosAluno.put("ativo", true);
@@ -330,7 +368,16 @@ public class TelaEntrar extends AppCompatActivity {
                     db.collection("alunos")
                             .document(uidAluno)
                             .set(dadosAluno, SetOptions.merge())
-                            .addOnSuccessListener(unused -> matricularNasDisciplinasDaTurma(uidAluno, turmaId, turmaNome))
+                            .addOnSuccessListener(unused -> {
+
+                                // A conta passa a ser o único registro do aluno: remove o cadastro
+                                // duplicado para não aparecer duas vezes na lista do administrador
+                                for (String cadastroId : cadastrosParaJuntar) {
+                                    db.collection("alunos").document(cadastroId).delete();
+                                }
+
+                                matricularNasDisciplinasDaTurma(uidAluno, turmaId, turmaNome);
+                            })
                             .addOnFailureListener(e ->
                                     Toast.makeText(
                                             this,

@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.SetOptions;
@@ -40,6 +41,9 @@ public class CadastrarUsuarioActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_cadastrar_usuario);
+
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
 
         db = FirebaseFirestore.getInstance();
 
@@ -225,6 +229,14 @@ public class CadastrarUsuarioActivity extends AppCompatActivity {
                     String documentoId = existentes.isEmpty()
                             ? null
                             : existentes.getDocuments().get(0).getId();
+
+                    // Se o aluno já entrou no app, atualiza a conta dele (a que tem pontuação)
+                    for (DocumentSnapshot documento : existentes.getDocuments()) {
+
+                        if (documento.getLong("pontuacao") != null) {
+                            documentoId = documento.getId();
+                        }
+                    }
 
                     salvarDocumento("alunos", documentoId, dados);
                 })

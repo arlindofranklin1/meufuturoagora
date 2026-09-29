@@ -3,6 +3,7 @@ package br.com.example.meufuturoagora;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -127,7 +128,21 @@ public class TelaInicialProfessor extends AppCompatActivity {
         // BIMESTRE ATUAL
         // =========================
 
-        BimestreUtil.carregarPeriodoAtual(db, findViewById(R.id.tvPeriodoBimestreAluno));
+        BimestreUtil.carregarPeriodoAtual(
+                db,
+                findViewById(R.id.tvTituloBimestre),
+                findViewById(R.id.tvPeriodoBimestre)
+        );
+
+        // Notificações de novidades (respeita o switch das configurações)
+        NotificacaoUtil.iniciar(this, NotificacaoUtil.PERFIL_PROFESSOR);
+
+        // Sino: abre a lista de notificações; bolinha laranja = tem notificação não vista
+        View bolinhaNotificacao = findViewById(R.id.bolinhaNotificacao);
+        NotificacaoHistorico.vincularBolinha(this, bolinhaNotificacao);
+        findViewById(R.id.btnNotificacoes).setOnClickListener(v ->
+                NotificacoesDialog.mostrar(this, bolinhaNotificacao)
+        );
 
         // =========================
         // BOTTOM NAVIGATION
@@ -136,6 +151,8 @@ public class TelaInicialProfessor extends AppCompatActivity {
         bottomNavigation = findViewById(
                 R.id.bottomNavigation
         );
+
+        InsetsUtil.aplicarInsetsBottomNav(bottomNavigation);
 
         bottomNavigation.setItemIconTintList(null);
 
@@ -156,6 +173,22 @@ public class TelaInicialProfessor extends AppCompatActivity {
                 Intent intent = new Intent(
                         TelaInicialProfessor.this,
                         TelaDisciplinaProfessor.class
+                );
+
+                startActivity(intent);
+
+                return true;
+
+            } else if (id == R.id.nav_ranking) {
+
+                Intent intent = new Intent(
+                        TelaInicialProfessor.this,
+                        RankingActivity.class
+                );
+
+                intent.putExtra(
+                        RankingActivity.EXTRA_PERFIL,
+                        RankingActivity.PERFIL_PROFESSOR
                 );
 
                 startActivity(intent);
@@ -203,6 +236,20 @@ public class TelaInicialProfessor extends AppCompatActivity {
 
         btnVerRanking.setOnClickListener(v -> startActivity(
                 new Intent(TelaInicialProfessor.this, RankingActivity.class)
+                        .putExtra(
+                                RankingActivity.EXTRA_PERFIL,
+                                RankingActivity.PERFIL_PROFESSOR
+                        )
+        ));
+
+        CardView btnDesempenho = findViewById(R.id.btnDesempenho);
+
+        btnDesempenho.setOnClickListener(v -> startActivity(
+                new Intent(TelaInicialProfessor.this, DesempenhoActivity.class)
+                        .putExtra(
+                                DesempenhoActivity.EXTRA_PERFIL,
+                                DesempenhoActivity.PERFIL_PROFESSOR
+                        )
         ));
     }
 

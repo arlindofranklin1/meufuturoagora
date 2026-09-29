@@ -57,7 +57,8 @@ public class TelaPerfilAluno extends AppCompatActivity {
 
             alunoId = usuario.getUid();
 
-            db.collection("alunos")
+            // Pontuação recalculada com as notas e faltas antes de exibir
+            PontuacaoUtil.recalcular(db, alunoId, () -> db.collection("alunos")
                     .document(alunoId)
                     .get()
                     .addOnSuccessListener(alunoDoc -> {
@@ -80,7 +81,7 @@ public class TelaPerfilAluno extends AppCompatActivity {
 
                         carregarPosicaoRanking();
                         carregarEstatisticas();
-                    });
+                    }));
         }
 
         // =========================
@@ -98,6 +99,8 @@ public class TelaPerfilAluno extends AppCompatActivity {
         // =========================
 
         BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
+
+        InsetsUtil.aplicarInsetsBottomNav(bottomNavigation);
 
         bottomNavigation.setItemIconTintList(null);
         bottomNavigation.setSelectedItemId(R.id.nav_perfil);
@@ -118,7 +121,8 @@ public class TelaPerfilAluno extends AppCompatActivity {
 
             } else if (id == R.id.nav_ranking) {
 
-                startActivity(new Intent(this, RankingActivity.class));
+                startActivity(new Intent(this, RankingActivity.class)
+                        .putExtra(RankingActivity.EXTRA_PERFIL, RankingActivity.PERFIL_ALUNO));
                 return true;
 
             } else if (id == R.id.nav_perfil) {
@@ -132,25 +136,9 @@ public class TelaPerfilAluno extends AppCompatActivity {
 
     private void carregarPosicaoRanking() {
 
-        db.collection("alunos")
-                .orderBy("pontuacao", Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-
-                    int posicao = 1;
-
-                    for (QueryDocumentSnapshot documento : querySnapshot) {
-
-                        if (documento.getId().equals(alunoId)) {
-
-                            ((TextView) findViewById(R.id.tvPosicaoRankingAluno))
-                                    .setText(posicao + "º");
-                            return;
-                        }
-
-                        posicao++;
-                    }
-                });
+        RankingActivity.carregarPosicaoNaTurma(
+                db, alunoId, findViewById(R.id.tvPosicaoRankingAluno)
+        );
     }
 
     private void carregarEstatisticas() {

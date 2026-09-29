@@ -12,6 +12,7 @@
         android:orientation="horizontal">
 
         <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgAlunoDisciplina"
             android:layout_width="42dp"
             android:layout_height="42dp"
             android:scaleType="centerCrop"

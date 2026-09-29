@@ -15,20 +15,35 @@ class BimestreUtil {
     private BimestreUtil() {
     }
 
-    static void carregarPeriodoAtual(FirebaseFirestore db, TextView destino) {
+    static void carregarPeriodoAtual(FirebaseFirestore db, TextView titulo, TextView periodo) {
 
         db.collection("configuracoes")
                 .document("geral")
                 .get()
-                .addOnSuccessListener(documento -> destino.setText(
-                        periodoAtual(documento)
-                ));
+                .addOnSuccessListener(documento -> {
+
+                    int numero = numeroAtual(documento);
+
+                    if (numero == 0) {
+                        titulo.setText("Bimestre");
+                        periodo.setText("Bimestre não definido");
+                        return;
+                    }
+
+                    titulo.setText(numero + "º Bimestre");
+                    periodo.setText(
+                            documento.getString("bimestre" + numero + "Inicio")
+                                    + " - "
+                                    + documento.getString("bimestre" + numero + "Fim")
+                    );
+                });
     }
 
-    private static String periodoAtual(DocumentSnapshot documento) {
+    // Retorna o número (1 a 4) do bimestre em que a data de hoje está, ou 0 se nenhum
+    private static int numeroAtual(DocumentSnapshot documento) {
 
         if (!documento.exists()) {
-            return "Bimestre não definido";
+            return 0;
         }
 
         SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
@@ -51,11 +66,11 @@ class BimestreUtil {
             }
 
             if (!hoje.before(inicio) && !hoje.after(fim)) {
-                return inicioTexto + " - " + fimTexto;
+                return i;
             }
         }
 
-        return "Bimestre não definido";
+        return 0;
     }
 
     private static Date tentarConverter(SimpleDateFormat formato, String texto) {

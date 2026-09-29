@@ -47,6 +47,9 @@ public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
 
         setContentView(R.layout.activity_tela_detalhes_disciplina_aluno);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
+
         db = FirebaseFirestore.getInstance();
 
         disciplinaId = getIntent().getStringExtra("disciplinaId");
@@ -79,8 +82,6 @@ public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
         recyclerAtividadesAluno.setLayoutManager(new LinearLayoutManager(this));
         adapter = new AtividadeAlunoAdapter(listaFiltrada);
         recyclerAtividadesAluno.setAdapter(adapter);
-
-        carregarAtividades();
     }
 
     @Override
@@ -96,7 +97,7 @@ public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
 
         abaAtual = aba;
 
-        int corAtiva = getColor(R.color.roxo_acao);
+        int corAtiva = getColor(R.color.roxo_primario);
         int corInativa = getColor(R.color.texto_escuro);
 
         tabTodos.setTextColor(aba == Aba.TODOS ? corAtiva : corInativa);

@@ -24,11 +24,14 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TelaDetalhesDisciplinaProfessor
         extends AppCompatActivity {
@@ -76,7 +79,7 @@ public class TelaDetalhesDisciplinaProfessor
     private TextView tvSemAlunosDisciplina;
 
     private AlunoDisciplinaAdapter adapterAlunos;
-    private final List<String> listaNomesAlunos = new ArrayList<>();
+    private final List<AlunoItem> listaNomesAlunos = new ArrayList<>();
 
     // =====================================================
     // FREQUÊNCIA
@@ -295,14 +298,14 @@ public class TelaDetalhesDisciplinaProfessor
         // =================================================
         // CARREGAR ATIVIDADES
         // =================================================
-
-        carregarAtividades();
+        // (o carregamento inicial acontece em onResume, que
+        // sempre roda logo após onCreate)
 
         // =================================================
         // CARREGAR ALUNOS
         // =================================================
-
-        carregarAlunos();
+        // (o carregamento inicial acontece em onResume, que
+        // sempre roda logo após onCreate)
     }
 
     // =====================================================
@@ -328,7 +331,7 @@ public class TelaDetalhesDisciplinaProfessor
 
         layoutFrequenciaAcoes.setVisibility(aba == Aba.FREQUENCIA ? View.VISIBLE : View.GONE);
 
-        int corAtiva = getColor(R.color.roxo_acao);
+        int corAtiva = getColor(R.color.roxo_primario);
         int corInativa = Color.parseColor("#171717");
 
         tabAtividades.setTextColor(aba == Aba.ATIVIDADES ? corAtiva : corInativa);
@@ -357,28 +360,73 @@ public class TelaDetalhesDisciplinaProfessor
 
                     listaNomesAlunos.clear();
 
+                    List<String> idsAlunos = new ArrayList<>();
+
                     for (QueryDocumentSnapshot documento : querySnapshot) {
 
                         String alunoNome = documento.getString("alunoNome");
+                        String alunoId = documento.getString("alunoId");
 
                         if (alunoNome != null) {
-                            listaNomesAlunos.add(alunoNome);
+
+                            listaNomesAlunos.add(new AlunoItem(alunoId, alunoNome, null));
+
+                            if (alunoId != null) {
+                                idsAlunos.add(alunoId);
+                            }
                         }
                     }
 
-                    adapterAlunos.notifyDataSetChanged();
-
-                    if (abaAtual == Aba.ALUNOS) {
-
-                        recyclerAlunos.setVisibility(
-                                listaNomesAlunos.isEmpty() ? View.GONE : View.VISIBLE
-                        );
-
-                        tvSemAlunosDisciplina.setVisibility(
-                                listaNomesAlunos.isEmpty() ? View.VISIBLE : View.GONE
-                        );
-                    }
+                    mostrarAlunos();
+                    carregarFotosAlunos(idsAlunos);
                 });
+    }
+
+    private void mostrarAlunos() {
+
+        adapterAlunos.notifyDataSetChanged();
+
+        if (abaAtual == Aba.ALUNOS) {
+
+            recyclerAlunos.setVisibility(
+                    listaNomesAlunos.isEmpty() ? View.GONE : View.VISIBLE
+            );
+
+            tvSemAlunosDisciplina.setVisibility(
+                    listaNomesAlunos.isEmpty() ? View.VISIBLE : View.GONE
+            );
+        }
+    }
+
+    // Busca a foto de cada aluno na coleção "alunos" (em lotes de até 10,
+    // limite do whereIn do Firestore) e preenche na lista já exibida.
+    private void carregarFotosAlunos(List<String> idsAlunos) {
+
+        for (int i = 0; i < idsAlunos.size(); i += 10) {
+
+            List<String> lote = idsAlunos.subList(i, Math.min(i + 10, idsAlunos.size()));
+
+            db.collection("alunos")
+                    .whereIn(FieldPath.documentId(), lote)
+                    .get()
+                    .addOnSuccessListener(alunosSnapshot -> {
+
+                        Map<String, String> fotosPorId = new HashMap<>();
+
+                        for (QueryDocumentSnapshot documento : alunosSnapshot) {
+                            fotosPorId.put(documento.getId(), documento.getString("fotoUrl"));
+                        }
+
+                        for (AlunoItem item : listaNomesAlunos) {
+
+                            if (item.id != null && fotosPorId.containsKey(item.id)) {
+                                item.fotoUrl = fotosPorId.get(item.id);
+                            }
+                        }
+
+                        adapterAlunos.notifyDataSetChanged();
+                    });
+        }
     }
 
     // =====================================================
@@ -846,13 +894,26 @@ public class TelaDetalhesDisciplinaProfessor
     // ADAPTER DE ALUNOS
     // =====================================================
 
+    private static class AlunoItem {
+
+        String id;
+        String nome;
+        String fotoUrl;
+
+        AlunoItem(String id, String nome, String fotoUrl) {
+            this.id = id;
+            this.nome = nome;
+            this.fotoUrl = fotoUrl;
+        }
+    }
+
     private class AlunoDisciplinaAdapter
             extends RecyclerView.Adapter<AlunoDisciplinaAdapter.ViewHolder> {
 
-        private final List<String> nomes;
+        private final List<AlunoItem> alunos;
 
-        public AlunoDisciplinaAdapter(List<String> nomes) {
-            this.nomes = nomes;
+        public AlunoDisciplinaAdapter(List<AlunoItem> alunos) {
+            this.alunos = alunos;
         }
 
         @Override
@@ -868,22 +929,32 @@ public class TelaDetalhesDisciplinaProfessor
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
 
-            holder.tvNomeAlunoDisciplina.setText(nomes.get(position));
+            AlunoItem item = alunos.get(position);
+
+            holder.tvNomeAlunoDisciplina.setText(item.nome);
+            holder.imgAlunoDisciplina.setImageResource(R.drawable.ic_perfil);
+            FotoUtil.carregar(
+                    TelaDetalhesDisciplinaProfessor.this,
+                    item.fotoUrl,
+                    holder.imgAlunoDisciplina
+            );
         }
 
         @Override
         public int getItemCount() {
-            return nomes.size();
+            return alunos.size();
         }
 
         class ViewHolder extends RecyclerView.ViewHolder {
 
             TextView tvNomeAlunoDisciplina;
+            ImageView imgAlunoDisciplina;
 
             public ViewHolder(View itemView) {
                 super(itemView);
 
                 tvNomeAlunoDisciplina = itemView.findViewById(R.id.tvNomeAlunoDisciplina);
+                imgAlunoDisciplina = itemView.findViewById(R.id.imgAlunoDisciplina);
             }
         }
     }

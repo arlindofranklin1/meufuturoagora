@@ -38,6 +38,9 @@ public class RegistrarFrequenciaActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_registrar_frequencia);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
+
         db = FirebaseFirestore.getInstance();
 
         disciplinaId = getIntent().getStringExtra("disciplinaId");

@@ -16,7 +16,7 @@
     <!-- ============================ -->
 
     <TextView
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="35dp"
         android:id="@+id/tvTituloDisciplinas"
         android:layout_width="wrap_content"
         android:gravity="center"
@@ -139,7 +139,8 @@
         android:layout_marginBottom="20dp"
         android:contentDescription="Criar disciplina"
         android:src="@drawable/ic_mais"
-        app:backgroundTint="@color/roxo_acao"
+        app:backgroundTint="#521BB3"
+        app:shapeAppearanceOverlay="@style/CircleImageView"
         app:tint="@android:color/white"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -164,12 +165,15 @@
         android:id="@+id/bottomNavigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:paddingBottomSystemWindowInsets="false"
         android:background="@android:color/white"
         android:minHeight="64dp"
         app:itemActiveIndicatorStyle="@style/BottomNavigationActiveIndicator"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconSize="24dp"
         app:itemIconTint="@null"
+        app:itemTextAppearanceActive="@style/BottomNavigationText"
+        app:itemTextAppearanceInactive="@style/BottomNavigationText"
         app:itemTextColor="@color/bottom_navigation_text"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="6dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="10dp">
+
+    <ImageView
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:background="@drawable/bg_icone_notificacao_item"
+        android:importantForAccessibility="no"
+        android:padding="8dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_notificacao_app"
+        app:tint="@color/roxo_primario" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvTituloNotificacao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_semibold"
+            android:text="Nova atividade"
+            android:textColor="@color/texto_escuro"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvMensagemNotificacao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_regular"
+            android:text="Mensagem"
+            android:textColor="@color/texto_cinza"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tvTempoNotificacao"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/poppins_regular"
+            android:text="há 5 minutos"
+            android:textColor="@color/linha_cinza"
+            android:textSize="11sp" />
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/bolinhaNaoLida"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_bolinha_notificacao" />
+
+</LinearLayout>

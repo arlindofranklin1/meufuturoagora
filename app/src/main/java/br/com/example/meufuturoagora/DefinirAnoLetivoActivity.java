@@ -25,6 +25,9 @@ public class DefinirAnoLetivoActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_definir_ano_letivo);
 
+        // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
+        InsetsUtil.aplicarInsetsSistema(this);
+
         db = FirebaseFirestore.getInstance();
 
         ImageView btnVoltar = findViewById(R.id.btnVoltar);

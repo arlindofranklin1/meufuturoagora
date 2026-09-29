@@ -3,7 +3,6 @@ package br.com.example.meufuturoagora;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,13 +26,13 @@ public class TelaAdminLogin extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        ImageView btnVoltarAdmin = findViewById(R.id.btnVoltarAdmin);
-        btnVoltarAdmin.setOnClickListener(v -> finish());
-
         edtSenhaAdmin = findViewById(R.id.edtSenhaAdmin);
 
         MaterialButton btnAcessarAdmin = findViewById(R.id.btnAcessarAdmin);
         btnAcessarAdmin.setOnClickListener(v -> verificarSenha());
+
+        // Volta para a tela de entrada (login com Google), que fica aberta por baixo desta
+        findViewById(R.id.tvVoltarLoginPadrao).setOnClickListener(v -> finish());
     }
 
     private void verificarSenha() {

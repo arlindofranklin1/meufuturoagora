@@ -13,7 +13,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginStart="18dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="40dp"
         android:contentDescription="Voltar"
         android:scaleType="centerInside"
         android:src="@drawable/seta_voltar"
@@ -99,6 +99,39 @@
                     android:fontFamily="@font/poppins_regular"
                     android:maxLines="1"
                     android:text="Nenhum anexo"
+                    android:textColor="@color/texto_escuro"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/itemLinkProfessor"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_botao_arquivo"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="15dp"
+                android:paddingEnd="15dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_link" />
+
+                <TextView
+                    android:id="@+id/tvLinkProfessor"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/poppins_regular"
+                    android:maxLines="1"
+                    android:text="Link da trilha"
                     android:textColor="@color/texto_escuro"
                     android:textSize="14sp" />
 
@@ -246,7 +279,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
                     android:layout_marginTop="16dp"
-                    android:backgroundTint="@color/roxo_acao"
+                    android:backgroundTint="@color/roxo_primario"
                     android:fontFamily="@font/poppins_bold"
                     android:text="Fazer entrega"
                     android:textAllCaps="false"
