@@ -42,18 +42,34 @@
                     android:paddingTop="40dp"
                     android:paddingBottom="20dp">
 
+                    <!-- Toque na foto para trocar -->
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
                     <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/imgFotoPerfil"
                         android:layout_width="76dp"
                         android:layout_height="76dp"
                         android:background="#FFFFFF"
-                        android:contentDescription="Foto de perfil"
+                        android:contentDescription="Foto de perfil (toque para trocar)"
                         android:padding="3dp"
                         android:scaleType="centerCrop"
                         android:src="@drawable/ic_perfil"
                         app:shapeAppearanceOverlay="@style/CircleImageView"
                         app:strokeColor="#FFFFFF"
                         app:strokeWidth="2dp" />
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="bottom|end"
+                            android:background="@drawable/bg_circulo_camera"
+                            android:contentDescription="@null"
+                            android:padding="5dp"
+                            android:src="@drawable/ic_camera" />
+
+                    </FrameLayout>
 
                     <TextView
                         android:id="@+id/tvNomePerfil"

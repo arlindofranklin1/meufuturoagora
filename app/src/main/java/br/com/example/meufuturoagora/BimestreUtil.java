@@ -22,6 +22,8 @@ class BimestreUtil {
                 .get()
                 .addOnSuccessListener(documento -> {
 
+                    AnoLetivoUtil.atualizar(documento);
+
                     int numero = numeroAtual(documento);
 
                     if (numero == 0) {
@@ -40,32 +42,27 @@ class BimestreUtil {
     }
 
     // Retorna o número (1 a 4) do bimestre em que a data de hoje está, ou 0 se nenhum
-    private static int numeroAtual(DocumentSnapshot documento) {
+    static int numeroAtual(DocumentSnapshot documento) {
+        return numeroDaData(documento, new Date());
+    }
 
-        if (!documento.exists()) {
+    // Retorna o número (1 a 4) do bimestre que contém a data, ou 0 se nenhum
+    static int numeroDaData(DocumentSnapshot documento, Date data) {
+
+        if (documento == null || !documento.exists() || data == null) {
             return 0;
         }
 
-        SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-        Date hoje = new Date();
-
         for (int i = 1; i <= 4; i++) {
 
-            String inicioTexto = documento.getString("bimestre" + i + "Inicio");
-            String fimTexto = documento.getString("bimestre" + i + "Fim");
-
-            if (inicioTexto == null || fimTexto == null) {
-                continue;
-            }
-
-            Date inicio = tentarConverter(formato, inicioTexto);
-            Date fim = tentarConverter(formato, fimTexto);
+            Date inicio = converter(documento.getString("bimestre" + i + "Inicio"));
+            Date fim = fimDoDia(converter(documento.getString("bimestre" + i + "Fim")));
 
             if (inicio == null || fim == null) {
                 continue;
             }
 
-            if (!hoje.before(inicio) && !hoje.after(fim)) {
+            if (!data.before(inicio) && !data.after(fim)) {
                 return i;
             }
         }
@@ -73,15 +70,58 @@ class BimestreUtil {
         return 0;
     }
 
-    private static Date tentarConverter(SimpleDateFormat formato, String texto) {
+    // A data está dentro do ano letivo? Vale o período dos bimestres (do 1º início ao
+    // último fim); sem bimestres definidos, vale o ano do calendário.
+    static boolean dataNoAno(Date data, String ano, DocumentSnapshot datas) {
+
+        if (data == null || ano == null) {
+            return false;
+        }
+
+        Date inicio = null;
+        Date fim = null;
+
+        if (datas != null && datas.exists()) {
+
+            for (int i = 1; i <= 4; i++) {
+
+                Date ini = converter(datas.getString("bimestre" + i + "Inicio"));
+                Date f = fimDoDia(converter(datas.getString("bimestre" + i + "Fim")));
+
+                if (ini != null && (inicio == null || ini.before(inicio))) inicio = ini;
+                if (f != null && (fim == null || f.after(fim))) fim = f;
+            }
+        }
+
+        if (inicio != null && fim != null) {
+            return !data.before(inicio) && !data.after(fim);
+        }
+
+        java.util.Calendar calendario = java.util.Calendar.getInstance();
+        calendario.setTime(data);
+
+        return String.valueOf(calendario.get(java.util.Calendar.YEAR)).equals(ano);
+    }
+
+    // Converte "dd/MM/yyyy"; null se vazio ou inválido
+    static Date converter(String texto) {
+
+        if (texto == null || texto.isEmpty()) {
+            return null;
+        }
 
         try {
 
-            return formato.parse(texto);
+            return new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(texto);
 
         } catch (ParseException e) {
 
             return null;
         }
+    }
+
+    // O último dia do bimestre vale até 23:59:59
+    static Date fimDoDia(Date data) {
+        return data != null ? new Date(data.getTime() + 24L * 60 * 60 * 1000 - 1) : null;
     }
 }

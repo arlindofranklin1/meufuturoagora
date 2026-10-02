@@ -53,6 +53,21 @@ class CloudinaryUtil {
         });
     }
 
+    // Envia um conteúdo já pronto (ex.: foto de perfil comprimida)
+    static void enviarBytes(byte[] conteudo, String mime, String nomeArquivo,
+                            String pasta, Callback callback) {
+
+        executor.execute(() -> {
+            try {
+                String url = enviarConteudo(conteudo, mime, nomeArquivo, pasta);
+                principal.post(() -> callback.onSucesso(url));
+            } catch (Exception e) {
+                String mensagem = e.getMessage() != null ? e.getMessage() : e.toString();
+                principal.post(() -> callback.onErro(mensagem));
+            }
+        });
+    }
+
     private static String enviarSincrono(ContentResolver resolver, Uri uri,
                                          String nomeArquivo, String pasta) throws Exception {
 
@@ -60,6 +75,12 @@ class CloudinaryUtil {
         if (mime == null) {
             mime = "application/octet-stream";
         }
+
+        return enviarConteudo(lerBytes(resolver, uri), mime, nomeArquivo, pasta);
+    }
+
+    private static String enviarConteudo(byte[] conteudo, String mime,
+                                         String nomeArquivo, String pasta) throws Exception {
 
         // Imagens e vídeos vão como "image"/"video"; PDFs, DOCX etc. vão como "raw",
         // pois contas gratuitas bloqueiam a entrega de PDF enviado como imagem.
@@ -85,8 +106,6 @@ class CloudinaryUtil {
             }
         }
         String publicId = System.currentTimeMillis() + "_" + nomeSeguro;
-
-        byte[] conteudo = lerBytes(resolver, uri);
 
         // Garante o limite mesmo quando o tamanho não pôde ser lido na seleção do arquivo
         if (conteudo.length > ArquivoUtil.LIMITE_TAMANHO_BYTES) {

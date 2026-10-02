@@ -13,27 +13,70 @@
         android:background="@drawable/bg_header_professor"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:paddingTop="60dp"
-        android:paddingBottom="28dp"
+        android:paddingTop="25dp"
+        android:paddingBottom="22dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
             android:contentDescription="@null"
-            android:src="@drawable/icone_app" />
+            android:src="@drawable/logo_meufuturoagora_branca" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="0dp"
             android:fontFamily="@font/poppins_bold"
             android:letterSpacing="0.05"
             android:text="ADMINISTRADOR"
             android:textColor="#FFFFFF"
-            android:textSize="18sp" />
+            android:textSize="24sp" />
+
+        <!-- ANO LETIVO, BIMESTRE E DIA ATUAIS -->
+
+        <TextView
+            android:id="@+id/tvAnoLetivoAdmin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_bold"
+            android:text="Ano letivo —"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/tvBimestreAdmin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/poppins_semibold"
+            android:text="Bimestre não definido"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/tvPeriodoBimestreAdmin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_regular"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tvDataHojeAdmin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_pill_branco_transparente"
+            android:fontFamily="@font/poppins_semibold"
+            android:paddingStart="12dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="3dp"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
 
     </LinearLayout>
 
@@ -114,7 +157,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:contentDescription="@null"
-                    android:src="@drawable/ic_diario_laranja" />
+                    android:src="@drawable/ic_diario_bimestres" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -166,7 +209,7 @@
                     android:layout_marginStart="14dp"
                     android:layout_weight="1"
                     android:fontFamily="@font/poppins_semibold"
-                    android:text="Cadastrar usuário"
+                    android:text="Cadastrar registro"
                     android:textColor="@color/texto_escuro"
                     android:textSize="16sp" />
 
@@ -210,7 +253,7 @@
                     android:layout_marginStart="14dp"
                     android:layout_weight="1"
                     android:fontFamily="@font/poppins_semibold"
-                    android:text="Ver usuários"
+                    android:text="Ver registros"
                     android:textColor="@color/texto_escuro"
                     android:textSize="16sp" />
 
@@ -231,7 +274,7 @@
                 android:background="#DADADA" />
 
             <LinearLayout
-                android:id="@+id/itemEncerrarBimestre"
+                android:id="@+id/itemHistorico"
                 android:layout_width="match_parent"
                 android:layout_height="58dp"
                 android:background="?attr/selectableItemBackground"
@@ -246,8 +289,8 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:contentDescription="@null"
-                    android:src="@drawable/ic_check_circle"
-                    app:tint="@color/laranja_primario" />
+                    android:src="@drawable/ic_desempenho"
+                    app:tint="@color/black" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -255,7 +298,7 @@
                     android:layout_marginStart="14dp"
                     android:layout_weight="1"
                     android:fontFamily="@font/poppins_semibold"
-                    android:text="Encerrar bimestre atual"
+                    android:text="Histórico dos anos letivos"
                     android:textColor="@color/texto_escuro"
                     android:textSize="16sp" />
 

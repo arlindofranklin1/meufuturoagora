@@ -6,14 +6,17 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -289,6 +292,51 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
         }
     }
 
+    // =====================================================
+    // REFAZER AVALIAÇÃO
+    // =====================================================
+
+    private void confirmarRefazerAvaliacao(Entrega entrega) {
+
+        new AlertDialog.Builder(this)
+                .setTitle("Refazer avaliação")
+                .setMessage("A nota e o comentário dados para " + entrega.alunoNome
+                        + " serão apagados e a entrega volta a ficar aguardando avaliação. "
+                        + "Deseja refazer a avaliação?")
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Refazer", (dialog, which) -> refazerAvaliacao(entrega))
+                .show();
+    }
+
+    private void refazerAvaliacao(Entrega entrega) {
+
+        Map<String, Object> dados = new HashMap<>();
+        dados.put("avaliado", false);
+        dados.put("nota", FieldValue.delete());
+        dados.put("comentarioProfessor", FieldValue.delete());
+        dados.put("avaliadoEm", FieldValue.delete());
+
+        db.collection("entregas")
+                .document(atividadeId + "_" + entrega.alunoId)
+                .update(dados)
+                .addOnSuccessListener(unused -> {
+
+                    // A nota antiga sai da pontuação do aluno
+                    PontuacaoUtil.recalcular(db, entrega.alunoId);
+
+                    // Abre direto a tela de avaliação para dar a nova nota
+                    startActivity(new Intent(this, AvaliarEntregaActivity.class)
+                            .putExtra("atividadeId", atividadeId)
+                            .putExtra("alunoId", entrega.alunoId)
+                            .putExtra("alunoNome", entrega.alunoNome));
+                })
+                .addOnFailureListener(e -> Toast.makeText(
+                        this,
+                        "Erro ao refazer avaliação: " + e.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show());
+    }
+
     public static class Entrega {
 
         String alunoId;
@@ -342,6 +390,24 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
                 holder.tvStatusEntrega.setTextColor(getColor(R.color.vermelho_erro));
             }
 
+            // Entrega avaliada: três pontinhos com a opção de refazer a avaliação
+            holder.btnMenuEntrega.setVisibility(
+                    entrega.entregue && entrega.avaliado ? View.VISIBLE : View.GONE
+            );
+
+            holder.btnMenuEntrega.setOnClickListener(v -> {
+
+                PopupMenu menu = new PopupMenu(QuestoesDoLivroActivity.this, holder.btnMenuEntrega);
+                menu.getMenu().add("Refazer avaliação");
+
+                menu.setOnMenuItemClickListener(item -> {
+                    confirmarRefazerAvaliacao(entrega);
+                    return true;
+                });
+
+                menu.show();
+            });
+
             holder.itemView.setOnClickListener(v -> {
 
                 if (!entrega.entregue) {
@@ -378,9 +444,12 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
             TextView tvNomeAlunoEntrega;
             TextView tvStatusEntrega;
             ImageView imgAlunoEntrega;
+            ImageView btnMenuEntrega;
 
             public ViewHolder(View itemView) {
                 super(itemView);
+
+                btnMenuEntrega = itemView.findViewById(R.id.btnMenuEntrega);
 
                 tvNomeAlunoEntrega = itemView.findViewById(R.id.tvNomeAlunoEntrega);
                 tvStatusEntrega = itemView.findViewById(R.id.tvStatusEntrega);

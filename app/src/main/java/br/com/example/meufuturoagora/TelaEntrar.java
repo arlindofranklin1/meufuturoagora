@@ -258,7 +258,7 @@ public class TelaEntrar extends AppCompatActivity {
 
                     if (!professores.isEmpty()) {
 
-                        atualizarFotoProfessor(user, professores.getDocuments().get(0).getId());
+                        atualizarFotoProfessor(user, professores.getDocuments().get(0));
                         startActivity(new Intent(TelaEntrar.this, TelaInicialProfessor.class));
                         finish();
                         return;
@@ -275,17 +275,27 @@ public class TelaEntrar extends AppCompatActivity {
                 );
     }
 
-    private void atualizarFotoProfessor(FirebaseUser user, String documentoId) {
+    private void atualizarFotoProfessor(FirebaseUser user,
+                                        com.google.firebase.firestore.DocumentSnapshot professor) {
+
+        // Conta recriada (uid novo): recupera as disciplinas, trilhas e aulas do professor
+        DisciplinaUtil.vincularAoProfessor(db, user.getUid(), user.getEmail(), professor.getString("uid"));
 
         Map<String, Object> dados = new HashMap<>();
 
-        dados.put(
-                "fotoUrl",
-                user.getPhotoUrl() != null ? user.getPhotoUrl().toString() : ""
-        );
+        // uid da conta: usado para mostrar os dados do professor nas disciplinas
+        dados.put("uid", user.getUid());
+
+        // Não substitui a foto que o professor escolheu no perfil
+        if (!Boolean.TRUE.equals(professor.getBoolean(PerfilFotoUtil.CAMPO_FOTO_PERSONALIZADA))) {
+            dados.put(
+                    "fotoUrl",
+                    user.getPhotoUrl() != null ? user.getPhotoUrl().toString() : ""
+            );
+        }
 
         db.collection("professores")
-                .document(documentoId)
+                .document(professor.getId())
                 .set(dados, SetOptions.merge());
     }
 
@@ -353,10 +363,13 @@ public class TelaEntrar extends AppCompatActivity {
                     Map<String, Object> dadosAluno = new HashMap<>();
                     dadosAluno.put("nome", user.getDisplayName() != null ? user.getDisplayName() : "Aluno");
                     dadosAluno.put("email", user.getEmail());
-                    dadosAluno.put(
-                            "fotoUrl",
-                            user.getPhotoUrl() != null ? user.getPhotoUrl().toString() : ""
-                    );
+                    // Não substitui a foto que o aluno escolheu no perfil
+                    if (!Boolean.TRUE.equals(alunoDoc.getBoolean(PerfilFotoUtil.CAMPO_FOTO_PERSONALIZADA))) {
+                        dadosAluno.put(
+                                "fotoUrl",
+                                user.getPhotoUrl() != null ? user.getPhotoUrl().toString() : ""
+                        );
+                    }
                     dadosAluno.put("turmaId", turmaId);
                     dadosAluno.put("turmaNome", turmaNome != null ? turmaNome : "");
                     dadosAluno.put("ativo", true);

@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
@@ -53,18 +55,29 @@ public class TelaPerfilProfessor extends AppCompatActivity {
             tvEmailPerfil.setText(email != null ? email : "");
             tvEmailContaPerfilProfessor.setText(email != null ? email : "");
 
-            Uri foto = usuario.getPhotoUrl();
+            // Foto escolhida pelo professor (ou a da conta Google); tocar nela troca a foto
+            PerfilFotoUtil.carregarFotoDoUsuario(this, imgFotoPerfil, true);
 
-            if (foto != null) {
+            // Galeria -> tela de recorte quadrado -> envio da foto recortada
+            ActivityResultLauncher<Intent> recortarFoto = registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    resultado -> {
+                        if (resultado.getResultCode() == RESULT_OK && resultado.getData() != null) {
+                            PerfilFotoUtil.trocarFoto(this, resultado.getData().getData(), true, imgFotoPerfil);
+                        }
+                    }
+            );
 
-                Glide.with(this)
-                        .load(foto)
-                        .placeholder(R.drawable.ic_perfil)
-                        .error(R.drawable.ic_perfil)
-                        .override(200, 200)
-                        .circleCrop()
-                        .into(imgFotoPerfil);
-            }
+            ActivityResultLauncher<String> escolherFoto = registerForActivityResult(
+                    new ActivityResultContracts.GetContent(),
+                    uri -> {
+                        if (uri != null) {
+                            recortarFoto.launch(RecortarFotoActivity.criarIntent(this, uri));
+                        }
+                    }
+            );
+
+            imgFotoPerfil.setOnClickListener(v -> escolherFoto.launch("image/*"));
 
             String uidProfessor = usuario.getUid();
 

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Diálogo do (i) ao lado do nome da disciplina: foto e nome do professor -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialogo_arredondado"
+    android:clipToOutline="true"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <!-- FAIXA ROXA + FOTO -->
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:background="@drawable/bg_header_professor" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgInfoProfessor"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="22dp"
+            android:background="#FFFFFF"
+            android:contentDescription="Foto do professor"
+            android:padding="3dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_perfil"
+            app:shapeAppearanceOverlay="@style/CircleImageView"
+            app:strokeColor="#FFFFFF"
+            app:strokeWidth="3dp" />
+
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/poppins_semibold"
+        android:text="PROFESSOR(A)"
+        android:letterSpacing="0.08"
+        android:textColor="@color/laranja_primario"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tvNomeInfoProfessor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:fontFamily="@font/poppins_bold"
+        android:gravity="center"
+        android:text="Professor"
+        android:textColor="@color/roxo_primario"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/tvEmailInfoProfessor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:fontFamily="@font/poppins_regular"
+        android:gravity="center"
+        android:textColor="@color/texto_cinza"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <!-- DISCIPLINA E TURMA -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_card_branco"
+        android:backgroundTint="@color/fundo_cinza_claro"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_regular"
+            android:text="Disciplina"
+            android:textColor="@color/texto_cinza"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvDisciplinaInfoProfessor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_semibold"
+            android:textColor="@color/texto_escuro"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/poppins_regular"
+            android:text="Turma"
+            android:textColor="@color/texto_cinza"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvTurmaInfoProfessor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_semibold"
+            android:text="—"
+            android:textColor="@color/texto_escuro"
+            android:textSize="15sp" />
+
+    </LinearLayout>
+
+    <!-- PARTICIPANTES (ALUNOS MATRICULADOS) -->
+
+    <TextView
+        android:id="@+id/tvTituloParticipantes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:fontFamily="@font/poppins_bold"
+        android:text="Participantes"
+        android:textColor="@color/roxo_primario"
+        android:textSize="16sp" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerParticipantes"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:overScrollMode="never"
+            app:layout_constrainedHeight="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHeight_max="200dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvSemParticipantes"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="@font/poppins_regular"
+            android:text="Carregando participantes..."
+            android:textColor="@color/texto_cinza"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFecharInfoProfessor"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        android:backgroundTint="@color/roxo_primario"
+        android:fontFamily="@font/poppins_bold"
+        android:text="Fechar"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        app:cornerRadius="15dp" />
+
+</LinearLayout>

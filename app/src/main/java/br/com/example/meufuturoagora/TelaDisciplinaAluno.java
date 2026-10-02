@@ -121,35 +121,28 @@ public class TelaDisciplinaAluno extends AppCompatActivity {
 
         String alunoId = usuario.getUid();
 
-        db.collection("matriculas")
-                .whereEqualTo("alunoId", alunoId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
+        // Só disciplinas que ainda existem e estão ativas (com o nome atual)
+        DisciplinaUtil.carregarDoAluno(db, alunoId, disciplinas -> {
 
-                    listaDisciplinas.clear();
-                    listaDisciplinasOriginal.clear();
+            listaDisciplinas.clear();
+            listaDisciplinasOriginal.clear();
 
-                    for (QueryDocumentSnapshot documento : querySnapshot) {
+            for (java.util.Map.Entry<String, String> item : disciplinas.entrySet()) {
 
-                        String disciplinaId = documento.getString("disciplinaId");
-                        String disciplinaNome = documento.getString("disciplinaNome");
+                String disciplinaId = item.getKey();
+                String disciplinaNome = item.getValue() != null ? item.getValue() : "Disciplina";
 
-                        if (disciplinaId != null && disciplinaNome != null) {
+                Disciplina disciplina = new Disciplina(
+                        disciplinaId, disciplinaNome, gerarCorDisciplina(disciplinaId)
+                );
 
-                            String cor = gerarCorDisciplina(disciplinaId);
+                listaDisciplinas.add(disciplina);
+                listaDisciplinasOriginal.add(disciplina);
+            }
 
-                            Disciplina disciplina = new Disciplina(
-                                    disciplinaId, disciplinaNome, cor
-                            );
-
-                            listaDisciplinas.add(disciplina);
-                            listaDisciplinasOriginal.add(disciplina);
-                        }
-                    }
-
-                    adapter.notifyDataSetChanged();
-                    atualizarVazio();
-                });
+            adapter.notifyDataSetChanged();
+            atualizarVazio();
+        });
     }
 
     private void atualizarVazio() {

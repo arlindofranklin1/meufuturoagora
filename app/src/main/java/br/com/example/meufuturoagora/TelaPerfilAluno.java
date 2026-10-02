@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
@@ -42,18 +44,29 @@ public class TelaPerfilAluno extends AppCompatActivity {
             String nome = usuario.getDisplayName();
             tvNomePerfilAluno.setText(nome != null && !nome.isEmpty() ? nome : "Aluno");
 
-            Uri foto = usuario.getPhotoUrl();
+            // Foto escolhida pelo aluno (ou a da conta Google); tocar nela troca a foto
+            PerfilFotoUtil.carregarFotoDoUsuario(this, imgFotoPerfilAluno, false);
 
-            if (foto != null) {
+            // Galeria -> tela de recorte quadrado -> envio da foto recortada
+            ActivityResultLauncher<Intent> recortarFoto = registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    resultado -> {
+                        if (resultado.getResultCode() == RESULT_OK && resultado.getData() != null) {
+                            PerfilFotoUtil.trocarFoto(this, resultado.getData().getData(), false, imgFotoPerfilAluno);
+                        }
+                    }
+            );
 
-                Glide.with(this)
-                        .load(foto)
-                        .placeholder(R.drawable.ic_perfil)
-                        .error(R.drawable.ic_perfil)
-                        .override(200, 200)
-                        .circleCrop()
-                        .into(imgFotoPerfilAluno);
-            }
+            ActivityResultLauncher<String> escolherFoto = registerForActivityResult(
+                    new ActivityResultContracts.GetContent(),
+                    uri -> {
+                        if (uri != null) {
+                            recortarFoto.launch(RecortarFotoActivity.criarIntent(this, uri));
+                        }
+                    }
+            );
+
+            imgFotoPerfilAluno.setOnClickListener(v -> escolherFoto.launch("image/*"));
 
             alunoId = usuario.getUid();
 
@@ -143,13 +156,10 @@ public class TelaPerfilAluno extends AppCompatActivity {
 
     private void carregarEstatisticas() {
 
-        db.collection("matriculas")
-                .whereEqualTo("alunoId", alunoId)
-                .get()
-                .addOnSuccessListener(querySnapshot ->
-                        ((TextView) findViewById(R.id.tvQtdDisciplinasPerfil))
-                                .setText(String.valueOf(querySnapshot.size()))
-                );
+        DisciplinaUtil.carregarDoAluno(db, alunoId, disciplinas ->
+                ((TextView) findViewById(R.id.tvQtdDisciplinasPerfil))
+                        .setText(String.valueOf(disciplinas.size()))
+        );
 
         db.collection("entregas")
                 .whereEqualTo("alunoId", alunoId)

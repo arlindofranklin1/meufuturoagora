@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.Calendar;
 import java.util.HashMap;
@@ -86,6 +87,8 @@ public class DefinirBimestresActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(documento -> {
 
+                    AnoLetivoUtil.atualizar(documento);
+
                     if (!documento.exists()) {
                         return;
                     }
@@ -116,10 +119,23 @@ public class DefinirBimestresActivity extends AppCompatActivity {
             dados.put("bimestre" + i + "Fim", edtFinais[i - 1].getText().toString().trim());
         }
 
-        db.collection("configuracoes")
-                .document("geral")
-                .set(dados, SetOptions.merge())
+        // Também ficam guardados no ano letivo atual, para o histórico do administrador
+        String anoLetivo = AnoLetivoUtil.atual();
+
+        Map<String, Object> dadosAno = new HashMap<>(dados);
+        dadosAno.put("ano", anoLetivo);
+
+        WriteBatch batch = db.batch();
+        batch.set(db.collection("configuracoes").document("geral"), dados, SetOptions.merge());
+        batch.set(db.collection("anosLetivos").document(anoLetivo), dadosAno, SetOptions.merge());
+
+        batch.commit()
                 .addOnSuccessListener(unused -> {
+
+                    AnoLetivoUtil.carregar(db);
+
+                    // O período do ano mudou: notas e faltas antigas podem entrar ou sair
+                    PontuacaoUtil.recalcularTodos(db);
 
                     Toast.makeText(this, "Bimestres salvos!", Toast.LENGTH_SHORT).show();
                     finish();

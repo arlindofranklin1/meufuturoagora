@@ -271,15 +271,28 @@ public class CriarAtividade extends AppCompatActivity {
                     ArrayAdapter<String> adapter =
                             new ArrayAdapter<>(
                                     CriarAtividade.this,
-                                    android.R.layout.simple_spinner_item,
+                                    R.layout.item_spinner,
                                     nomesDisciplinas
                             );
 
                     adapter.setDropDownViewResource(
-                            android.R.layout.simple_spinner_dropdown_item
+                            R.layout.item_spinner_dropdown
                     );
 
                     spinnerDisciplina.setAdapter(adapter);
+
+                    // Toda trilha precisa de uma disciplina
+                    if (idsDisciplinas.isEmpty()) {
+
+                        Toast.makeText(
+                                CriarAtividade.this,
+                                "Crie uma disciplina primeiro para depois criar uma trilha.",
+                                Toast.LENGTH_LONG
+                        ).show();
+
+                        finish();
+                        return;
+                    }
 
                     // =============================
                     // SELECIONAR DISCIPLINA
@@ -880,6 +893,9 @@ public class CriarAtividade extends AppCompatActivity {
                 "criadoEm",
                 com.google.firebase.firestore.FieldValue.serverTimestamp()
         );
+
+        // Fica salva no ano letivo (e bimestre) em que foi criada
+        AnoLetivoUtil.marcar(atividade);
 
         db.collection("atividades")
                 .add(atividade)

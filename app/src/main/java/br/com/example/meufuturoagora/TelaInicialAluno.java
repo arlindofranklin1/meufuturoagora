@@ -48,6 +48,14 @@ public class TelaInicialAluno extends AppCompatActivity {
     private final List<ProximaAtividade> listaProximas = new ArrayList<>();
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Atualiza a foto ao voltar do perfil (o aluno pode ter trocado)
+        PerfilFotoUtil.carregarFotoDoUsuario(this, findViewById(R.id.imgAluno), false);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -103,18 +111,10 @@ public class TelaInicialAluno extends AppCompatActivity {
         String nome = usuario.getDisplayName();
         tvSaudacaoAluno.setText(nome != null && !nome.isEmpty() ? "Olá, " + primeiroNome(nome) + "!" : "Olá, Aluno!");
 
-        Uri foto = usuario.getPhotoUrl();
-
-        if (foto != null) {
-
-            Glide.with(this)
-                    .load(foto)
-                    .placeholder(R.drawable.ic_perfil)
-                    .error(R.drawable.ic_perfil)
-                    .override(200, 200)
-                    .circleCrop()
-                    .into(imgAluno);
-        }
+        // Tocar na foto abre o perfil (a foto é carregada no onResume)
+        imgAluno.setOnClickListener(v ->
+                startActivity(new Intent(this, TelaPerfilAluno.class))
+        );
 
         alunoId = usuario.getUid();
 
@@ -216,23 +216,15 @@ public class TelaInicialAluno extends AppCompatActivity {
 
     private void carregarProximasAtividades() {
 
-        db.collection("matriculas")
-                .whereEqualTo("alunoId", alunoId)
-                .get()
-                .addOnSuccessListener(matriculas -> {
+        // Só disciplinas que ainda existem e estão ativas (com o nome atual)
+        DisciplinaUtil.carregarDoAluno(db, alunoId, disciplinas -> {
 
                     List<String> disciplinaIds = new ArrayList<>();
                     List<String> disciplinaNomes = new ArrayList<>();
 
-                    for (QueryDocumentSnapshot documento : matriculas) {
-
-                        String disciplinaId = documento.getString("disciplinaId");
-                        String disciplinaNome = documento.getString("disciplinaNome");
-
-                        if (disciplinaId != null) {
-                            disciplinaIds.add(disciplinaId);
-                            disciplinaNomes.add(disciplinaNome != null ? disciplinaNome : "Disciplina");
-                        }
+                    for (java.util.Map.Entry<String, String> item : disciplinas.entrySet()) {
+                        disciplinaIds.add(item.getKey());
+                        disciplinaNomes.add(item.getValue() != null ? item.getValue() : "Disciplina");
                     }
 
                     if (disciplinaIds.isEmpty()) {

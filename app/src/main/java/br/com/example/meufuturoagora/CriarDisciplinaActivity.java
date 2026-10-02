@@ -75,11 +75,11 @@ public class CriarDisciplinaActivity extends AppCompatActivity {
 
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(
                             this,
-                            android.R.layout.simple_spinner_item,
+                            R.layout.item_spinner,
                             turmaNomes
                     );
 
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    adapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
                     spinnerTurmaDisciplina.setAdapter(adapter);
                 })
                 .addOnFailureListener(e -> Toast.makeText(
@@ -117,8 +117,10 @@ public class CriarDisciplinaActivity extends AppCompatActivity {
         dados.put("turmaNome", turmaNomes.get(posicao));
         dados.put("professorId", usuario.getUid());
         dados.put("professorNome", usuario.getDisplayName() != null ? usuario.getDisplayName() : "Professor");
+        dados.put("professorEmail", usuario.getEmail() != null ? usuario.getEmail() : "");
         dados.put("ativo", true);
         dados.put("criadoEm", com.google.firebase.firestore.FieldValue.serverTimestamp());
+        AnoLetivoUtil.marcar(dados);
 
         db.collection("disciplinas")
                 .add(dados)

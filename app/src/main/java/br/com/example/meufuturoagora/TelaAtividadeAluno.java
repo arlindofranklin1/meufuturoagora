@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
@@ -275,6 +276,21 @@ public class TelaAtividadeAluno extends AppCompatActivity {
             return;
         }
 
+        // Confirma antes de enviar, caso o aluno tenha anexado ou escrito algo errado
+        String resumo = "Comentário: " + (comentario.isEmpty() ? "nenhum" : comentario)
+                + "\nArquivo: " + (arquivoAlunoUri != null ? nomeArquivoAluno : "nenhum");
+
+        new AlertDialog.Builder(this)
+                .setTitle("Confirmar entrega")
+                .setMessage("Confira sua entrega antes de enviar:\n\n" + resumo
+                        + "\n\nDeseja enviar?")
+                .setNegativeButton("Revisar", null)
+                .setPositiveButton("Enviar", (dialog, which) -> confirmarEnvio(comentario))
+                .show();
+    }
+
+    private void confirmarEnvio(String comentario) {
+
         Map<String, Object> entrega = new HashMap<>();
 
         entrega.put("atividadeId", atividadeId);
@@ -283,6 +299,7 @@ public class TelaAtividadeAluno extends AppCompatActivity {
         entrega.put("avaliado", false);
         // Usado para notificar o professor sobre a nova entrega
         entrega.put("enviadoEm", com.google.firebase.firestore.FieldValue.serverTimestamp());
+        AnoLetivoUtil.marcar(entrega);
 
         if (arquivoAlunoUri != null) {
 

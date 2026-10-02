@@ -22,6 +22,30 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <!-- TELA SOBRE: botão do LinkedIn nos cards das pessoas -->
+
+    <style name="BotaoLinkedinSobre" parent="Widget.Material3.Button">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">14dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:text">LinkedIn</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">@font/poppins_bold</item>
+        <item name="backgroundTint">@color/roxo_primario</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="icon">@drawable/ic_linkedin</item>
+        <item name="iconSize">18dp</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconTint">@null</item>
+    </style>
+
     <!-- TELA DE DESEMPENHO -->
 
     <style name="AbaBimestre">

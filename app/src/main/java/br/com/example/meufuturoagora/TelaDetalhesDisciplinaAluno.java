@@ -64,6 +64,11 @@ public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
             tvNomeDisciplinaAluno.setText(disciplinaNome);
         }
 
+        // (i): professor e participantes da disciplina
+        findViewById(R.id.btnInfoProfessor).setOnClickListener(v ->
+                InfoDisciplinaDialog.mostrar(this, disciplinaId)
+        );
+
         tabTodos = findViewById(R.id.tabTodos);
         tabEntregues = findViewById(R.id.tabEntregues);
         tabAvaliadas = findViewById(R.id.tabAvaliadas);

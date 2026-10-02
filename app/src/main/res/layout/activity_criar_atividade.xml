@@ -15,7 +15,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginStart="18dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="35dp"
         android:src="@drawable/seta_voltar"
         android:scaleType="centerInside"
         android:contentDescription="Voltar"
@@ -99,35 +99,65 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="38dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="9dp"
                 android:orientation="horizontal">
 
                 <!-- PONTUAÇÃO -->
 
-                <EditText
-                    android:id="@+id/edtPontos"
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
-                    android:hint="Pontuação máxima (até 10)"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:textSize="16sp"
-                    android:textColor="#171717"
-                    android:textColorHint="#171717"
-                    android:fontFamily="@font/poppins_regular"
-                    android:background="@drawable/bg_campo_criar_atividade"
-                    android:inputType="number"
-                    android:maxLength="2" />
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Pontuação"
+                        android:textColor="#171717"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_semibold" />
+
+                    <EditText
+                        android:id="@+id/edtPontos"
+                        android:layout_width="match_parent"
+                        android:layout_height="38dp"
+                        android:hint="Máx. 10 pts"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:textSize="16sp"
+                        android:textColor="#171717"
+                        android:textColorHint="#8A8A8A"
+                        android:fontFamily="@font/poppins_regular"
+                        android:background="@drawable/bg_campo_criar_atividade"
+                        android:inputType="number"
+                        android:maxLength="2" />
+
+                </LinearLayout>
 
                 <!-- PRAZO -->
 
-                <FrameLayout
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1">
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Prazo"
+                        android:textColor="#171717"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_semibold" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp">
 
                     <EditText
                         android:id="@+id/edtPrazo"
@@ -155,6 +185,8 @@
                         android:contentDescription="Selecionar prazo" />
 
                 </FrameLayout>
+
+                </LinearLayout>
 
             </LinearLayout>
 

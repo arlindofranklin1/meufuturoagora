@@ -64,6 +64,7 @@ class PenalidadeFaltaUtil {
                 dados.put("data", data);
                 dados.put("pontos", -PONTOS_POR_DIA);
                 dados.put("criadoEm", FieldValue.serverTimestamp());
+                AnoLetivoUtil.marcar(dados);
 
                 penalidade.set(dados)
                         .addOnSuccessListener(unused -> PontuacaoUtil.recalcular(db, alunoId));

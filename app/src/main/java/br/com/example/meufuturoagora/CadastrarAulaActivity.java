@@ -120,6 +120,7 @@ public class CadastrarAulaActivity extends AppCompatActivity {
         aula.put("disciplinaId", disciplinaId);
         aula.put("professorId", usuario.getUid());
         aula.put("ativo", true);
+        AnoLetivoUtil.marcar(aula);
 
         db.collection("aulas")
                 .add(aula)

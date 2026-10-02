@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -26,6 +27,10 @@ public class TelaInicialProfessor extends AppCompatActivity {
     private TextView tvNomeProfessor;
     private TextView tvNumeroDisciplinas;
     private CardView cardDisciplinas;
+    private CardView btnCriarTarefa;
+
+    // -1 enquanto ainda não carregou
+    private int quantidadeDisciplinas = -1;
 
     private FirebaseFirestore db;
 
@@ -94,35 +99,13 @@ public class TelaInicialProfessor extends AppCompatActivity {
                 tvNomeProfessor.setText("Professor");
             }
 
-            // =========================
-            // FOTO DO PROFESSOR
-            // =========================
-
-            Uri foto = usuario.getPhotoUrl();
-
-            if (foto != null) {
-
-                Glide.with(this)
-                        .load(foto)
-                        .placeholder(R.drawable.ic_perfil)
-                        .error(R.drawable.ic_perfil)
-                        .override(200, 200)
-                        .circleCrop()
-                        .into(imgProfessor);
-
-            } else {
-
-                imgProfessor.setImageResource(
-                        R.drawable.ic_perfil
-                );
-            }
-
-            // =========================
-            // CARREGAR DISCIPLINAS
-            // =========================
-
-            carregarQuantidadeDisciplinas(uidProfessor);
+            // Tocar na foto abre o perfil
+            imgProfessor.setOnClickListener(v ->
+                    startActivity(new Intent(this, TelaPerfilProfessor.class))
+            );
         }
+
+        AnoLetivoUtil.carregar(db);
 
         // =========================
         // BIMESTRE ATUAL
@@ -226,11 +209,23 @@ public class TelaInicialProfessor extends AppCompatActivity {
         // AÇÕES RÁPIDAS
         // =========================
 
-        CardView btnCriarTarefa = findViewById(R.id.btnCriarTarefa);
+        btnCriarTarefa = findViewById(R.id.btnCriarTarefa);
 
-        btnCriarTarefa.setOnClickListener(v -> startActivity(
-                new Intent(TelaInicialProfessor.this, CriarAtividade.class)
-        ));
+        // Toda trilha pertence a uma disciplina: sem disciplina criada, só avisa
+        btnCriarTarefa.setOnClickListener(v -> {
+
+            if (quantidadeDisciplinas == 0) {
+
+                Toast.makeText(
+                        this,
+                        "Crie uma disciplina primeiro para depois criar uma trilha.",
+                        Toast.LENGTH_LONG
+                ).show();
+                return;
+            }
+
+            startActivity(new Intent(TelaInicialProfessor.this, CriarAtividade.class));
+        });
 
         CardView btnVerRanking = findViewById(R.id.btnVerRanking);
 
@@ -254,6 +249,26 @@ public class TelaInicialProfessor extends AppCompatActivity {
     }
 
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (usuario == null) {
+            return;
+        }
+
+        // Foto (a escolhida no perfil ou a do Google) e disciplinas, atualizadas ao voltar
+        PerfilFotoUtil.carregarFotoDoUsuario(this, imgProfessor, true);
+        carregarQuantidadeDisciplinas(usuario.getUid());
+    }
+
+    // Sem disciplina, o botão fica apagado (o toque só mostra o aviso)
+    private void btnCriarTarefaHabilitado(boolean habilitado) {
+        btnCriarTarefa.setAlpha(habilitado ? 1f : 0.5f);
+    }
+
     // =====================================================
     // QUANTIDADE DE DISCIPLINAS DO PROFESSOR
     // =====================================================
@@ -264,10 +279,14 @@ public class TelaInicialProfessor extends AppCompatActivity {
 
         db.collection("disciplinas")
                 .whereEqualTo("professorId", uidProfessor)
+                .whereEqualTo("ativo", true)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
 
                     int quantidade = querySnapshot.size();
+
+                    quantidadeDisciplinas = quantidade;
+                    btnCriarTarefaHabilitado(quantidade > 0);
 
                     tvNumeroDisciplinas.setText(String.valueOf(quantidade));
 

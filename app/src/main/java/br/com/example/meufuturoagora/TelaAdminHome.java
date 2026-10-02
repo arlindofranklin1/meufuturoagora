@@ -2,24 +2,23 @@ package br.com.example.meufuturoagora;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
+import android.widget.TextView;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.WriteBatch;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class TelaAdminHome extends AppCompatActivity {
 
     private FirebaseFirestore db;
+
+    private TextView tvAnoLetivoAdmin;
+    private TextView tvBimestreAdmin;
+    private TextView tvPeriodoBimestreAdmin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +27,10 @@ public class TelaAdminHome extends AppCompatActivity {
         setContentView(R.layout.activity_tela_admin_home);
 
         db = FirebaseFirestore.getInstance();
+
+        tvAnoLetivoAdmin = findViewById(R.id.tvAnoLetivoAdmin);
+        tvBimestreAdmin = findViewById(R.id.tvBimestreAdmin);
+        tvPeriodoBimestreAdmin = findViewById(R.id.tvPeriodoBimestreAdmin);
 
         findViewById(R.id.itemAnoLetivo).setOnClickListener(v ->
                 startActivity(new Intent(this, DefinirAnoLetivoActivity.class))
@@ -45,7 +48,9 @@ public class TelaAdminHome extends AppCompatActivity {
                 startActivity(new Intent(this, ListaUsuariosActivity.class))
         );
 
-        findViewById(R.id.itemEncerrarBimestre).setOnClickListener(v -> confirmarEncerramento());
+        findViewById(R.id.itemHistorico).setOnClickListener(v ->
+                startActivity(new Intent(this, HistoricoAnoLetivoActivity.class))
+        );
 
         findViewById(R.id.itemSairAdmin).setOnClickListener(v -> {
 
@@ -56,70 +61,52 @@ public class TelaAdminHome extends AppCompatActivity {
         });
     }
 
-    private void confirmarEncerramento() {
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-        new AlertDialog.Builder(this)
-                .setTitle("Encerrar bimestre atual")
-                .setMessage(
-                        "Isso vai zerar a pontuação e as faltas de todos os alunos. " +
-                                "Essa ação não pode ser desfeita. Deseja continuar?"
-                )
-                .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Encerrar", (dialog, which) -> encerrarBimestre())
-                .show();
+        // Recarrega ao voltar das telas de ano letivo e bimestres
+        carregarCabecalho();
     }
 
-    private void encerrarBimestre() {
+    private void carregarCabecalho() {
 
-        Toast.makeText(this, "Encerrando bimestre...", Toast.LENGTH_SHORT).show();
+        String hoje = new SimpleDateFormat("EEEE, dd/MM/yyyy", new Locale("pt", "BR"))
+                .format(new Date());
 
-        db.collection("alunos")
+        ((TextView) findViewById(R.id.tvDataHojeAdmin)).setText(
+                "Hoje: " + hoje.substring(0, 1).toUpperCase() + hoje.substring(1)
+        );
+
+        db.collection("configuracoes")
+                .document("geral")
                 .get()
-                .addOnSuccessListener(alunos -> {
+                .addOnSuccessListener(documento -> {
 
-                    db.collection("frequencias")
-                            .get()
-                            .addOnSuccessListener(frequencias -> {
+                    AnoLetivoUtil.atualizar(documento);
 
-                                WriteBatch batch = db.batch();
+                    String ano = documento.getString("anoLetivo");
 
-                                for (QueryDocumentSnapshot aluno : alunos) {
+                    tvAnoLetivoAdmin.setText(
+                            ano != null && !ano.isEmpty()
+                                    ? "Ano letivo " + ano
+                                    : "Ano letivo não definido"
+                    );
 
-                                    DocumentReference referencia = aluno.getReference();
-                                    batch.update(referencia, "pontuacao", 0);
-                                }
+                    int numero = BimestreUtil.numeroAtual(documento);
 
-                                for (QueryDocumentSnapshot frequencia : frequencias) {
-                                    batch.delete(frequencia.getReference());
-                                }
+                    if (numero == 0) {
 
-                                // A partir de agora a pontuação só conta notas e faltas novas
-                                Map<String, Object> marco = new HashMap<>();
-                                marco.put("pontuacaoZeradaEm", FieldValue.serverTimestamp());
+                        tvBimestreAdmin.setText("Fora de bimestre / não definido");
+                        tvPeriodoBimestreAdmin.setText("Defina os bimestres do ano letivo");
+                        return;
+                    }
 
-                                batch.set(
-                                        db.collection("configuracoes").document("geral"),
-                                        marco,
-                                        SetOptions.merge()
-                                );
-
-                                batch.commit()
-                                        .addOnSuccessListener(unused -> Toast.makeText(
-                                                this,
-                                                "Bimestre encerrado! Pontuação e faltas reiniciadas.",
-                                                Toast.LENGTH_LONG
-                                        ).show())
-                                        .addOnFailureListener(e -> Toast.makeText(
-                                                this,
-                                                "Erro ao encerrar bimestre: " + e.getMessage(),
-                                                Toast.LENGTH_LONG
-                                        ).show());
-                            });
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao encerrar bimestre: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+                    tvBimestreAdmin.setText(numero + "º Bimestre");
+                    tvPeriodoBimestreAdmin.setText(
+                            "De " + documento.getString("bimestre" + numero + "Inicio")
+                                    + " até " + documento.getString("bimestre" + numero + "Fim")
+                    );
+                });
     }
 }

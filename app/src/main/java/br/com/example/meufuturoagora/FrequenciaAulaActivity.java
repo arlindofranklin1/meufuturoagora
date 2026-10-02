@@ -213,6 +213,7 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
             registro.put("alunoId", aluno.alunoId);
             registro.put("alunoNome", aluno.alunoNome);
             registro.put("status", aluno.status);
+            AnoLetivoUtil.marcar(registro);
 
             if (dataAula != null) {
                 registro.put("data", dataAula);
@@ -276,12 +277,12 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
 
             ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
                     FrequenciaAulaActivity.this,
-                    android.R.layout.simple_spinner_item,
+                    R.layout.item_spinner,
                     STATUS_OPCOES
             );
 
             spinnerAdapter.setDropDownViewResource(
-                    android.R.layout.simple_spinner_dropdown_item
+                    R.layout.item_spinner_dropdown
             );
 
             holder.spinnerStatusFrequencia.setAdapter(spinnerAdapter);

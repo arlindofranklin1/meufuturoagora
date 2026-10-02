@@ -15,6 +15,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MeuFuturoAgora">
         <activity
+            android:name=".HistoricoAnoLetivoActivity"
+            android:exported="false" />
+        <activity
+            android:name=".RecortarFotoActivity"
+            android:exported="false" />
+        <activity
             android:name=".CriarDisciplinaActivity"
             android:exported="false" />
         <activity

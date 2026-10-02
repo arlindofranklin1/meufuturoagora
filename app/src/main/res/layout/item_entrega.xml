@@ -46,6 +46,19 @@
             android:textColor="@color/vermelho_erro"
             android:textSize="12sp" />
 
+        <!-- Três pontinhos: aparece só quando a entrega já foi avaliada -->
+        <ImageView
+            android:id="@+id/btnMenuEntrega"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Opções da avaliação"
+            android:padding="6dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_menu_vertical"
+            android:visibility="gone" />
+
     </LinearLayout>
 
     <View

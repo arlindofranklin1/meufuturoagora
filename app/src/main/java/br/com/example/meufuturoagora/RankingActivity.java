@@ -181,11 +181,11 @@ public class RankingActivity extends AppCompatActivity {
 
                     ArrayAdapter<String> adapterTurmas = new ArrayAdapter<>(
                             this,
-                            android.R.layout.simple_spinner_item,
+                            R.layout.item_spinner,
                             turmaNomes
                     );
                     adapterTurmas.setDropDownViewResource(
-                            android.R.layout.simple_spinner_dropdown_item
+                            R.layout.item_spinner_dropdown
                     );
                     spinnerTurma.setAdapter(adapterTurmas);
 
