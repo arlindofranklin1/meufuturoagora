@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Meia-lua no canto inferior direito dos cards de curso (cor via tint) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="150dp"
+    android:viewportWidth="360"
+    android:viewportHeight="150">
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M 180,150
+            C 196,98 238,66 292,62
+            C 318,60 342,66 360,74
+            L 360,150
+            Z" />
+
+</vector>

@@ -586,9 +586,15 @@ public class DesempenhoActivity extends AppCompatActivity {
 
         buscarEmLotes("alunos", null, idsAlunos).addOnSuccessListener(documentos -> {
 
+            Set<String> existentes = new HashSet<>();
+
             for (DocumentSnapshot documento : documentos) {
+                existentes.add(documento.getId());
                 fotosAlunos.put(documento.getId(), documento.getString("fotoUrl"));
             }
+
+            // Aluno excluído (matrícula ficou para trás) não aparece
+            nomesAlunos.keySet().retainAll(existentes);
 
             mostrarBimestre();
         });

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Diário fechado com brilho na capa (bottom bar, inativo) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Capa e lombada -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M7,3 L17,3 C18.1,3 19,3.9 19,5 L19,19 C19,20.1 18.1,21 17,21 L7,21 C5.9,21 5,20.1 5,19 L5,5 C5,3.9 5.9,3 7,3 Z M8.5,3 L8.5,21" />
+
+    <!-- Brilho -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M13.75,8 C14,9.9 14.9,10.8 16.75,11 C14.9,11.2 14,12.1 13.75,14 C13.5,12.1 12.6,11.2 10.75,11 C12.6,10.8 13.5,9.9 13.75,8 Z" />
+
+</vector>

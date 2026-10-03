@@ -83,6 +83,11 @@ public class RankingActivity extends AppCompatActivity {
 
         bottomNavigation.setItemIconTintList(null);
 
+        // O diário é só do aluno: o professor usa esta tela com a mesma barra, sem esse item
+        if (modoProfessor) {
+            bottomNavigation.getMenu().removeItem(R.id.nav_diario);
+        }
+
         bottomNavigation.setSelectedItemId(R.id.nav_ranking);
 
         bottomNavigation.setOnItemSelectedListener(item -> {
@@ -105,6 +110,11 @@ public class RankingActivity extends AppCompatActivity {
                         modoProfessor ? TelaDisciplinaProfessor.class : TelaDisciplinaAluno.class
                 ));
 
+                return true;
+
+            } else if (id == R.id.nav_diario) {
+
+                startActivity(new Intent(this, DiarioAlunoActivity.class));
                 return true;
 
             } else if (id == R.id.nav_ranking) {

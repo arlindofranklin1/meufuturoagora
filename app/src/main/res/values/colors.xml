@@ -19,4 +19,25 @@
     <color name="dourado_ranking">#F5B400</color>
     <color name="prata_ranking">#B0B7C3</color>
     <color name="bronze_ranking">#C77B3E</color>
+
+    <!-- MEU FUTURO AGORA: cores dos cursos (forte / suave / fundo do card) -->
+    <color name="curso_azul">#1E5FD8</color>
+    <color name="curso_azul_suave">#BCD3FF</color>
+    <color name="curso_azul_fundo">#F3F7FF</color>
+
+    <color name="curso_amarelo">#E0A100</color>
+    <color name="curso_amarelo_texto">#B37F00</color>
+    <color name="curso_amarelo_suave">#FFE39A</color>
+    <color name="curso_amarelo_fundo">#FFFBEC</color>
+
+    <color name="curso_verde">#22A05A</color>
+    <color name="curso_verde_suave">#B4EBC9</color>
+    <color name="curso_verde_fundo">#F2FBF5</color>
+
+    <!-- DIÁRIO: folhinhas pastel das metas -->
+    <color name="folha_lilas">#F1E8FF</color>
+    <color name="folha_rosa">#FFE8F1</color>
+    <color name="folha_pessego">#FFEEE3</color>
+    <color name="folha_menta">#E6F8EF</color>
+    <color name="folha_ceu">#E7F1FF</color>
 </resources>

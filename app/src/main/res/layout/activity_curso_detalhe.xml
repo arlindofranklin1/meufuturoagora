@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    tools:context=".CursoDetalheActivity">
+
+    <!-- ============================= -->
+    <!-- TOPO -->
+    <!-- ============================= -->
+
+    <ImageView
+        android:id="@+id/btnVoltar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="35dp"
+        android:contentDescription="Voltar"
+        android:scaleType="centerInside"
+        android:src="@drawable/seta_voltar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvTituloTela"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="64dp"
+        android:layout_marginEnd="64dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/poppins_bold"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="Informática"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@id/btnVoltar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnVoltar" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnVoltar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            android:paddingBottom="48dp">
+
+            <!-- ============================= -->
+            <!-- CARD DESTAQUE DO CURSO -->
+            <!-- ============================= -->
+
+            <include
+                android:id="@+id/cardDestaque"
+                layout="@layout/item_card_curso" />
+
+            <!-- ============================= -->
+            <!-- SOBRE O CURSO -->
+            <!-- ============================= -->
+
+            <TextView
+                android:id="@+id/tvSecaoSobre"
+                style="@style/TituloSecaoCurso"
+                android:text="Sobre o curso" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="20dp"
+                app:cardBackgroundColor="@android:color/white"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:id="@+id/containerInfos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="6dp" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ============================= -->
+            <!-- DESCRIÇÃO -->
+            <!-- ============================= -->
+
+            <TextView
+                android:id="@+id/tvSecaoDescricao"
+                style="@style/TituloSecaoCurso"
+                android:text="Descrição" />
+
+            <TextView
+                android:id="@+id/tvDescricaoCurso"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginEnd="20dp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingMultiplier="1.15"
+                android:textColor="#303030"
+                android:textSize="14sp" />
+
+            <!-- ============================= -->
+            <!-- ONDE PODE TRABALHAR -->
+            <!-- ============================= -->
+
+            <TextView
+                android:id="@+id/tvSecaoTrabalho"
+                style="@style/TituloSecaoCurso"
+                android:text="Onde você pode trabalhar" />
+
+            <TextView
+                android:id="@+id/tvIntroTrabalho"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginEnd="20dp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingMultiplier="1.15"
+                android:textColor="#303030"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/containerTrabalho"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="20dp"
+                android:orientation="vertical" />
+
+            <!-- ============================= -->
+            <!-- DISCIPLINAS POR ANO -->
+            <!-- ============================= -->
+
+            <TextView
+                android:id="@+id/tvSecaoDisciplinas"
+                style="@style/TituloSecaoCurso"
+                android:text="Disciplinas técnicas" />
+
+            <TextView
+                android:id="@+id/tvObsDisciplinas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="20dp"
+                android:fontFamily="@font/poppins_regular"
+                android:textColor="@color/texto_cinza"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <!-- Padding (em vez de margem) e sem recorte: a sombra dos cards aparece inteira nas laterais -->
+            <LinearLayout
+                android:id="@+id/containerDisciplinas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="8dp" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

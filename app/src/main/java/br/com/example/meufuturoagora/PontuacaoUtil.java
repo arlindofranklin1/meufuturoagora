@@ -4,14 +4,22 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-// Pontuação do ranking = soma das notas das trilhas avaliadas
-//                        - 5 pontos por dia com falta sem justificativa.
+// Pontuação do ranking = soma das notas das trilhas avaliadas (trilhas e disciplinas
+//                        não excluídas) - 5 pontos por dia com falta sem justificativa.
 // É sempre recalculada a partir dos dados (em vez de somada aos poucos), assim
 // reavaliar uma entrega ou corrigir uma falta não soma nem desconta duas vezes.
 // Só conta o que pertence ao ano letivo atual: ao trocar de ano letivo a pontuação
@@ -60,10 +68,16 @@ class PontuacaoUtil {
                 .whereEqualTo("alunoId", alunoId)
                 .get();
 
-        Tasks.whenAllSuccess(Arrays.asList(config, entregas, penalidades))
+        // Só contam as notas de trilhas que ainda existem (não excluídas) em disciplinas
+        // ativas — a mesma regra da tela de desempenho, para os totais baterem.
+        Task<Set<String>> atividadesValidas = entregas.continueWithTask(t ->
+                atividadesValidas(db, t.getResult().getDocuments()));
+
+        Tasks.whenAllSuccess(Arrays.asList(config, entregas, penalidades, atividadesValidas))
                 .addOnSuccessListener(resultados -> {
 
                     DocumentSnapshot configuracao = config.getResult();
+                    Set<String> validas = atividadesValidas.getResult();
 
                     double total = 0;
 
@@ -71,7 +85,8 @@ class PontuacaoUtil {
 
                         Double nota = entrega.getDouble("nota");
 
-                        if (nota != null && contaNoAnoAtual(entrega, configuracao,
+                        if (nota != null && validas.contains(entrega.getString("atividadeId"))
+                                && contaNoAnoAtual(entrega, configuracao,
                                 data(entrega, "enviadoEm", "avaliadoEm"), "avaliadoEm")) {
                             total += nota;
                         }
@@ -99,6 +114,84 @@ class PontuacaoUtil {
                         depois.run();
                     }
                 });
+    }
+
+    // IDs das atividades das entregas que estão ativas e cuja disciplina também está ativa
+    private static Task<Set<String>> atividadesValidas(FirebaseFirestore db,
+                                                       List<DocumentSnapshot> entregas) {
+
+        Set<String> idsAtividades = new HashSet<>();
+
+        for (DocumentSnapshot entrega : entregas) {
+
+            String atividadeId = entrega.getString("atividadeId");
+
+            if (atividadeId != null) {
+                idsAtividades.add(atividadeId);
+            }
+        }
+
+        return buscarPorIds(db, "atividades", idsAtividades).continueWithTask(t -> {
+
+            Map<String, String> disciplinaDaAtividade = new HashMap<>();
+
+            for (DocumentSnapshot atividade : t.getResult()) {
+
+                String disciplinaId = atividade.getString("disciplinaId");
+
+                if (disciplinaId != null && !Boolean.FALSE.equals(atividade.getBoolean("ativo"))) {
+                    disciplinaDaAtividade.put(atividade.getId(), disciplinaId);
+                }
+            }
+
+            return buscarPorIds(db, "disciplinas", new HashSet<>(disciplinaDaAtividade.values()))
+                    .continueWith(td -> {
+
+                        Set<String> disciplinasAtivas = new HashSet<>();
+
+                        for (DocumentSnapshot disciplina : td.getResult()) {
+                            if (!Boolean.FALSE.equals(disciplina.getBoolean("ativo"))) {
+                                disciplinasAtivas.add(disciplina.getId());
+                            }
+                        }
+
+                        Set<String> validas = new HashSet<>();
+
+                        for (Map.Entry<String, String> item : disciplinaDaAtividade.entrySet()) {
+                            if (disciplinasAtivas.contains(item.getValue())) {
+                                validas.add(item.getKey());
+                            }
+                        }
+
+                        return validas;
+                    });
+        });
+    }
+
+    // Busca documentos pelo ID em lotes de até 10 (limite do whereIn do Firestore)
+    private static Task<List<DocumentSnapshot>> buscarPorIds(FirebaseFirestore db, String colecao,
+                                                             Collection<String> ids) {
+
+        List<String> lista = new ArrayList<>(ids);
+        List<Task<QuerySnapshot>> consultas = new ArrayList<>();
+
+        for (int i = 0; i < lista.size(); i += 10) {
+            consultas.add(db.collection(colecao)
+                    .whereIn(FieldPath.documentId(),
+                            new ArrayList<>(lista.subList(i, Math.min(i + 10, lista.size()))))
+                    .get());
+        }
+
+        return Tasks.whenAllSuccess(consultas).continueWith(t -> {
+
+            List<DocumentSnapshot> documentos = new ArrayList<>();
+
+            for (Object resultado : t.getResult()) {
+                documentos.addAll(((QuerySnapshot) resultado).getDocuments());
+            }
+
+            return documentos;
+        });
     }
 
     // Registro com ano letivo gravado conta só no próprio ano. Registro antigo (de antes

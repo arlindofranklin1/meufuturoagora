@@ -417,6 +417,10 @@ public class TelaDetalhesDisciplinaProfessor
                             fotosPorId.put(documento.getId(), documento.getString("fotoUrl"));
                         }
 
+                        // Aluno deste lote que não existe mais (foi excluído) sai da lista
+                        listaNomesAlunos.removeIf(item -> item.id != null
+                                && lote.contains(item.id) && !fotosPorId.containsKey(item.id));
+
                         for (AlunoItem item : listaNomesAlunos) {
 
                             if (item.id != null && fotosPorId.containsKey(item.id)) {
@@ -424,7 +428,7 @@ public class TelaDetalhesDisciplinaProfessor
                             }
                         }
 
-                        adapterAlunos.notifyDataSetChanged();
+                        mostrarAlunos();
                     });
         }
     }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cabeçalho do diário: degradê da marca (roxo -> lilás -> laranja), cantos de baixo arredondados -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <gradient
+        android:type="linear"
+        android:angle="315"
+        android:startColor="#2E0C7B"
+        android:centerColor="#7A2BC9"
+        android:endColor="#FF683F" />
+
+    <corners
+        android:bottomLeftRadius="32dp"
+        android:bottomRightRadius="32dp" />
+
+</shape>

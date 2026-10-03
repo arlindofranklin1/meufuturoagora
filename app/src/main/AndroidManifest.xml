@@ -15,6 +15,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MeuFuturoAgora">
         <activity
+            android:name=".DiarioAlunoActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".MeuFuturoActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CursoDetalheActivity"
+            android:exported="false" />
+        <activity
             android:name=".HistoricoAnoLetivoActivity"
             android:exported="false" />
         <activity

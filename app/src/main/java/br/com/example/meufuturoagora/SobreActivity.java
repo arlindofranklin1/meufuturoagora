@@ -12,7 +12,7 @@ public class SobreActivity extends AppCompatActivity {
 
     // Perfis do LinkedIn (cole aqui o endereço completo de cada perfil)
     private static final String LINKEDIN_ARLINDO = "https://www.linkedin.com/in/arlindo-franklim-62b6a3409?utm_source=share_via&utm_content=profile&utm_medium=member_android";
-    private static final String LINKEDIN_MARIA = "";
+    private static final String LINKEDIN_MARIA = "https://www.linkedin.com/in/maria-h-91ba7a3a9?jobid=1234&lipi=urn%3Ali%3Apage%3Ad_jobs_easyapply_pdfgenresume%3BgSRz3d1XQ9OsLNJwlOgkSA%3D%3D&licu=urn%3Ali%3Acontrol%3Ad_jobs_easyapply_pdfgenresume-v02_profile";
     private static final String LINKEDIN_ALEXANDRE = "https://www.linkedin.com/in/alexandrecostapb?utm_source=share_via&utm_content=profile&utm_medium=member_android";
 
     @Override

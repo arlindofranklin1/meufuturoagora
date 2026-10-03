@@ -132,6 +132,11 @@ public class TelaPerfilAluno extends AppCompatActivity {
                 startActivity(new Intent(this, TelaDisciplinaAluno.class));
                 return true;
 
+            } else if (id == R.id.nav_diario) {
+
+                startActivity(new Intent(this, DiarioAlunoActivity.class));
+                return true;
+
             } else if (id == R.id.nav_ranking) {
 
                 startActivity(new Intent(this, RankingActivity.class)

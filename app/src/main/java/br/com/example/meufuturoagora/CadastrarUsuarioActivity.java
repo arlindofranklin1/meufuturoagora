@@ -168,14 +168,23 @@ public class CadastrarUsuarioActivity extends AppCompatActivity {
         dados.put("ano", ano);
         dados.put("ativo", true);
 
+        // A turma é identificada pelo nome (sem diferenciar maiúsculas e espaços):
+        // "6º ano A" e "6º ano B" são turmas diferentes, mesmo com o mesmo ano (6)
         db.collection("turmas")
-                .whereEqualTo("nome", nome)
                 .get()
                 .addOnSuccessListener(existentes -> {
 
-                    String documentoId = existentes.isEmpty()
-                            ? null
-                            : existentes.getDocuments().get(0).getId();
+                    String documentoId = null;
+
+                    for (QueryDocumentSnapshot turma : existentes) {
+
+                        String nomeExistente = turma.getString("nome");
+
+                        if (nomeExistente != null && nomeExistente.trim().equalsIgnoreCase(nome)) {
+                            documentoId = turma.getId();
+                            break;
+                        }
+                    }
 
                     salvarDocumento("turmas", documentoId, dados);
                     carregarTurmas();

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Estrelinha de quatro pontas (brilho) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,0 C12.9,7 17,11.1 24,12 C17,12.9 12.9,17 12,24 C11.1,17 7,12.9 0,12 C7,11.1 11.1,7 12,0 Z" />
+
+</vector>

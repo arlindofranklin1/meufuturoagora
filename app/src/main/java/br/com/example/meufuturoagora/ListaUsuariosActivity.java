@@ -13,9 +13,13 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
@@ -104,8 +108,11 @@ public class ListaUsuariosActivity extends AppCompatActivity {
                                 // E-mails de alunos que já entraram no app (a conta tem pontuação).
                                 // O cadastro antigo desses alunos é escondido até ser juntado no próximo login.
                                 Set<String> emailsComConta = new HashSet<>();
+                                Set<String> idsAlunos = new HashSet<>();
 
                                 for (QueryDocumentSnapshot documento : alunos) {
+
+                                    idsAlunos.add(documento.getId());
 
                                     String email = documento.getString("email");
 
@@ -136,6 +143,7 @@ public class ListaUsuariosActivity extends AppCompatActivity {
                                 }
 
                                 montarGrupos(listaProfessores, gruposPorTurmaId, semTurma);
+                                limparMatriculasOrfas(idsAlunos);
                             });
                 });
     }
@@ -228,11 +236,16 @@ public class ListaUsuariosActivity extends AppCompatActivity {
 
                     lote.delete(db.collection("alunos").document(pessoa.id));
 
+                    List<String> idsExcluidos = new ArrayList<>();
+                    idsExcluidos.add(pessoa.id);
+
                     for (QueryDocumentSnapshot documento : registros) {
                         lote.delete(documento.getReference());
+                        idsExcluidos.add(documento.getId());
                     }
 
                     lote.commit()
+                            .addOnSuccessListener(unused -> excluirMatriculas(idsExcluidos))
                             .addOnSuccessListener(unused -> {
 
                                 Toast.makeText(this, "Excluído!", Toast.LENGTH_SHORT).show();
@@ -247,6 +260,42 @@ public class ListaUsuariosActivity extends AppCompatActivity {
                 ).show());
     }
 
+    // Sem as matrículas, o aluno excluído some das disciplinas, da frequência e do
+    // desempenho dos professores (as telas montam a lista de alunos pelas matrículas)
+    private void excluirMatriculas(List<String> idsAlunos) {
+
+        for (int i = 0; i < idsAlunos.size(); i += 10) {
+
+            db.collection("matriculas")
+                    .whereIn("alunoId", new ArrayList<>(
+                            idsAlunos.subList(i, Math.min(i + 10, idsAlunos.size()))))
+                    .get()
+                    .addOnSuccessListener(matriculas -> {
+                        for (QueryDocumentSnapshot matricula : matriculas) {
+                            matricula.getReference().delete();
+                        }
+                    });
+        }
+    }
+
+    // Apaga matrículas de alunos que não existem mais (excluídos antes de a
+    // exclusão passar a apagar as matrículas junto)
+    private void limparMatriculasOrfas(Set<String> idsAlunosExistentes) {
+
+        db.collection("matriculas")
+                .get()
+                .addOnSuccessListener(matriculas -> {
+                    for (QueryDocumentSnapshot matricula : matriculas) {
+
+                        String alunoId = matricula.getString("alunoId");
+
+                        if (alunoId != null && !idsAlunosExistentes.contains(alunoId)) {
+                            matricula.getReference().delete();
+                        }
+                    }
+                });
+    }
+
     private void confirmarExclusaoTurma(Grupo grupo) {
 
         new AlertDialog.Builder(this)
@@ -256,20 +305,43 @@ public class ListaUsuariosActivity extends AppCompatActivity {
                                 + "Os alunos dela deixarão de ter turma, mas não serão excluídos."
                 )
                 .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Excluir", (dialog, which) ->
-                        db.collection("turmas")
-                                .document(grupo.turmaId)
-                                .delete()
-                                .addOnSuccessListener(unused -> {
-
-                                    Toast.makeText(this, "Turma excluída!", Toast.LENGTH_SHORT).show();
-                                    carregarDados();
-                                })
-                                .addOnFailureListener(e -> Toast.makeText(
-                                        this, "Erro ao excluir turma: " + e.getMessage(), Toast.LENGTH_LONG
-                                ).show())
-                )
+                .setPositiveButton("Excluir", (dialog, which) -> excluirTurma(grupo.turmaId))
                 .show();
+    }
+
+    // Apaga a turma e tira a turma dos alunos e disciplinas que estavam nela,
+    // para o nome dela não continuar aparecendo nos filtros e listas
+    private void excluirTurma(String turmaId) {
+
+        Task<QuerySnapshot> tAlunos = db.collection("alunos").whereEqualTo("turmaId", turmaId).get();
+        Task<QuerySnapshot> tDisciplinas = db.collection("disciplinas").whereEqualTo("turmaId", turmaId).get();
+
+        Tasks.whenAllSuccess(tAlunos, tDisciplinas)
+                .continueWithTask(t -> {
+
+                    WriteBatch lote = db.batch();
+
+                    lote.delete(db.collection("turmas").document(turmaId));
+
+                    List<DocumentSnapshot> vinculados = new ArrayList<>(tAlunos.getResult().getDocuments());
+                    vinculados.addAll(tDisciplinas.getResult().getDocuments());
+
+                    for (DocumentSnapshot documento : vinculados) {
+                        lote.update(documento.getReference(),
+                                "turmaId", FieldValue.delete(),
+                                "turmaNome", FieldValue.delete());
+                    }
+
+                    return lote.commit();
+                })
+                .addOnSuccessListener(unused -> {
+
+                    Toast.makeText(this, "Turma excluída!", Toast.LENGTH_SHORT).show();
+                    carregarDados();
+                })
+                .addOnFailureListener(e -> Toast.makeText(
+                        this, "Erro ao excluir turma: " + e.getMessage(), Toast.LENGTH_LONG
+                ).show());
     }
 
     private static class Pessoa {

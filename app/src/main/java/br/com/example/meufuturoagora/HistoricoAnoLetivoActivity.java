@@ -61,6 +61,8 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
 
     // Opções do filtro de turma (a primeira é "Todas as turmas")
     private final List<String> turmas = new ArrayList<>();
+    // Nomes das turmas que ainda existem na coleção "turmas"
+    private final TreeSet<String> turmasExistentes = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
     private TextView tvResumo;
     private EditText edtBuscar;
     private ProgressBar progress;
@@ -244,15 +246,16 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
         spinnerAno.setOnItemSelectedListener(new AoSelecionar());
     }
 
-    // Turmas cadastradas e as que aparecem nos registros (inclusive de anos anteriores)
+    // Somente as turmas cadastradas (turma excluída não aparece no filtro; os
+    // registros dela ficam em "Sem turma")
     private void montarListaDeTurmas(QuerySnapshot turmasCadastradas) {
 
-        TreeSet<String> nomes = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        turmasExistentes.clear();
         boolean temSemTurma = false;
 
         for (DocumentSnapshot turma : turmasCadastradas) {
             String nome = turma.getString("nome");
-            if (nome != null && !nome.isEmpty()) nomes.add(nome);
+            if (nome != null && !nome.isEmpty()) turmasExistentes.add(nome);
         }
 
         List<DocumentSnapshot> comTurma = new ArrayList<>(alunos.values());
@@ -262,16 +265,14 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
 
             String nome = documento.getString("turmaNome");
 
-            if (nome != null && !nome.isEmpty()) {
-                nomes.add(nome);
-            } else {
+            if (nome == null || !turmasExistentes.contains(nome)) {
                 temSemTurma = true;
             }
         }
 
         turmas.clear();
         turmas.add("Todas as turmas");
-        turmas.addAll(nomes);
+        turmas.addAll(turmasExistentes);
 
         if (temSemTurma) {
             turmas.add(SEM_TURMA);
@@ -676,12 +677,15 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
 
         for (Linha linha : linhas) {
 
-            if (turmaFiltro != null && !turmaFiltro.equals(linha.turma)) {
+            // Registro de uma turma que foi excluída entra em "Sem turma"
+            String turmaDaLinha = turmasExistentes.contains(linha.turma) ? linha.turma : SEM_TURMA;
+
+            if (turmaFiltro != null && !turmaFiltro.equalsIgnoreCase(turmaDaLinha)) {
                 continue;
             }
 
             if (busca.isEmpty() || linha.busca.contains(busca)) {
-                porTurma.computeIfAbsent(linha.turma, k -> new ArrayList<>()).add(linha);
+                porTurma.computeIfAbsent(turmaDaLinha, k -> new ArrayList<>()).add(linha);
             }
         }
 

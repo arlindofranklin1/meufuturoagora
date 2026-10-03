@@ -26,15 +26,24 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 public class TelaDisciplinaProfessor extends AppCompatActivity {
 
@@ -285,6 +294,7 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
 
                     adapter.notifyDataSetChanged();
 
+                    carregarQuantidadeAlunos();
                 })
                 .addOnFailureListener(e -> {
 
@@ -294,6 +304,85 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
                             e
                     );
                 });
+    }
+
+    // Conta os alunos matriculados em cada disciplina. Só entram alunos que
+    // ainda existem na coleção "alunos" (aluno excluído não é contado).
+    private void carregarQuantidadeAlunos() {
+
+        List<Task<QuerySnapshot>> consultas = new ArrayList<>();
+
+        for (int i = 0; i < listaDisciplinasOriginal.size(); i += 10) {
+
+            List<String> lote = new ArrayList<>();
+
+            for (Disciplina disciplina : listaDisciplinasOriginal.subList(
+                    i, Math.min(i + 10, listaDisciplinasOriginal.size()))) {
+                lote.add(disciplina.id);
+            }
+
+            consultas.add(db.collection("matriculas").whereIn("disciplinaId", lote).get());
+        }
+
+        Tasks.whenAllSuccess(consultas).addOnSuccessListener(this, resultados -> {
+
+            Map<String, Set<String>> alunosPorDisciplina = new HashMap<>();
+            Set<String> idsAlunos = new HashSet<>();
+
+            for (Object resultado : resultados) {
+                for (DocumentSnapshot matricula : ((QuerySnapshot) resultado).getDocuments()) {
+
+                    String disciplinaId = matricula.getString("disciplinaId");
+                    String alunoId = matricula.getString("alunoId");
+
+                    if (disciplinaId != null && alunoId != null) {
+                        alunosPorDisciplina
+                                .computeIfAbsent(disciplinaId, k -> new HashSet<>())
+                                .add(alunoId);
+                        idsAlunos.add(alunoId);
+                    }
+                }
+            }
+
+            List<String> listaIds = new ArrayList<>(idsAlunos);
+            List<Task<QuerySnapshot>> consultasAlunos = new ArrayList<>();
+
+            for (int i = 0; i < listaIds.size(); i += 10) {
+                consultasAlunos.add(db.collection("alunos")
+                        .whereIn(FieldPath.documentId(),
+                                new ArrayList<>(listaIds.subList(i, Math.min(i + 10, listaIds.size()))))
+                        .get());
+            }
+
+            Tasks.whenAllSuccess(consultasAlunos).addOnSuccessListener(this, alunos -> {
+
+                Set<String> existentes = new HashSet<>();
+
+                for (Object resultado : alunos) {
+                    for (DocumentSnapshot aluno : ((QuerySnapshot) resultado).getDocuments()) {
+                        existentes.add(aluno.getId());
+                    }
+                }
+
+                for (Disciplina disciplina : listaDisciplinasOriginal) {
+
+                    int quantidade = 0;
+                    Set<String> matriculados = alunosPorDisciplina.get(disciplina.id);
+
+                    if (matriculados != null) {
+                        for (String alunoId : matriculados) {
+                            if (existentes.contains(alunoId)) {
+                                quantidade++;
+                            }
+                        }
+                    }
+
+                    disciplina.qtdAlunos = quantidade;
+                }
+
+                adapter.notifyDataSetChanged();
+            });
+        });
     }
 
     // =====================================================
@@ -337,6 +426,7 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
         String id;
         String nome;
         String cor;
+        int qtdAlunos = -1; // -1 = ainda carregando
 
         public Disciplina(
                 String id,
@@ -393,9 +483,12 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
                     disciplina.nome
             );
 
-            // Por enquanto, quantidade de alunos
+            // Quantidade de alunos matriculados
             holder.tvQuantidadeAlunos.setText(
-                    "0 alunos"
+                    disciplina.qtdAlunos < 0
+                            ? "..."
+                            : disciplina.qtdAlunos
+                                    + (disciplina.qtdAlunos == 1 ? " aluno" : " alunos")
             );
 
             int cor = Color.parseColor(disciplina.cor);
