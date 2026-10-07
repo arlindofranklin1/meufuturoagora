@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Botão "Área do administrador": só aparece para contas marcadas como admin -->
+<com.google.android.material.button.MaterialButton xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/btnAreaAdministrador"
+    android:layout_width="match_parent"
+    android:layout_height="52dp"
+    android:layout_marginStart="20dp"
+    android:layout_marginTop="16dp"
+    android:layout_marginEnd="20dp"
+    android:backgroundTint="@color/roxo_acao"
+    android:fontFamily="@font/poppins_bold"
+    android:text="Área do administrador"
+    android:textAllCaps="false"
+    android:textColor="@android:color/white"
+    android:textSize="16sp"
+    android:visibility="gone"
+    app:cornerRadius="15dp"
+    app:icon="@drawable/ic_cadeado"
+    app:iconGravity="textStart"
+    app:iconTint="@android:color/white" />
