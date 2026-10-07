@@ -287,6 +287,9 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
                                             cor
                                     );
 
+                            disciplina.turmaNome =
+                                    documento.getString("turmaNome");
+
                             listaDisciplinas.add(disciplina);
                             listaDisciplinasOriginal.add(disciplina);
                         }
@@ -426,6 +429,7 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
         String id;
         String nome;
         String cor;
+        String turmaNome;
         int qtdAlunos = -1; // -1 = ainda carregando
 
         public Disciplina(
@@ -478,9 +482,11 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
             Disciplina disciplina =
                     disciplinas.get(position);
 
-            // Nome da disciplina
+            // Nome da disciplina com a turma entre parênteses
             holder.tvNomeDisciplina.setText(
-                    disciplina.nome
+                    disciplina.turmaNome != null && !disciplina.turmaNome.isEmpty()
+                            ? disciplina.nome + " (" + disciplina.turmaNome + ")"
+                            : disciplina.nome
             );
 
             // Quantidade de alunos matriculados

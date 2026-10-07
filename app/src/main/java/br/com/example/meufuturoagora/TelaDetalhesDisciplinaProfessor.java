@@ -453,10 +453,16 @@ public class TelaDetalhesDisciplinaProfessor
                         String nome =
                                 documento.getString("nome");
 
+                        String turmaNome =
+                                documento.getString("turmaNome");
+
                         if (nome != null) {
 
+                            // Nome da disciplina com a turma entre parênteses
                             tvNomeDisciplina.setText(
-                                    nome
+                                    turmaNome != null && !turmaNome.isEmpty()
+                                            ? nome + " (" + turmaNome + ")"
+                                            : nome
                             );
                         }
                     }
