@@ -47,6 +47,10 @@ public class TelaAtividadeAluno extends AppCompatActivity {
     private LinearLayout layoutAvaliacaoAluno;
     private MaterialButton btnSelecionarArquivoAluno;
     private EditText edtComentarioAluno;
+    private MaterialButton btnFazerEntrega;
+
+    // Depois de entregue, o aluno não pode mais alterar a entrega
+    private boolean entregaFeita = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,7 +126,7 @@ public class TelaAtividadeAluno extends AppCompatActivity {
 
         btnSelecionarArquivoAluno.setOnClickListener(v -> selecionarArquivoLauncher.launch("*/*"));
 
-        MaterialButton btnFazerEntrega = findViewById(R.id.btnFazerEntrega);
+        btnFazerEntrega = findViewById(R.id.btnFazerEntrega);
         btnFazerEntrega.setOnClickListener(v -> enviarEntrega());
 
         carregarAtividadeEEntrega(atividadeNome);
@@ -209,6 +213,8 @@ public class TelaAtividadeAluno extends AppCompatActivity {
             return;
         }
 
+        bloquearEdicaoEntrega();
+
         Boolean avaliado = documento.getBoolean("avaliado");
         String comentarioAluno = documento.getString("comentarioAluno");
 
@@ -255,7 +261,25 @@ public class TelaAtividadeAluno extends AppCompatActivity {
         }
     }
 
+    // Mantém a entrega visível, mas sem permitir trocar o arquivo, o comentário ou reenviar
+    private void bloquearEdicaoEntrega() {
+
+        entregaFeita = true;
+
+        btnSelecionarArquivoAluno.setEnabled(false);
+        edtComentarioAluno.setEnabled(false);
+        edtComentarioAluno.setFocusable(false);
+        edtComentarioAluno.setHint("Sem comentário");
+        btnFazerEntrega.setVisibility(View.GONE);
+    }
+
     private void enviarEntrega() {
+
+        if (entregaFeita) {
+
+            Toast.makeText(this, "Esta atividade já foi entregue.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         if (alunoId == null || documentoEntregaId == null) {
 
@@ -283,6 +307,7 @@ public class TelaAtividadeAluno extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Confirmar entrega")
                 .setMessage("Confira sua entrega antes de enviar:\n\n" + resumo
+                        + "\n\nAtenção: depois de enviada, a entrega não poderá ser modificada."
                         + "\n\nDeseja enviar?")
                 .setNegativeButton("Revisar", null)
                 .setPositiveButton("Enviar", (dialog, which) -> confirmarEnvio(comentario))
@@ -290,6 +315,9 @@ public class TelaAtividadeAluno extends AppCompatActivity {
     }
 
     private void confirmarEnvio(String comentario) {
+
+        // Evita um segundo envio enquanto o primeiro ainda está em andamento
+        btnFazerEntrega.setEnabled(false);
 
         Map<String, Object> entrega = new HashMap<>();
 
@@ -334,6 +362,8 @@ public class TelaAtividadeAluno extends AppCompatActivity {
                     @Override
                     public void onErro(String mensagem) {
 
+                        btnFazerEntrega.setEnabled(true);
+
                         Toast.makeText(
                                 TelaAtividadeAluno.this,
                                 "Erro ao enviar arquivo: " + mensagem,
@@ -354,9 +384,14 @@ public class TelaAtividadeAluno extends AppCompatActivity {
                     Toast.makeText(this, "Entrega enviada!", Toast.LENGTH_SHORT).show();
                     finish();
                 })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this, "Erro ao enviar entrega: " + e.getMessage(), Toast.LENGTH_LONG
-                ).show());
+                .addOnFailureListener(e -> {
+
+                    btnFazerEntrega.setEnabled(true);
+
+                    Toast.makeText(
+                            this, "Erro ao enviar entrega: " + e.getMessage(), Toast.LENGTH_LONG
+                    ).show();
+                });
     }
 
     private String obterNomeArquivo(Uri uri) {
