@@ -402,6 +402,8 @@
 
             </androidx.cardview.widget.CardView>
 
+            <include layout="@layout/item_botao_area_admin" />
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

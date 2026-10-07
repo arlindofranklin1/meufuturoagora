@@ -343,7 +343,7 @@
                     android:layout_marginStart="14dp"
                     android:layout_weight="1"
                     android:fontFamily="@font/poppins_semibold"
-                    android:text="Sair da conta"
+                    android:text="Sair da área do administrador"
                     android:textColor="@color/vermelho_erro"
                     android:textSize="16sp" />
 

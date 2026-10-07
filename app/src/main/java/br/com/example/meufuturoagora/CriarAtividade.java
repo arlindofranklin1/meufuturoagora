@@ -630,11 +630,35 @@ public class CriarAtividade extends AppCompatActivity {
                         .toString()
                         .trim();
 
-        if (!link.isEmpty()
-                && !link.startsWith("http://")
-                && !link.startsWith("https://")) {
+        // Só links seguros (https). Sem o início, o https:// é colocado
+        // automaticamente; links http:// são recusados
+        if (!link.isEmpty()) {
 
-            link = "https://" + link;
+            String linkMinusculo = link.toLowerCase();
+
+            if (linkMinusculo.startsWith("http://")) {
+
+                edtLink.setError(
+                        "Use um link seguro, que comece com https://"
+                );
+
+                return;
+            }
+
+            if (!linkMinusculo.startsWith("https://")) {
+
+                link = "https://" + link;
+            }
+
+            if (link.contains(" ")
+                    || !android.util.Patterns.WEB_URL.matcher(link).matches()) {
+
+                edtLink.setError(
+                        "Digite um link válido (ex: https://site.com)"
+                );
+
+                return;
+            }
         }
 
         // =============================

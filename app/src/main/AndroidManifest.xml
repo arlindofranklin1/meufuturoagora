@@ -52,9 +52,6 @@
             android:name=".TelaAdminHome"
             android:exported="false" />
         <activity
-            android:name=".TelaAdminLogin"
-            android:exported="false" />
-        <activity
             android:name=".TelaPerfilAluno"
             android:exported="false" />
         <activity

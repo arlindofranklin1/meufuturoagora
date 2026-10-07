@@ -31,6 +31,9 @@ public class TelaPerfilAluno extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
+        // Botão "Área do administrador" (só para contas admin)
+        AdminUtil.configurarBotao(this, db);
+
         ImageView imgFotoPerfilAluno = findViewById(R.id.imgFotoPerfilAluno);
         TextView tvNomePerfilAluno = findViewById(R.id.tvNomePerfilAluno);
         TextView tvTurmaPerfilAluno = findViewById(R.id.tvTurmaPerfilAluno);

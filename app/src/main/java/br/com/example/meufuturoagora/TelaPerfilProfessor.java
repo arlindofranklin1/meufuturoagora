@@ -39,6 +39,9 @@ public class TelaPerfilProfessor extends AppCompatActivity {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+        // Botão "Área do administrador" (só para contas admin)
+        AdminUtil.configurarBotao(this, db);
+
         // =========================
         // USUÁRIO LOGADO
         // =========================

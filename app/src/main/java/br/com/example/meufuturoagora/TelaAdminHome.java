@@ -3,6 +3,7 @@ package br.com.example.meufuturoagora;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -28,6 +29,16 @@ public class TelaAdminHome extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
+        // Só contas marcadas como admin no banco podem ficar nesta tela
+        AdminUtil.verificar(db, ehAdmin -> {
+
+            if (!ehAdmin && !isFinishing()) {
+
+                Toast.makeText(this, "Acesso restrito ao administrador.", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        });
+
         tvAnoLetivoAdmin = findViewById(R.id.tvAnoLetivoAdmin);
         tvBimestreAdmin = findViewById(R.id.tvBimestreAdmin);
         tvPeriodoBimestreAdmin = findViewById(R.id.tvPeriodoBimestreAdmin);
@@ -52,13 +63,8 @@ public class TelaAdminHome extends AppCompatActivity {
                 startActivity(new Intent(this, HistoricoAnoLetivoActivity.class))
         );
 
-        findViewById(R.id.itemSairAdmin).setOnClickListener(v -> {
-
-            Intent intent = new Intent(this, TelaEntrar.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-        });
+        // Volta para o perfil, de onde a área do administrador foi aberta
+        findViewById(R.id.itemSairAdmin).setOnClickListener(v -> finish());
     }
 
     @Override
