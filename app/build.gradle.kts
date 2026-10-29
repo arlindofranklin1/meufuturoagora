@@ -117,6 +117,8 @@ dependencies {
     implementation(libs.okhttp)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.espresso.intents)
+    androidTestImplementation(libs.test.rules)
     implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")

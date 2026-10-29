@@ -10,7 +10,10 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.materialswitch.MaterialSwitch;
-import com.google.firebase.auth.FirebaseAuth;
+
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 public class ConfiguracoesActivity extends AppCompatActivity {
 
@@ -83,7 +86,23 @@ public class ConfiguracoesActivity extends AppCompatActivity {
 
     private void sairDaConta() {
 
-        FirebaseAuth.getInstance().signOut();
+        // Apaga a sessão do aparelho e revoga no servidor, em segundo plano. Sem
+        // Activity dona: esta tela fecha logo abaixo e o logout termina mesmo assim.
+        Tarefas.executar(null, () -> {
+            Servicos.get(this).auth.sair();
+            return null;
+        }, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object resultado) {
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                // sair() já limpa o aparelho mesmo sem resposta do servidor
+            }
+        });
+
+        PonteFirebase.sair();
 
         Intent intent = new Intent(this, TelaEntrar.class);
 
