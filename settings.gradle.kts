@@ -11,6 +11,11 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+// Permite ao Gradle baixar sozinho o JDK exigido em gradle/gradle-daemon-jvm.properties.
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
