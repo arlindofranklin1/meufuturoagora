@@ -504,3 +504,13 @@ e por quê. Nenhum ajuste muda uma decisão da Seção 7.
 | Bimestre da aula | Bimestre de hoje (como `AnoLetivoUtil.marcar`) | Bimestre da data da aula | A frequência costuma ser lançada depois da aula |
 | Ranking: seletor de turmas | Não previsto | RPC `turmas_do_ranking()` | Professor não lê a tabela de turmas filtrada por D2 |
 | Funções auxiliares | `public` | Esquema `privado`, fora da Data API | Não ficam chamáveis como RPC |
+
+### 8.1 Avisos aceitos do Security Advisor (projeto remoto)
+
+O advisor do projeto remoto, que é mais novo que o da CLI local, aponta
+`authenticated_security_definer_function_executable` (lint 0029) para as 16
+RPCs de `public`. É intencional: essas funções são a API do app e precisam ser
+`security definer` para gravar em tabelas que o usuário não grava direto
+(notas, frequência, ano letivo, exclusões). Cada uma confere no início quem
+está chamando, e os testes pgTAP cobrem a recusa (42501) de cada uma.
+Nenhum outro aviso de segurança ou desempenho apareceu.
