@@ -52,7 +52,7 @@ public class TelaInicialAluno extends AppCompatActivity {
         super.onResume();
 
         // Atualiza a foto ao voltar do perfil (o aluno pode ter trocado)
-        PerfilFotoUtil.carregarFotoDoUsuario(this, findViewById(R.id.imgAluno), false);
+        PerfilFotoUtil.carregarFotoDoUsuario(this, findViewById(R.id.imgAluno));
     }
 
     @Override

@@ -173,6 +173,16 @@ public class AtividadeEFrequenciaRepositorioTest {
     }
 
     @Test
+    public void entregasDeUmAlunoParaOAdmin() throws Exception {
+        falso.responder("[" + ENTREGA + "]");
+
+        List<Entrega> entregas = atividades.entregasDoAluno("a1");
+
+        assertEquals("eq.a1", falso.proxima().getUrl().queryParameter("aluno_id"));
+        assertEquals("t1/a1/r.pdf", entregas.get(0).arquivoPath);
+    }
+
+    @Test
     public void entregarAvaliarERefazer() throws Exception {
         falso.responder(201, "[" + ENTREGA + "]");
         falso.responder(204, "");

@@ -260,7 +260,7 @@ public class TelaInicialProfessor extends AppCompatActivity {
         }
 
         // Foto (a escolhida no perfil ou a do Google) e disciplinas, atualizadas ao voltar
-        PerfilFotoUtil.carregarFotoDoUsuario(this, imgProfessor, true);
+        PerfilFotoUtil.carregarFotoDoUsuario(this, imgProfessor);
         carregarQuantidadeDisciplinas(usuario.getUid());
     }
 

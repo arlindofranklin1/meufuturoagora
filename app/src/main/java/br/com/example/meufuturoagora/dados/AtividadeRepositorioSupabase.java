@@ -118,6 +118,12 @@ public class AtividadeRepositorioSupabase implements AtividadeRepositorio {
     }
 
     @Override
+    public List<Entrega> entregasDoAluno(String alunoId) throws ErroApi {
+        return Json.lista(rest.selecionar("entregas", Consulta.campos("*").igual("aluno_id", alunoId)),
+                Entrega::deJson);
+    }
+
+    @Override
     public Entrega entregar(String atividadeId, String comentario, String arquivoPath, String arquivoNome)
             throws ErroApi {
 

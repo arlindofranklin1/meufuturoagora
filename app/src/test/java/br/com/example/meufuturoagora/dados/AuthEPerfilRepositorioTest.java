@@ -142,6 +142,20 @@ public class AuthEPerfilRepositorioTest {
     }
 
     @Test
+    public void buscarPorEmailFiltraPeloEmailSemEspacos() throws Exception {
+        falso.logar();
+        falso.responder("[" + PERFIL_JSON + "]");
+        falso.responder("[]");
+
+        Perfil encontrado = perfis.buscarPorEmail("  Ana@Escola.test ");
+        Perfil nenhum = perfis.buscarPorEmail("ninguem@escola.test");
+
+        assertEquals("eq.Ana@Escola.test", falso.proxima().getUrl().queryParameter("email"));
+        assertEquals("p1", encontrado.id);
+        assertNull(nenhum);
+    }
+
+    @Test
     public void cadastrarLimpaEspacos() throws Exception {
         falso.logar();
         falso.responder(201, "[" + PERFIL_JSON + "]");

@@ -32,6 +32,9 @@ public interface AtividadeRepositorio {
 
     List<Entrega> minhasEntregas() throws ErroApi;
 
+    // Admin: para apagar os arquivos do aluno antes da exclusão definitiva
+    List<Entrega> entregasDoAluno(String alunoId) throws ErroApi;
+
     // Uma vez só; o servidor marca horário e dias de atraso
     Entrega entregar(String atividadeId, String comentario, String arquivoPath, String arquivoNome)
             throws ErroApi;

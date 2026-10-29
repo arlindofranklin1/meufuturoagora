@@ -3,8 +3,11 @@ package br.com.example.meufuturoagora;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -69,6 +72,12 @@ public class ConfiguracoesActivity extends AppCompatActivity {
         );
 
         // =========================
+        // EXCLUSÃO DOS DADOS (decisão D12)
+        // =========================
+
+        findViewById(R.id.itemExcluirDados).setOnClickListener(v -> pedirExclusao());
+
+        // =========================
         // SAIR DA CONTA
         // =========================
 
@@ -82,6 +91,46 @@ public class ConfiguracoesActivity extends AppCompatActivity {
                         .setPositiveButton("Sair", (dialog, which) -> sairDaConta())
                         .show()
         );
+    }
+
+    // O pedido vai para o admin, que aprova (apaga tudo de vez) ou recusa
+    private void pedirExclusao() {
+
+        EditText edtMotivo = new EditText(this);
+        edtMotivo.setHint("Motivo (opcional)");
+        edtMotivo.setMaxLines(3);
+
+        FrameLayout moldura = new FrameLayout(this);
+        int margem = Math.round(20 * getResources().getDisplayMetrics().density);
+        moldura.setPadding(margem, 0, margem, 0);
+        moldura.addView(edtMotivo);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Solicitar exclusão dos meus dados")
+                .setMessage("A coordenação vai analisar o pedido. Se for aprovado, a sua conta e todos os "
+                        + "seus dados no app (entregas, notas, frequência, diário e foto) são apagados de vez.")
+                .setView(moldura)
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Enviar pedido", (dialog, which) -> {
+
+                    String motivo = edtMotivo.getText().toString().trim();
+
+                    Tarefas.executar(this, () -> Servicos.get(this).perfis.solicitarExclusao(motivo),
+                            new Tarefas.Retorno<String>() {
+                                @Override
+                                public void sucesso(String id) {
+                                    Toast.makeText(ConfiguracoesActivity.this,
+                                            "Pedido enviado. A coordenação vai analisar.", Toast.LENGTH_LONG).show();
+                                }
+
+                                @Override
+                                public void erro(ErroApi erro) {
+                                    Toast.makeText(ConfiguracoesActivity.this, erro.getMessage(),
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+                })
+                .show();
     }
 
     private void sairDaConta() {

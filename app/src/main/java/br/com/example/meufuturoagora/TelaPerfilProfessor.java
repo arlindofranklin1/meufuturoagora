@@ -1,22 +1,27 @@
 package br.com.example.meufuturoagora;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
+
+import br.com.example.meufuturoagora.dados.Disciplina;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Perfil;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 public class TelaPerfilProfessor extends AppCompatActivity {
+
+    private ImageView imgFotoPerfil;
+    private Perfil perfil;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,90 +29,38 @@ public class TelaPerfilProfessor extends AppCompatActivity {
 
         setContentView(R.layout.activity_tela_perfil_professor);
 
-        // =========================
-        // COMPONENTES
-        // =========================
-
-        ImageView imgFotoPerfil = findViewById(R.id.imgFotoPerfil);
-        TextView tvNomePerfil = findViewById(R.id.tvNomePerfil);
-        TextView tvEmailPerfil = findViewById(R.id.tvEmailPerfil);
-        TextView tvQtdDisciplinas = findViewById(R.id.tvQtdDisciplinasPerfilProfessor);
-        TextView tvQtdTrilhasEnviadas = findViewById(R.id.tvQtdTrilhasEnviadasPerfilProfessor);
-        TextView tvQtdAulasRegistradas = findViewById(R.id.tvQtdAulasRegistradasPerfilProfessor);
-        TextView tvNomeContaPerfilProfessor = findViewById(R.id.tvNomeContaPerfilProfessor);
-        TextView tvEmailContaPerfilProfessor = findViewById(R.id.tvEmailContaPerfilProfessor);
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        imgFotoPerfil = findViewById(R.id.imgFotoPerfil);
 
         // Botão "Área do administrador" (só para contas admin)
-        AdminUtil.configurarBotao(this, db);
+        AdminUtil.configurarBotao(this);
 
-        // =========================
-        // USUÁRIO LOGADO
-        // =========================
-
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (usuario != null) {
-
-            String nome = usuario.getDisplayName();
-            tvNomePerfil.setText(nome != null && !nome.isEmpty() ? nome : "Professor(a)");
-            tvNomeContaPerfilProfessor.setText(nome != null && !nome.isEmpty() ? nome : "Professor(a)");
-
-            String email = usuario.getEmail();
-            tvEmailPerfil.setText(email != null ? email : "");
-            tvEmailContaPerfilProfessor.setText(email != null ? email : "");
-
-            // Foto escolhida pelo professor (ou a da conta Google); tocar nela troca a foto
-            PerfilFotoUtil.carregarFotoDoUsuario(this, imgFotoPerfil, true);
-
-            // Galeria -> tela de recorte quadrado -> envio da foto recortada
-            ActivityResultLauncher<Intent> recortarFoto = registerForActivityResult(
-                    new ActivityResultContracts.StartActivityForResult(),
-                    resultado -> {
-                        if (resultado.getResultCode() == RESULT_OK && resultado.getData() != null) {
-                            PerfilFotoUtil.trocarFoto(this, resultado.getData().getData(), true, imgFotoPerfil);
-                        }
+        // Galeria -> tela de recorte quadrado -> envio da foto recortada
+        ActivityResultLauncher<Intent> recortarFoto = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                resultado -> {
+                    if (resultado.getResultCode() == RESULT_OK && resultado.getData() != null) {
+                        PerfilFotoUtil.trocarFoto(this, resultado.getData().getData(), perfil,
+                                imgFotoPerfil, atualizado -> perfil = atualizado);
                     }
-            );
+                }
+        );
 
-            ActivityResultLauncher<String> escolherFoto = registerForActivityResult(
-                    new ActivityResultContracts.GetContent(),
-                    uri -> {
-                        if (uri != null) {
-                            recortarFoto.launch(RecortarFotoActivity.criarIntent(this, uri));
-                        }
+        ActivityResultLauncher<String> escolherFoto = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        recortarFoto.launch(RecortarFotoActivity.criarIntent(this, uri));
                     }
-            );
+                }
+        );
 
-            imgFotoPerfil.setOnClickListener(v -> escolherFoto.launch("image/*"));
+        imgFotoPerfil.setOnClickListener(v -> {
+            if (perfil != null) {
+                escolherFoto.launch("image/*");
+            }
+        });
 
-            String uidProfessor = usuario.getUid();
-
-            db.collection("disciplinas")
-                    .whereEqualTo("professorId", uidProfessor)
-                    .whereEqualTo("ativo", true)
-                    .get()
-                    .addOnSuccessListener(querySnapshot ->
-                            tvQtdDisciplinas.setText(String.valueOf(querySnapshot.size()))
-                    );
-
-            db.collection("atividades")
-                    .whereEqualTo("professorId", uidProfessor)
-                    .whereEqualTo("ativo", true)
-                    .get()
-                    .addOnSuccessListener(querySnapshot ->
-                            tvQtdTrilhasEnviadas.setText(String.valueOf(querySnapshot.size()))
-                    );
-
-            db.collection("aulas")
-                    .whereEqualTo("professorId", uidProfessor)
-                    .whereEqualTo("ativo", true)
-                    .get()
-                    .addOnSuccessListener(querySnapshot ->
-                            tvQtdAulasRegistradas.setText(String.valueOf(querySnapshot.size()))
-                    );
-        }
+        carregarPerfil();
 
         // =========================
         // CONFIGURAÇÕES
@@ -158,5 +111,75 @@ public class TelaPerfilProfessor extends AppCompatActivity {
 
             return false;
         });
+    }
+
+    private void carregarPerfil() {
+
+        Servicos servicos = Servicos.get(this);
+
+        Tarefas.executar(this, () -> {
+
+            Perfil meu = servicos.perfis.meu();
+
+            if (meu == null) {
+                throw new IllegalStateException("perfil não encontrado");
+            }
+
+            // O admin enxerga todas as disciplinas: contam só as do próprio professor
+            int disciplinas = 0;
+            int trilhas = 0;
+            int aulas = 0;
+
+            for (Disciplina disciplina : servicos.disciplinas.listar()) {
+
+                if (!meu.id.equals(disciplina.professorId) || !disciplina.ativo) {
+                    continue;
+                }
+
+                disciplinas++;
+                trilhas += servicos.atividades.daDisciplina(disciplina.id).size();
+                aulas += servicos.frequencias.aulas(disciplina.id).size();
+            }
+
+            return new Dados(meu, disciplinas, trilhas, aulas);
+
+        }, new Tarefas.Retorno<Dados>() {
+            @Override
+            public void sucesso(Dados dados) {
+
+                perfil = dados.perfil;
+
+                ((TextView) findViewById(R.id.tvNomePerfil)).setText(perfil.nome);
+                ((TextView) findViewById(R.id.tvNomeContaPerfilProfessor)).setText(perfil.nome);
+                ((TextView) findViewById(R.id.tvEmailPerfil)).setText(perfil.email);
+                ((TextView) findViewById(R.id.tvEmailContaPerfilProfessor)).setText(perfil.email);
+                ((TextView) findViewById(R.id.tvQtdDisciplinasPerfilProfessor)).setText(String.valueOf(dados.disciplinas));
+                ((TextView) findViewById(R.id.tvQtdTrilhasEnviadasPerfilProfessor)).setText(String.valueOf(dados.trilhas));
+                ((TextView) findViewById(R.id.tvQtdAulasRegistradasPerfilProfessor)).setText(String.valueOf(dados.aulas));
+
+                PerfilFotoUtil.mostrar(TelaPerfilProfessor.this, perfil, imgFotoPerfil);
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(TelaPerfilProfessor.this, "Erro ao carregar o perfil: " + erro.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private static final class Dados {
+
+        final Perfil perfil;
+        final int disciplinas;
+        final int trilhas;
+        final int aulas;
+
+        Dados(Perfil perfil, int disciplinas, int trilhas, int aulas) {
+            this.perfil = perfil;
+            this.disciplinas = disciplinas;
+            this.trilhas = trilhas;
+            this.aulas = aulas;
+        }
     }
 }

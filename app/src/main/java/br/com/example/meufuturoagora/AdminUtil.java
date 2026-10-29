@@ -4,17 +4,15 @@ import android.app.Activity;
 import android.content.Intent;
 import android.view.View;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Perfil;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
-// A área do administrador só é aberta por contas marcadas como admin no banco:
-// o cadastro do usuário (em "professores" ou "alunos", achado pelo e-mail)
-// precisa ter o campo admin = true. Para essas contas, o perfil mostra o
-// botão "Área do administrador".
+// Mostra ou esconde a área do administrador. É só conveniência de tela: quem
+// barra de verdade é o servidor (RLS e as funções com exigir_admin), então
+// uma tela aberta à força não consegue gravar nada.
 class AdminUtil {
-
-    static final String CAMPO_ADMIN = "admin";
 
     interface Callback {
         void aoVerificar(boolean ehAdmin);
@@ -23,40 +21,23 @@ class AdminUtil {
     private AdminUtil() {
     }
 
-    static void verificar(FirebaseFirestore db, Callback callback) {
+    static void verificar(Activity activity, Callback callback) {
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+        Tarefas.executar(activity, () -> Servicos.get(activity).perfis.meu(), new Tarefas.Retorno<Perfil>() {
+            @Override
+            public void sucesso(Perfil perfil) {
+                callback.aoVerificar(perfil != null && perfil.admin && perfil.ativo);
+            }
 
-        if (usuario == null || usuario.getEmail() == null) {
-            callback.aoVerificar(false);
-            return;
-        }
-
-        String email = usuario.getEmail();
-
-        db.collection("professores")
-                .whereEqualTo("email", email)
-                .whereEqualTo(CAMPO_ADMIN, true)
-                .get()
-                .addOnSuccessListener(professores -> {
-
-                    if (!professores.isEmpty()) {
-                        callback.aoVerificar(true);
-                        return;
-                    }
-
-                    db.collection("alunos")
-                            .whereEqualTo("email", email)
-                            .whereEqualTo(CAMPO_ADMIN, true)
-                            .get()
-                            .addOnSuccessListener(alunos -> callback.aoVerificar(!alunos.isEmpty()))
-                            .addOnFailureListener(e -> callback.aoVerificar(false));
-                })
-                .addOnFailureListener(e -> callback.aoVerificar(false));
+            @Override
+            public void erro(ErroApi erro) {
+                callback.aoVerificar(false);
+            }
+        });
     }
 
     // Mostra o botão do perfil só para administradores
-    static void configurarBotao(Activity activity, FirebaseFirestore db) {
+    static void configurarBotao(Activity activity) {
 
         View botao = activity.findViewById(R.id.btnAreaAdministrador);
 
@@ -64,11 +45,6 @@ class AdminUtil {
                 activity.startActivity(new Intent(activity, TelaAdminHome.class))
         );
 
-        verificar(db, ehAdmin -> {
-
-            if (!activity.isDestroyed()) {
-                botao.setVisibility(ehAdmin ? View.VISIBLE : View.GONE);
-            }
-        });
+        verificar(activity, ehAdmin -> botao.setVisibility(ehAdmin ? View.VISIBLE : View.GONE));
     }
 }

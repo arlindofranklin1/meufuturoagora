@@ -11,6 +11,9 @@ public interface PerfilRepositorio {
     // Admin: todos; professor: os alunos das suas disciplinas
     List<Perfil> listar(String tipo) throws ErroApi;
 
+    // Admin: cadastro com esse e-mail (sem diferenciar maiúsculas), ou null
+    Perfil buscarPorEmail(String email) throws ErroApi;
+
     // Admin. E-mail repetido: ErroApi com jaExiste()
     Perfil cadastrar(String email, String nome, String tipo, String turmaId) throws ErroApi;
 

@@ -33,6 +33,13 @@ public class PerfilRepositorioSupabase implements PerfilRepositorio {
                 Consulta.campos("*").igual("tipo", tipo).ordenar("nome")), Perfil::deJson);
     }
 
+    // email é citext no banco: o "eq" do PostgREST já não diferencia maiúsculas
+    @Override
+    public Perfil buscarPorEmail(String email) throws ErroApi {
+        return Json.um(rest.selecionarUm("perfis", Consulta.campos("*").igual("email", email.trim())),
+                Perfil::deJson);
+    }
+
     @Override
     public Perfil cadastrar(String email, String nome, String tipo, String turmaId) throws ErroApi {
         return Json.um(rest.inserir("perfis", Json.objeto(
