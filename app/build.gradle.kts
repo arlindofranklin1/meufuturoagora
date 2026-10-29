@@ -1,3 +1,5 @@
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
@@ -33,6 +35,8 @@ android {
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("debug")
+            // Relatório de cobertura: ./gradlew createDebugUnitTestCoverageReport
+            enableUnitTestCoverage = true
         }
         release {
             isMinifyEnabled = false
@@ -46,6 +50,27 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    testCoverage {
+        jacocoVersion = libs.versions.jacoco.get()
+    }
+
+    // Robolectric executa as tarefas do Firestore na thread principal simulada
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            // Robolectric acessa internos do FileDescriptor, fechados por padrão no JDK 17+
+            it.jvmArgs(
+                "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
+                "--add-opens=java.base/java.io=ALL-UNNAMED"
+            )
+            // Sem isto o JaCoCo não enxerga as classes carregadas pelo Robolectric
+            it.extensions.configure(JacocoTaskExtension::class.java) {
+                isIncludeNoLocationClasses = true
+                excludes = listOf("jdk.internal.*")
+            }
+        }
+    }
 }
 
 dependencies {
@@ -54,6 +79,8 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
