@@ -1,4 +1,25 @@
+import java.util.Properties
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+
+// URL e chave pública do Supabase ficam no local.properties (fora do Git).
+// Só a chave pública (anon / sb_publishable_...) pode ir para o app.
+val propriedadesLocais = Properties().apply {
+    val arquivo = rootProject.file("local.properties")
+    if (arquivo.exists()) arquivo.inputStream().use { load(it) }
+}
+
+fun propriedadeObrigatoria(nome: String): String =
+    propriedadesLocais.getProperty(nome)?.trim()?.takeIf { it.isNotEmpty() }
+        ?: throw GradleException(
+            "Falta $nome no local.properties. Veja PROMPT_MIGRACAO_SUPABASE.md, Seção 3.1."
+        )
+
+val supabaseUrl = propriedadeObrigatoria("SUPABASE_URL")
+val supabaseChavePublica = propriedadeObrigatoria("SUPABASE_ANON_KEY")
+
+if (supabaseChavePublica.startsWith("sb_secret_") || supabaseChavePublica.contains("service_role")) {
+    throw GradleException("SUPABASE_ANON_KEY precisa ser a chave pública, nunca a secreta.")
+}
 
 plugins {
     alias(libs.plugins.android.application)
@@ -8,7 +29,8 @@ plugins {
 android {
     namespace = "br.com.example.meufuturoagora"
     compileSdk {
-        version = release(36)
+        // 37: exigido pelo OkHttp 5.5. O targetSdk continua 36 (comportamento no aparelho não muda)
+        version = release(37)
     }
 
     defaultConfig {
@@ -19,6 +41,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_CHAVE_PUBLICA", "\"$supabaseChavePublica\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     // Keystore de debug compartilhado (no Git) para que todos os computadores
@@ -81,6 +110,11 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
     testImplementation(libs.robolectric)
+    testImplementation(libs.mockwebserver)
+    // O org.json do android.jar é só um esqueleto nos testes JVM
+    testImplementation(libs.org.json)
+
+    implementation(libs.okhttp)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
