@@ -13,7 +13,7 @@ Quem decide o acesso é só o Supabase.
 
 | # | Perfil | Ação | Esperado | Obtido | Resultado |
 |---|---|---|---|---|---|
-| 1.1 | Admin (e-mail do `admins.local.txt`) | Abrir o app pela primeira vez e entrar com o Google | Vai para a tela inicial do professor; no Supabase, o perfil fica com `usuario_id` preenchido | | pendente |
+| 1.1 | Admin (e-mail do `admins.local.txt`) | Abrir o app pela primeira vez e entrar com o Google | Vai para a tela inicial do professor; no Supabase, o perfil fica com `usuario_id` preenchido | Entrou na tela do professor (Galaxy S25+, Android 17); perfil ligado e foto do Google gravada | ok |
 | 1.2 | Admin | Fechar e abrir o app de novo | Entra direto, sem pedir login | | pendente |
 | 1.3 | Conta Google sem cadastro | Entrar com o Google | Mensagem "Seu e-mail não está autorizado…" e continua na tela de login | | pendente |
 | 1.4 | Qualquer | Tocar em "Entrar com o Google" e fechar a janela de contas | Nada acontece, sem mensagem de erro; botão volta ao normal | | pendente |
@@ -25,3 +25,12 @@ Quem decide o acesso é só o Supabase.
 
 Testes automáticos que cobrem o roteamento com dados falsos: `LoginTest` e
 `TelaEntrarTest` (instrumentados), e a camada de dados nos testes JVM.
+
+### Achados do QA do módulo 1
+
+- **Texto do botão do Google quebrava em duas linhas** no Galaxy S25+ (22sp e
+  65dp de margem não cabiam em ~384dp). Corrigido: 18sp, margens de 40dp e uma
+  linha só.
+- **App instalado duas vezes** em aparelhos Samsung com Dual Messenger: o
+  `installDebug` instala também no perfil DUAL_APP (usuário 95). Para testar,
+  instalar só no perfil principal: `adb install -r --user 0 app-debug.apk`.
