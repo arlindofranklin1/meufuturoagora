@@ -19,7 +19,7 @@ Quem decide o acesso é só o Supabase.
 | 1.4 | Qualquer | Tocar em "Entrar com o Google" e fechar a janela de contas | Nada acontece, sem mensagem de erro; botão volta ao normal | | pendente |
 | 1.5 | Qualquer | Tocar duas vezes rápido em "Entrar com o Google" | Abre uma janela só ("Entrando...") | | pendente |
 | 1.6 | Admin | Configurações → Sair da conta → Sair | Volta para a tela de login; ao reabrir o app, pede login de novo | Voltou para o login e entrou de novo normalmente | ok |
-| 1.7 | Admin | Modo avião, abrir o app com sessão salva | Mensagem de sem conexão e tela de login; ao voltar a rede e reabrir, entra direto | | pendente |
+| 1.7 | Admin | Modo avião, abrir o app com sessão salva | Mensagem de sem conexão e tela de login; ao voltar a rede e reabrir, entra direto | Como esperado | ok |
 | 1.8 | Aluno cadastrado pelo admin | Entrar com o Google | Vai para a tela inicial do aluno | | pendente (depende do módulo 2 para cadastrar) |
 | 1.9 | Admin desativado no painel | Reabrir o app | Volta para o login com a mensagem de não autorizado | | pendente |
 
