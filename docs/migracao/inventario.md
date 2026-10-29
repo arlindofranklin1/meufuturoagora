@@ -483,3 +483,24 @@ repositório de arquivos existir. Até lá aparece só a foto do Google.
 | D9 | **Matrícula automática** por trigger: ao criar uma disciplina (ou mudá-la de turma), os alunos ativos da turma são matriculados na hora; ao cadastrar um aluno ou mudá-lo de turma, ele é matriculado nas disciplinas ativas dela |
 
 Todas as dúvidas foram respondidas. **Portão 1 aprovado em 29/10/2026.**
+
+---
+
+## 8. Ajustes feitos na Fase 3
+
+O que mudou em relação às Seções 4 e 5 durante a implementação das migrações,
+e por quê. Nenhum ajuste muda uma decisão da Seção 7.
+
+| Item | Previsto | Implementado | Motivo |
+|---|---|---|---|
+| `desempenho(aluno_id)` e `historico_ano_letivo(ano)` | RPCs | Leitura direta das tabelas, mais a RPC `pontuacao(aluno, ano)` | O RLS já entrega a cada perfil exatamente o que ele pode ver; menos código no servidor |
+| `excluir_atividade(id)` | RPC | `delete` direto em `atividades`, com cascata nas entregas | O Storage não deixa apagar arquivos por SQL (`storage.protect_delete`). O app apaga os arquivos pela API do Storage e depois a linha |
+| Arquivos na exclusão de usuário | Dentro de `excluir_usuario` | O app apaga os arquivos antes de chamar a RPC | Mesmo motivo |
+| `atividades.ativo` e `aulas.ativo` | Colunas | Removidas | Nada desativa trilhas (D6 apaga) nem aulas |
+| Escrita em `matriculas` pelo admin, `delete` em `disciplinas` | Permitidos | Sem acesso pela API | As matrículas são só dos gatilhos (D9); a disciplina é desativada |
+| E-mail trocado pelo admin | Não previsto | A conta ligada ao e-mail antigo perde o acesso na hora | Sem isso, a conta antiga continuaria acessando os dados do perfil |
+| Nome no login | Hoje é sobrescrito pelo nome do Google | Fica o nome cadastrado pelo admin | O nome do Google é editável pelo usuário e aparece no ranking |
+| Foto do Google | Qualquer URL | Só URLs `*.googleusercontent.com` | O metadado é editável pelo usuário |
+| Bimestre da aula | Bimestre de hoje (como `AnoLetivoUtil.marcar`) | Bimestre da data da aula | A frequência costuma ser lançada depois da aula |
+| Ranking: seletor de turmas | Não previsto | RPC `turmas_do_ranking()` | Professor não lê a tabela de turmas filtrada por D2 |
+| Funções auxiliares | `public` | Esquema `privado`, fora da Data API | Não ficam chamáveis como RPC |
