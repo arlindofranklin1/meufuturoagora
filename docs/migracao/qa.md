@@ -40,3 +40,20 @@ Testes automáticos que cobrem o roteamento com dados falsos: `LoginTest` e
   (desempenho e ranking): uma única chamada a `ranking_turma` calculada no
   servidor, com indicador de carregamento e o pódio escondido até os dados
   chegarem.
+
+## Módulo 2: perfis e área do admin
+
+| # | Perfil | Ação | Esperado | Obtido | Resultado |
+|---|---|---|---|---|---|
+| 2.1 | Admin | Perfil do professor | Nome do cadastro, e-mail e o botão "Área do administrador" | | pendente |
+| 2.2 | Admin | Tocar na foto e escolher outra imagem | "Foto de perfil atualizada!"; a foto nova continua depois de reabrir o app | | pendente |
+| 2.3 | Admin | Área do admin → Cadastrar usuário → Turma "6º ano A", ano 6 | "Turma cadastrada!" | | pendente |
+| 2.4 | Admin | Cadastrar a mesma turma de novo ("6º ANO A") | "Já existe uma turma com esse nome." | | pendente |
+| 2.5 | Admin | Cadastrar aluno com uma segunda conta Google, na turma 6º ano A | "Cadastrado!" | | pendente |
+| 2.6 | Admin | Cadastrar o mesmo e-mail de novo, com outro nome | Pergunta se quer atualizar; ao confirmar, "Cadastro atualizado!" | | pendente |
+| 2.7 | Admin | Lista de usuários | Professores e a turma com o aluno, marcado "(ainda não entrou)" | | pendente |
+| 2.8 | Aluno (segunda conta) | Entrar com o Google (caso 1.8) | Vai para a tela inicial do aluno; o perfil mostra o nome e a turma | | pendente |
+| 2.9 | Aluno | Configurações → Solicitar exclusão dos meus dados → Enviar | "Pedido enviado…"; mandar de novo dá "Você já tem um pedido…" | | pendente |
+| 2.10 | Admin | Lista de usuários → Pedidos de exclusão → Recusar | O pedido some da lista | | pendente |
+| 2.11 | Admin | Lista de usuários → aluno → Excluir → Excluir | O aluno some; ao tentar entrar com a conta dele, acesso recusado | | pendente |
+| 2.12 | Admin | Excluir a si mesmo (único admin) | "É preciso haver ao menos um administrador ativo." | | pendente |
