@@ -239,6 +239,22 @@ public class AtividadeEFrequenciaRepositorioTest {
         assertEquals(2, gravados);
     }
 
+    @Test
+    public void excluirAulaApagaPeloIdESemLinhaApagadaESemPermissao() throws Exception {
+        FrequenciaRepositorioSupabase frequencias = new FrequenciaRepositorioSupabase(falso.rest);
+        falso.responder("[{\"id\":\"au1\"}]");
+        falso.responder("[]");
+
+        frequencias.excluirAula("au1");
+        ErroApi erro = ServidorFalso.erroDe(() -> frequencias.excluirAula("au2"));
+
+        RecordedRequest apagar = falso.proxima();
+        assertEquals("DELETE", apagar.getMethod());
+        assertEquals("/rest/v1/aulas", apagar.getUrl().encodedPath());
+        assertEquals("eq.au1", apagar.getUrl().queryParameter("id"));
+        assertTrue("o RLS não dá erro: nenhuma linha apagada é recusa", erro.semPermissao());
+    }
+
     // ===== Ranking =====
 
     @Test

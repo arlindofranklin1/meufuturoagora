@@ -99,7 +99,8 @@ ID composto `atividadeId_alunoId` (`TelaAtividadeAluno.java:149`). Campos:
 ### 1.8 `aulas`
 
 `quantidade`, `descricao`, `data` (texto), `disciplinaId`, `professorId`, `ativo`,
-`anoLetivo`, `bimestre` (`CadastrarAulaActivity.java:117`). Não há tela de excluir aula.
+`anoLetivo`, `bimestre` (`CadastrarAulaActivity.java:117`). A exclusão é física,
+pela lista de frequência (`RegistrarFrequenciaActivity`); ver a Seção 8.2.
 
 ### 1.9 `frequencias`
 
@@ -519,3 +520,13 @@ O histórico do admin (migração `20261030001031`) acrescentou 4 funções ao
 mesmo aviso: `historico_anos`, `historico_alunos`, `historico_trilhas` e
 `historico_entregas`. Todas chamam `privado.exigir_admin()` na primeira linha, e
 o pgTAP `110_historico` confere a recusa de professor, aluno e anônimo.
+
+### 8.2 Correção: excluir aula existe
+
+A Seção 1.8 dizia "Não há tela de excluir aula", mas a lista de frequência
+(`RegistrarFrequenciaActivity.excluirAula`) exclui a aula. A migração
+`20261030003301_excluir_aula.sql` dá `delete` ao professor da disciplina e ao
+admin. A frequência vai junto (cascata) e, como o desconto de 5 pontos por dia
+de falta é calculado da frequência, os alunos que faltaram nesse dia recuperam
+os pontos. No app antigo a frequência ficava órfã e os pontos continuavam
+descontados. A tela avisa disso antes de excluir. Testes: pgTAP `120_excluir_aula`.

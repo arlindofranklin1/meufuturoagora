@@ -9,21 +9,26 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDate;
 
+import br.com.example.meufuturoagora.dados.Aula;
+import br.com.example.meufuturoagora.dados.Datas;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+
+// Cadastro de aula pelo professor da disciplina. O professor é conferido pelo
+// servidor (RLS), e o ano letivo e o bimestre saem da data da aula.
 public class CadastrarAulaActivity extends AppCompatActivity {
 
-    private FirebaseFirestore db;
+    // O banco aceita de 1 a 20 aulas num mesmo registro
+    private static final int MAXIMO_AULAS = 20;
 
     private EditText edtQuantidadeAulas;
     private EditText edtDescricaoAula;
     private EditText edtDataAula;
+    private MaterialButton btnSalvarAula;
 
     private String disciplinaId;
 
@@ -36,8 +41,6 @@ public class CadastrarAulaActivity extends AppCompatActivity {
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
 
-        db = FirebaseFirestore.getInstance();
-
         disciplinaId = getIntent().getStringExtra("disciplinaId");
 
         ImageView btnVoltar = findViewById(R.id.btnVoltar);
@@ -49,38 +52,36 @@ public class CadastrarAulaActivity extends AppCompatActivity {
 
         edtDataAula.setOnClickListener(v -> abrirCalendario());
 
-        MaterialButton btnSalvarAula = findViewById(R.id.btnSalvarAula);
+        btnSalvarAula = findViewById(R.id.btnSalvarAula);
         btnSalvarAula.setOnClickListener(v -> salvarAula());
     }
 
+    // Abre no dia já escolhido; sem data, em hoje
     private void abrirCalendario() {
 
-        Calendar calendario = Calendar.getInstance();
+        LocalDate inicial;
+
+        try {
+            LocalDate escolhida = Datas.ler(edtDataAula.getText().toString());
+            inicial = escolhida != null ? escolhida : LocalDate.now();
+        } catch (IllegalArgumentException e) {
+            inicial = LocalDate.now();
+        }
 
         new DatePickerDialog(
                 this,
-                (view, ano, mes, dia) -> edtDataAula.setText(
-                        String.format("%02d/%02d/%04d", dia, mes + 1, ano)
-                ),
-                calendario.get(Calendar.YEAR),
-                calendario.get(Calendar.MONTH),
-                calendario.get(Calendar.DAY_OF_MONTH)
+                (view, ano, mes, dia) -> edtDataAula.setText(Datas.formatar(LocalDate.of(ano, mes + 1, dia))),
+                inicial.getYear(),
+                inicial.getMonthValue() - 1,
+                inicial.getDayOfMonth()
         ).show();
     }
 
     private void salvarAula() {
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (usuario == null) {
-
-            Toast.makeText(this, "Usuário não está logado.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         String quantidadeTexto = edtQuantidadeAulas.getText().toString().trim();
         String descricao = edtDescricaoAula.getText().toString().trim();
-        String data = edtDataAula.getText().toString().trim();
+        String dataTexto = edtDataAula.getText().toString().trim();
 
         if (quantidadeTexto.isEmpty()) {
 
@@ -88,7 +89,7 @@ public class CadastrarAulaActivity extends AppCompatActivity {
             return;
         }
 
-        if (data.isEmpty()) {
+        if (dataTexto.isEmpty()) {
 
             edtDataAula.setError("Selecione a data");
             return;
@@ -100,11 +101,11 @@ public class CadastrarAulaActivity extends AppCompatActivity {
             return;
         }
 
-        long quantidade;
+        int quantidade;
 
         try {
 
-            quantidade = Long.parseLong(quantidadeTexto);
+            quantidade = Integer.parseInt(quantidadeTexto);
 
         } catch (NumberFormatException e) {
 
@@ -112,27 +113,43 @@ public class CadastrarAulaActivity extends AppCompatActivity {
             return;
         }
 
-        Map<String, Object> aula = new HashMap<>();
+        if (quantidade < 1 || quantidade > MAXIMO_AULAS) {
 
-        aula.put("quantidade", quantidade);
-        aula.put("descricao", descricao);
-        aula.put("data", data);
-        aula.put("disciplinaId", disciplinaId);
-        aula.put("professorId", usuario.getUid());
-        aula.put("ativo", true);
-        AnoLetivoUtil.marcar(aula);
+            edtQuantidadeAulas.setError("Digite de 1 a " + MAXIMO_AULAS + " aulas");
+            return;
+        }
 
-        db.collection("aulas")
-                .add(aula)
-                .addOnSuccessListener(documentReference -> {
+        LocalDate data;
 
-                    Toast.makeText(this, "Aula cadastrada!", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao cadastrar aula: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+        try {
+
+            data = Datas.ler(dataTexto);
+
+        } catch (IllegalArgumentException e) {
+
+            edtDataAula.setError("Data inválida");
+            return;
+        }
+
+        btnSalvarAula.setEnabled(false);
+
+        Tarefas.executar(this,
+                () -> Servicos.get(this).frequencias.cadastrarAula(disciplinaId, data, quantidade, descricao),
+                new Tarefas.Retorno<Aula>() {
+                    @Override
+                    public void sucesso(Aula aula) {
+
+                        Toast.makeText(CadastrarAulaActivity.this, "Aula cadastrada!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+
+                    @Override
+                    public void erro(ErroApi erro) {
+
+                        btnSalvarAula.setEnabled(true);
+                        Toast.makeText(CadastrarAulaActivity.this, "Erro ao cadastrar aula: " + erro.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 }

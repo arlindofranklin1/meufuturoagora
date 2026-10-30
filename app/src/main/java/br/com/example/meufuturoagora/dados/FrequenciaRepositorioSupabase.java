@@ -31,6 +31,15 @@ public class FrequenciaRepositorioSupabase implements FrequenciaRepositorio {
         )), Aula::deJson);
     }
 
+    // O RLS não dá erro ao filtrar: nenhuma linha apagada quer dizer sem permissão
+    @Override
+    public void excluirAula(String aulaId) throws ErroApi {
+
+        if (rest.apagar("aulas", Consulta.campos("id").igual("id", aulaId)).length() == 0) {
+            throw ErroApi.daResposta(403, "");
+        }
+    }
+
     @Override
     public List<Frequencia> frequenciaDaAula(String aulaId) throws ErroApi {
         return Json.lista(rest.selecionar("frequencias", Consulta.campos("*").igual("aula_id", aulaId)),

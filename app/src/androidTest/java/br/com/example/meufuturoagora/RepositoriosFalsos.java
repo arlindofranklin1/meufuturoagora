@@ -54,6 +54,7 @@ final class RepositoriosFalsos {
     final List<Entrega> entregas = new ArrayList<>();
     final List<Aula> aulas = new ArrayList<>();
     final List<Frequencia> frequencias = new ArrayList<>();
+    final List<Participante> participantes = new ArrayList<>();
     final List<SolicitacaoExclusao> pedidos = new ArrayList<>();
     AnoLetivo anoAtual;
     final List<Bimestre> bimestres = new ArrayList<>();
@@ -287,7 +288,7 @@ final class RepositoriosFalsos {
 
         @Override
         public List<Participante> participantes(String disciplinaId) {
-            return new ArrayList<>();
+            return new ArrayList<>(participantes);
         }
     }
 
@@ -425,6 +426,12 @@ final class RepositoriosFalsos {
             Aula nova = new Aula("aula-nova", disciplinaId, data, quantidade, descricao, 4);
             aulas.add(nova);
             return nova;
+        }
+
+        @Override
+        public void excluirAula(String aulaId) {
+            chamadas.add("frequencias.excluirAula " + aulaId);
+            aulas.removeIf(a -> a.id.equals(aulaId));
         }
 
         @Override

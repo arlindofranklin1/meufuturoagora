@@ -1,9 +1,6 @@
 package br.com.example.meufuturoagora.dados;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,29 +9,16 @@ import java.util.List;
 // é quem garante.
 public final class Bimestres {
 
-    // STRICT: "31/02/2026" é recusada (o SimpleDateFormat antigo aceitava e virava março)
-    private static final DateTimeFormatter FORMATO =
-            DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
-
     private Bimestres() {
     }
 
     public static String formatar(LocalDate data) {
-        return data != null ? data.format(FORMATO) : "";
+        return Datas.formatar(data);
     }
 
     // Texto vazio = bimestre não definido (null); texto inválido lança IllegalArgumentException
     public static LocalDate ler(String texto) {
-
-        if (texto == null || texto.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            return LocalDate.parse(texto.trim(), FORMATO);
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Data inválida: " + texto.trim(), e);
-        }
+        return Datas.ler(texto);
     }
 
     // Uma linha da tela: início e fim em texto, como digitados

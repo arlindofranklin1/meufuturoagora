@@ -11,6 +11,10 @@ public interface FrequenciaRepositorio {
     Aula cadastrarAula(String disciplinaId, LocalDate data, int quantidade, String descricao)
             throws ErroApi;
 
+    // Professor da disciplina ou admin. A frequência da aula vai junto, e o
+    // desconto de pontos por falta daquele dia some (é calculado da frequência).
+    void excluirAula(String aulaId) throws ErroApi;
+
     // Professor: a da aula inteira; aluno: só a própria
     List<Frequencia> frequenciaDaAula(String aulaId) throws ErroApi;
 

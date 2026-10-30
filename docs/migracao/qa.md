@@ -116,3 +116,20 @@ Testes automáticos: pgTAP `110_historico` (22 testes), `BimestresTest`,
 `HistoricoRepositorioTest`, `EstruturaEscolarTest` (repositórios falsos) e 3
 testes novos em `E2eSupabaseLocalTest`. Os de tela ainda **não rodaram**
 (emulador desligado por falta de memória).
+
+## Módulo 4: aulas e frequência
+
+| # | Perfil | Ação | Esperado | Obtido | Resultado |
+|---|---|---|---|---|---|
+| 4.1 | Professor | Disciplina → Cadastrar aula: quantidade 2, data, descrição → Salvar | "Aula cadastrada!" | | pendente |
+| 4.2 | Professor | Cadastrar aula com quantidade 0 ou 21 | Erro "Digite de 1 a 20 aulas"; nada é gravado | | pendente |
+| 4.3 | Professor | Cadastrar aula com a data 31/02/2026 (digitada) | "Data inválida" | | pendente |
+| 4.4 | Professor | Registrar frequência → lista de aulas | Aulas com a descrição e a data em dd/mm/aaaa, as mais recentes primeiro | | pendente |
+| 4.5 | Professor | Abrir uma aula | Só os alunos (sem o professor), nome e foto; todos em "Presente" na primeira vez | | pendente |
+| 4.6 | Professor | Marcar um aluno como "Falta" e salvar | "Frequência salva!"; o aluno perde 5 pontos no ranking | | pendente |
+| 4.7 | Professor | Marcar o mesmo aluno como "Falta justificada" e salvar | Os 5 pontos voltam | | pendente |
+| 4.8 | Professor | Duas faltas do mesmo aluno no mesmo dia (duas aulas) | Desconta 5 pontos uma vez só | | pendente |
+| 4.9 | Professor | Reabrir uma aula já salva | Os status salvos aparecem, não tudo "Presente" | | pendente |
+| 4.10 | Professor | Excluir uma aula com faltas | Aviso de que a frequência também é apagada; depois o aluno recupera os pontos | | pendente |
+| 4.11 | Professor | Sem internet, salvar a frequência | Mensagem de erro e o botão volta a funcionar (antes mostrava "salva" mesmo falhando) | | pendente |
+| 4.12 | Outro professor | Tentar excluir ou registrar frequência numa aula alheia | Recusado (403) | | pendente |

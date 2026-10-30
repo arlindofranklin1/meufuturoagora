@@ -315,6 +315,108 @@ public class E2eSupabaseLocalTest {
         return false;
     }
 
+    // Lógica de Programação, do seed.sql: da Marta, 1º ano (Lia e Rui)
+    private static final String LOGICA = "00000000-0000-4000-8000-000000000d01";
+
+    private String idDaLia() throws ErroApi {
+
+        for (br.com.example.meufuturoagora.dados.Participante p : local.servicos.disciplinas.participantes(LOGICA)) {
+            if ("Lia Fictícia".equals(p.nome)) {
+                return p.perfilId;
+            }
+        }
+
+        throw new AssertionError("A Lia devia estar na disciplina");
+    }
+
+    // A falta é registrada pela tela e o desconto aparece na pontuação da aluna.
+    // O final volta a Lia para "presente": os outros testes contam com 0 ponto.
+    @Test
+    public void professoraRegistraFaltaPelaTelaEAPontuacaoDaAlunaCai() throws Exception {
+        local.entrar(MARTA);
+        String lia = idDaLia();
+        br.com.example.meufuturoagora.dados.Aula aula = local.servicos.frequencias.aulas(LOGICA).get(0);
+
+        try {
+            ActivityScenario.launch(new android.content.Intent(
+                    androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                    FrequenciaAulaActivity.class)
+                    .putExtra("aulaId", aula.id)
+                    .putExtra("disciplinaId", LOGICA)
+                    .putExtra("aulaDescricao", "Aula de teste"));
+
+            Espera.ate(() -> onView(withText("Lia Fictícia")).check(matches(isDisplayed())));
+            ViewInteractionDeStatus.de("Lia Fictícia").perform(click());
+            onView(withText("Falta")).inRoot(isPlatformPopup()).perform(click());
+            Captura.salvar("41_frequencia_falta");
+            onView(withId(R.id.btnSalvarFrequencia)).perform(click());
+
+            Espera.ate(() -> {
+                try {
+                    boolean achou = false;
+                    for (br.com.example.meufuturoagora.dados.Frequencia f : local.servicos.frequencias.frequenciaDaAula(aula.id)) {
+                        achou |= f.alunoId.equals(lia) && "falta".equals(f.status);
+                    }
+                    assertTrue(achou);
+                } catch (ErroApi e) {
+                    throw new AssertionError(e);
+                }
+            });
+
+            local.entrar(LIA);
+            assertEquals("uma falta = -5 pontos", -5, local.servicos.ranking.pontuacao(lia, null));
+
+        } finally {
+
+            local.entrar(MARTA);
+            local.servicos.frequencias.registrar(aula.id, java.util.Collections.singletonList(
+                    new br.com.example.meufuturoagora.dados.Frequencia(aula.id, lia,
+                            br.com.example.meufuturoagora.dados.Frequencia.PRESENTE)));
+        }
+    }
+
+    @Test
+    public void excluirAulaDevolveOsPontosDaFaltaESoOProfessorDaDisciplinaExclui() throws Exception {
+        local.entrar(MARTA);
+        String lia = idDaLia();
+
+        br.com.example.meufuturoagora.dados.Aula aula = local.servicos.frequencias.cadastrarAula(
+                LOGICA, java.time.LocalDate.now(), 1, "E2E: aula para excluir");
+        boolean excluida = false;
+
+        try {
+            local.servicos.frequencias.registrar(aula.id, java.util.Collections.singletonList(
+                    new br.com.example.meufuturoagora.dados.Frequencia(aula.id, lia,
+                            br.com.example.meufuturoagora.dados.Frequencia.FALTA)));
+
+            local.entrar(LIA);
+            assertEquals(-5, local.servicos.ranking.pontuacao(lia, null));
+
+            // O João dá outra disciplina: não exclui a aula da Marta
+            local.entrar(JOAO);
+            try {
+                local.servicos.frequencias.excluirAula(aula.id);
+                fail("Outro professor não pode excluir a aula");
+            } catch (ErroApi esperado) {
+                assertTrue(esperado.semPermissao());
+            }
+
+            local.entrar(MARTA);
+            local.servicos.frequencias.excluirAula(aula.id);
+            excluida = true;
+
+            local.entrar(LIA);
+            assertEquals("sem a aula, o desconto some", 0, local.servicos.ranking.pontuacao(lia, null));
+
+        } finally {
+
+            if (!excluida) {
+                local.entrar(MARTA);
+                local.servicos.frequencias.excluirAula(aula.id);
+            }
+        }
+    }
+
     @Test
     public void professorComumNaoTemAreaDoAdministrador() throws Exception {
         local.entrar(JOAO);

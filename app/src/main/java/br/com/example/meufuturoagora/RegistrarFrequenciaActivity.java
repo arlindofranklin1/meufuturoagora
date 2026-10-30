@@ -14,15 +14,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class RegistrarFrequenciaActivity extends AppCompatActivity {
+import br.com.example.meufuturoagora.dados.Datas;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
-    private FirebaseFirestore db;
+// Lista as aulas da disciplina (mais recentes primeiro) para abrir a frequência
+// de cada uma ou excluir a aula.
+public class RegistrarFrequenciaActivity extends AppCompatActivity {
 
     private String disciplinaId;
 
@@ -40,8 +42,6 @@ public class RegistrarFrequenciaActivity extends AppCompatActivity {
 
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
-
-        db = FirebaseFirestore.getInstance();
 
         disciplinaId = getIntent().getStringExtra("disciplinaId");
 
@@ -62,6 +62,7 @@ public class RegistrarFrequenciaActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+        // Volta da tela de cadastro de aula: recarrega
         if (adapter != null) {
             carregarAulas();
         }
@@ -73,41 +74,43 @@ public class RegistrarFrequenciaActivity extends AppCompatActivity {
             return;
         }
 
-        db.collection("aulas")
-                .whereEqualTo("disciplinaId", disciplinaId)
-                .whereEqualTo("ativo", true)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
+        Tarefas.executar(this, () -> Servicos.get(this).frequencias.aulas(disciplinaId),
+                new Tarefas.Retorno<List<br.com.example.meufuturoagora.dados.Aula>>() {
+                    @Override
+                    public void sucesso(List<br.com.example.meufuturoagora.dados.Aula> aulas) {
 
-                    listaAulas.clear();
+                        listaAulas.clear();
 
-                    for (QueryDocumentSnapshot documento : querySnapshot) {
+                        for (br.com.example.meufuturoagora.dados.Aula aula : aulas) {
 
-                        String descricao = documento.getString("descricao");
-                        String data = documento.getString("data");
+                            listaAulas.add(new Aula(
+                                    aula.id,
+                                    aula.descricao != null && !aula.descricao.isEmpty() ? aula.descricao : "Aula",
+                                    Datas.formatar(aula.data)
+                            ));
+                        }
 
-                        listaAulas.add(new Aula(
-                                documento.getId(),
-                                descricao != null && !descricao.isEmpty() ? descricao : "Aula",
-                                data != null ? data : ""
-                        ));
+                        adapter.notifyDataSetChanged();
+
+                        tvSemAulas.setVisibility(listaAulas.isEmpty() ? View.VISIBLE : View.GONE);
+                        recyclerAulas.setVisibility(listaAulas.isEmpty() ? View.GONE : View.VISIBLE);
                     }
 
-                    adapter.notifyDataSetChanged();
-
-                    tvSemAulas.setVisibility(listaAulas.isEmpty() ? View.VISIBLE : View.GONE);
-                    recyclerAulas.setVisibility(listaAulas.isEmpty() ? View.GONE : View.VISIBLE);
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this, "Erro ao carregar aulas.", Toast.LENGTH_SHORT
-                ).show());
+                    @Override
+                    public void erro(ErroApi erro) {
+                        Toast.makeText(RegistrarFrequenciaActivity.this, "Erro ao carregar aulas: " + erro.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
+    // A frequência da aula também é apagada, e com ela o desconto de pontos por falta daquele dia
     private void confirmarExclusao(String aulaId) {
 
         new AlertDialog.Builder(this)
                 .setTitle("Excluir aula")
-                .setMessage("Tem certeza que deseja excluir esta aula?")
+                .setMessage("Tem certeza que deseja excluir esta aula? A frequência registrada nela também "
+                        + "será apagada, e os alunos que faltaram nesse dia recuperam os pontos descontados.")
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Excluir", (dialog, which) -> excluirAula(aulaId))
                 .show();
@@ -115,17 +118,23 @@ public class RegistrarFrequenciaActivity extends AppCompatActivity {
 
     private void excluirAula(String aulaId) {
 
-        db.collection("aulas")
-                .document(aulaId)
-                .delete()
-                .addOnSuccessListener(unused -> {
+        Tarefas.executar(this, () -> {
+            Servicos.get(this).frequencias.excluirAula(aulaId);
+            return null;
+        }, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object resultado) {
 
-                    Toast.makeText(this, "Aula excluída!", Toast.LENGTH_SHORT).show();
-                    carregarAulas();
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this, "Erro ao excluir aula.", Toast.LENGTH_SHORT
-                ).show());
+                Toast.makeText(RegistrarFrequenciaActivity.this, "Aula excluída!", Toast.LENGTH_SHORT).show();
+                carregarAulas();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(RegistrarFrequenciaActivity.this, "Erro ao excluir aula: " + erro.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     public static class Aula {
