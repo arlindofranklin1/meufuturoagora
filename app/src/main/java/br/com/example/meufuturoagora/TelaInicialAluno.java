@@ -15,6 +15,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.PosicaoRanking;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -34,7 +40,6 @@ public class TelaInicialAluno extends AppCompatActivity {
     private FirebaseFirestore db;
 
     private String alunoId;
-    private long pontuacaoAluno = 0;
 
     private TextView tvPontuacaoTotalAluno;
     private TextView tvPosicaoRankingAluno;
@@ -118,26 +123,11 @@ public class TelaInicialAluno extends AppCompatActivity {
 
         alunoId = usuario.getUid();
 
-        // Mantém a pontuação em dia com as notas e faltas (inclusive as antigas)
-        // e só depois mostra a pontuação e a posição no ranking
-        PontuacaoUtil.recalcular(db, alunoId, () -> db.collection("alunos")
-                .document(alunoId)
-                .get()
-                .addOnSuccessListener(alunoDoc -> {
-
-                    if (!alunoDoc.exists()) {
-                        return;
-                    }
-
-                    Long pontuacao = alunoDoc.getLong("pontuacao");
-                    pontuacaoAluno = pontuacao != null ? pontuacao : 0;
-
-                    tvPontuacaoTotalAluno.setText(String.valueOf(pontuacaoAluno));
-
-                    carregarPosicaoRanking();
-                    carregarProximasAtividades();
-                    carregarFrequencia();
-                }));
+        // Pontuação e posição vêm do servidor (módulo 7). O resto da tela segue
+        // no Firestore até o módulo 9.
+        carregarPontuacaoEPosicao();
+        carregarProximasAtividades();
+        carregarFrequencia();
 
         // =========================
         // BOTTOM NAVIGATION
@@ -190,11 +180,39 @@ public class TelaInicialAluno extends AppCompatActivity {
         return espaco > 0 ? nomeCompleto.substring(0, espaco) : nomeCompleto;
     }
 
-    private void carregarPosicaoRanking() {
+    private static final class PontuacaoEPosicao {
 
-        RankingActivity.carregarPosicaoNaTurma(db, alunoId, tvPosicaoRankingAluno);
+        final int pontos;
+        final PosicaoRanking posicao;
+
+        PontuacaoEPosicao(int pontos, PosicaoRanking posicao) {
+            this.pontos = pontos;
+            this.posicao = posicao;
+        }
     }
 
+    private void carregarPontuacaoEPosicao() {
+
+        Servicos servicos = Servicos.get(this);
+
+        Tarefas.executar(this, () -> new PontuacaoEPosicao(
+                        servicos.ranking.pontuacao(servicos.perfis.meu().id, null),
+                        servicos.ranking.minhaPosicao()),
+                new Tarefas.Retorno<PontuacaoEPosicao>() {
+                    @Override
+                    public void sucesso(PontuacaoEPosicao dados) {
+
+                        tvPontuacaoTotalAluno.setText(String.valueOf(dados.pontos));
+                        tvPosicaoRankingAluno.setText(
+                                dados.posicao != null ? dados.posicao.posicao + "º" : "—");
+                    }
+
+                    @Override
+                    public void erro(ErroApi erro) {
+                        // Os números ficam como estão no layout
+                    }
+                });
+    }
     private void carregarFrequencia() {
 
         db.collection("frequencias")

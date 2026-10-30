@@ -13,29 +13,30 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldPath;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import br.com.example.meufuturoagora.dados.AnoLetivo;
+import br.com.example.meufuturoagora.dados.Atividade;
+import br.com.example.meufuturoagora.dados.Aula;
+import br.com.example.meufuturoagora.dados.Bimestre;
+import br.com.example.meufuturoagora.dados.Datas;
+import br.com.example.meufuturoagora.dados.Desempenho;
+import br.com.example.meufuturoagora.dados.Disciplina;
+import br.com.example.meufuturoagora.dados.Entrega;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Frequencia;
+import br.com.example.meufuturoagora.dados.Participante;
+import br.com.example.meufuturoagora.dados.Perfil;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 /**
  * Desempenho por bimestre.
@@ -45,7 +46,8 @@ import java.util.Set;
  *
  * Os pontos vêm das entregas avaliadas (nota) e entram no bimestre do prazo
  * da atividade. As faltas vêm das frequências e entram no bimestre da data
- * da aula. Os períodos são os definidos pelo administrador.
+ * da aula. Os períodos são os definidos pelo administrador. A conta é da
+ * classe Desempenho; o RLS já limita o que cada perfil lê.
  */
 public class DesempenhoActivity extends AppCompatActivity {
 
@@ -53,39 +55,18 @@ public class DesempenhoActivity extends AppCompatActivity {
     public static final String PERFIL_PROFESSOR = "professor";
     public static final String PERFIL_ALUNO = "aluno";
 
-    static final String STATUS_FALTA = "Falta";
-    static final String STATUS_FALTA_JUSTIFICADA = "Falta justificada";
-
-    // Limite seguro de valores por consulta whereIn do Firestore
-    private static final int TAMANHO_LOTE = 10;
-
     private static final String[] CORES = {
             "#521BB3", "#E45832", "#22BEEA", "#8E44AD",
             "#27AE60", "#F39C12", "#E84393", "#16A085"
     };
 
-    private FirebaseFirestore db;
-    private String uid;
     private boolean modoProfessor;
 
-    private final SimpleDateFormat formatoData =
-            new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-
     // Índices 1 a 4
-    private final Date[] iniciosBimestre = new Date[5];
-    private final Date[] finsBimestre = new Date[5];
     private final String[] periodosTexto = new String[5];
 
     private int bimestreSelecionado = 1;
-    private boolean dadosCarregados = false;
-
-    // Dados carregados do Firestore
-    private final Map<String, String> nomesAlunos = new LinkedHashMap<>();
-    private final Map<String, String> fotosAlunos = new HashMap<>();
-    private final Map<String, String> nomesDisciplinas = new LinkedHashMap<>();
-    private final Map<String, AtividadeInfo> atividades = new HashMap<>();
-    private final List<Pontuacao> pontuacoes = new ArrayList<>();
-    private final List<Falta> faltas = new ArrayList<>();
+    private Dados dados;
 
     private final TextView[] abas = new TextView[5];
 
@@ -107,9 +88,6 @@ public class DesempenhoActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_desempenho);
         InsetsUtil.aplicarInsetsSistema(this);
-
-        db = FirebaseFirestore.getInstance();
-        formatoData.setLenient(false);
 
         modoProfessor = PERFIL_PROFESSOR.equals(
                 getIntent().getStringExtra(EXTRA_PERFIL)
@@ -162,15 +140,6 @@ public class DesempenhoActivity extends AppCompatActivity {
         adapter = new DesempenhoAdapter();
         recyclerDesempenho.setAdapter(adapter);
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (usuario == null) {
-            finish();
-            return;
-        }
-
-        uid = usuario.getUid();
-
         mostrarBimestre();
         carregarDados();
     }
@@ -179,321 +148,133 @@ public class DesempenhoActivity extends AppCompatActivity {
     // CARREGAMENTO
     // =====================================================
 
+    // Tudo o que a tela mostra, já lido do servidor
+    private static final class Dados {
+
+        final Perfil eu;
+        final List<Bimestre> bimestres;
+        final Desempenho desempenho;
+        // Professor: os alunos das disciplinas dele, por nome
+        final List<Participante> alunos;
+        // Aluno: as disciplinas ativas em que está matriculado
+        final Map<String, String> disciplinas;
+
+        Dados(Perfil eu, List<Bimestre> bimestres, Desempenho desempenho, List<Participante> alunos,
+              Map<String, String> disciplinas) {
+            this.eu = eu;
+            this.bimestres = bimestres;
+            this.desempenho = desempenho;
+            this.alunos = alunos;
+            this.disciplinas = disciplinas;
+        }
+    }
+
     private void carregarDados() {
 
-        db.collection("configuracoes")
-                .document("geral")
-                .get()
-                .continueWithTask(tarefa -> {
+        Servicos servicos = Servicos.get(this);
+        boolean professor = modoProfessor;
 
-                    lerPeriodos(tarefa.getResult());
+        Tarefas.executar(this, () -> {
 
-                    return modoProfessor
-                            ? carregarDadosProfessor()
-                            : carregarDadosAluno();
-                })
-                .addOnSuccessListener(this, resultado -> {
+            Perfil eu = servicos.perfis.meu();
+            AnoLetivo ano = servicos.escola.anoAtual();
+            List<Bimestre> bimestres = ano != null
+                    ? servicos.escola.bimestres(ano.ano)
+                    : new ArrayList<>();
 
-                    dadosCarregados = true;
-                    mostrarBimestre();
-                })
-                .addOnFailureListener(this, e -> {
+            // As disciplinas ativas que a tela cobre: as que o professor dá ou
+            // em que o aluno está matriculado (o RLS já filtra por perfil)
+            Map<String, String> disciplinas = new LinkedHashMap<>();
 
-                    progressDesempenho.setVisibility(View.GONE);
+            for (Disciplina d : servicos.disciplinas.listar()) {
 
-                    Toast.makeText(
-                            this,
-                            "Erro ao carregar desempenho.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
-    }
-
-    private void lerPeriodos(DocumentSnapshot documento) {
-
-        Date hoje = new Date();
-
-        for (int i = 1; i <= 4; i++) {
-
-            String inicio = documento.exists()
-                    ? documento.getString("bimestre" + i + "Inicio") : null;
-            String fim = documento.exists()
-                    ? documento.getString("bimestre" + i + "Fim") : null;
-
-            iniciosBimestre[i] = converterData(inicio);
-            finsBimestre[i] = converterData(fim);
-
-            if (iniciosBimestre[i] != null && finsBimestre[i] != null) {
-
-                periodosTexto[i] = inicio + " - " + fim;
-
-                if (!hoje.before(iniciosBimestre[i]) && !hoje.after(finsBimestre[i])) {
-                    bimestreSelecionado = i;
+                if (d.ativo && (!professor || eu.id.equals(d.professorId))) {
+                    disciplinas.put(d.id, d.nome != null ? d.nome : "Disciplina");
                 }
             }
-        }
-    }
 
-    // Professor: alunos matriculados, atividades, entregas e faltas
-    // das disciplinas ativas do professor.
-    private Task<Void> carregarDadosProfessor() {
+            List<Atividade> atividades = new ArrayList<>();
+            List<Aula> aulas = new ArrayList<>();
+            List<Entrega> entregas = new ArrayList<>();
+            Map<String, Participante> alunos = new LinkedHashMap<>();
 
-        return db.collection("disciplinas")
-                .whereEqualTo("professorId", uid)
-                .whereEqualTo("ativo", true)
-                .get()
-                .continueWithTask(tarefa -> {
+            for (String disciplinaId : disciplinas.keySet()) {
 
-                    for (DocumentSnapshot disciplina : tarefa.getResult()) {
+                for (Atividade a : servicos.atividades.daDisciplina(disciplinaId)) {
 
-                        String nome = disciplina.getString("nome");
-                        nomesDisciplinas.put(
-                                disciplina.getId(),
-                                nome != null ? nome : "Disciplina"
-                        );
+                    atividades.add(a);
+
+                    if (professor) {
+                        entregas.addAll(servicos.atividades.entregasDaAtividade(a.id));
                     }
+                }
 
-                    Set<String> idsDisciplinas = nomesDisciplinas.keySet();
+                aulas.addAll(servicos.frequencias.aulas(disciplinaId));
 
-                    Task<List<DocumentSnapshot>> tMatriculas =
-                            buscarEmLotes("matriculas", "disciplinaId", idsDisciplinas);
-                    Task<List<DocumentSnapshot>> tAtividades =
-                            buscarEmLotes("atividades", "disciplinaId", idsDisciplinas);
-                    Task<List<DocumentSnapshot>> tFrequencias =
-                            buscarEmLotes("frequencias", "disciplinaId", idsDisciplinas);
-                    Task<List<DocumentSnapshot>> tArquivadas =
-                            buscarEmLotes("frequenciasArquivadas", "disciplinaId", idsDisciplinas);
+                if (professor) {
 
-                    return Tasks.whenAllSuccess(tMatriculas, tAtividades, tFrequencias, tArquivadas)
-                            .continueWithTask(todas -> {
+                    for (Participante p : servicos.disciplinas.participantes(disciplinaId)) {
 
-                                Map<String, String> encontrados = new HashMap<>();
-
-                                for (DocumentSnapshot matricula : tMatriculas.getResult()) {
-
-                                    String alunoId = matricula.getString("alunoId");
-                                    String alunoNome = matricula.getString("alunoNome");
-
-                                    if (alunoId != null && !encontrados.containsKey(alunoId)) {
-                                        encontrados.put(
-                                                alunoId,
-                                                alunoNome != null ? alunoNome : "Aluno"
-                                        );
-                                    }
-                                }
-
-                                // Ordena os alunos por nome
-                                List<String> idsAlunos = new ArrayList<>(encontrados.keySet());
-                                Collections.sort(idsAlunos, (a, b) ->
-                                        encontrados.get(a).compareToIgnoreCase(encontrados.get(b)));
-
-                                for (String alunoId : idsAlunos) {
-                                    nomesAlunos.put(alunoId, encontrados.get(alunoId));
-                                }
-
-                                carregarFotosAlunos(idsAlunos);
-
-                                lerAtividades(tAtividades.getResult());
-
-                                List<DocumentSnapshot> frequencias = new ArrayList<>();
-                                frequencias.addAll(tFrequencias.getResult());
-                                frequencias.addAll(tArquivadas.getResult());
-
-                                return carregarEntregasEFaltas(
-                                        buscarEmLotes("entregas", "atividadeId", atividades.keySet()),
-                                        frequencias
-                                );
-                            });
-                });
-    }
-
-    // Aluno: disciplinas em que está matriculado, suas entregas e faltas.
-    private Task<Void> carregarDadosAluno() {
-
-        return db.collection("matriculas")
-                .whereEqualTo("alunoId", uid)
-                .get()
-                .continueWithTask(tarefa -> {
-
-                    Map<String, String> matriculadas = new LinkedHashMap<>();
-
-                    for (DocumentSnapshot matricula : tarefa.getResult()) {
-
-                        String disciplinaId = matricula.getString("disciplinaId");
-                        String disciplinaNome = matricula.getString("disciplinaNome");
-
-                        if (disciplinaId != null) {
-                            matriculadas.put(
-                                    disciplinaId,
-                                    disciplinaNome != null ? disciplinaNome : "Disciplina"
-                            );
+                        if ("aluno".equals(p.tipo) && !alunos.containsKey(p.perfilId)) {
+                            alunos.put(p.perfilId, p);
                         }
                     }
-
-                    Task<List<DocumentSnapshot>> tDisciplinas =
-                            buscarEmLotes("disciplinas", null, matriculadas.keySet());
-                    Task<List<DocumentSnapshot>> tAtividades =
-                            buscarEmLotes("atividades", "disciplinaId", matriculadas.keySet());
-                    Task<QuerySnapshot> tFrequencias = db.collection("frequencias")
-                            .whereEqualTo("alunoId", uid).get();
-                    Task<QuerySnapshot> tArquivadas = db.collection("frequenciasArquivadas")
-                            .whereEqualTo("alunoId", uid).get();
-
-                    return Tasks.whenAllSuccess(tDisciplinas, tAtividades, tFrequencias, tArquivadas)
-                            .continueWithTask(todas -> {
-
-                                // Somente disciplinas ativas (usa o nome atualizado)
-                                for (DocumentSnapshot disciplina : tDisciplinas.getResult()) {
-
-                                    if (Boolean.FALSE.equals(disciplina.getBoolean("ativo"))) {
-                                        continue;
-                                    }
-
-                                    String nome = disciplina.getString("nome");
-                                    nomesDisciplinas.put(
-                                            disciplina.getId(),
-                                            nome != null ? nome : matriculadas.get(disciplina.getId())
-                                    );
-                                }
-
-                                lerAtividades(tAtividades.getResult());
-
-                                List<DocumentSnapshot> frequencias = new ArrayList<>();
-                                frequencias.addAll(tFrequencias.getResult().getDocuments());
-                                frequencias.addAll(tArquivadas.getResult().getDocuments());
-
-                                return carregarEntregasEFaltas(
-                                        db.collection("entregas")
-                                                .whereEqualTo("alunoId", uid)
-                                                .get()
-                                                .continueWith(t -> t.getResult().getDocuments()),
-                                        frequencias
-                                );
-                            });
-                });
-    }
-
-    private void lerAtividades(List<DocumentSnapshot> documentos) {
-
-        for (DocumentSnapshot atividade : documentos) {
-
-            String disciplinaId = atividade.getString("disciplinaId");
-
-            if (Boolean.FALSE.equals(atividade.getBoolean("ativo"))
-                    || !nomesDisciplinas.containsKey(disciplinaId)) {
-                continue;
-            }
-
-            atividades.put(
-                    atividade.getId(),
-                    new AtividadeInfo(
-                            disciplinaId,
-                            converterData(atividade.getString("prazo"))
-                    )
-            );
-        }
-    }
-
-    // Lê as entregas avaliadas e busca a data das aulas em que houve falta.
-    private Task<Void> carregarEntregasEFaltas(
-            Task<List<DocumentSnapshot>> tEntregas,
-            List<DocumentSnapshot> frequencias
-    ) {
-
-        List<DocumentSnapshot> ausencias = new ArrayList<>();
-        Set<String> idsAulas = new HashSet<>();
-
-        for (DocumentSnapshot frequencia : frequencias) {
-
-            String status = frequencia.getString("status");
-            String aulaId = frequencia.getString("aulaId");
-
-            if (aulaId != null
-                    && nomesDisciplinas.containsKey(frequencia.getString("disciplinaId"))
-                    && (STATUS_FALTA.equals(status) || STATUS_FALTA_JUSTIFICADA.equals(status))) {
-
-                ausencias.add(frequencia);
-                idsAulas.add(aulaId);
-            }
-        }
-
-        Task<List<DocumentSnapshot>> tAulas = buscarEmLotes("aulas", null, idsAulas);
-
-        return Tasks.whenAllSuccess(tEntregas, tAulas).continueWith(todas -> {
-
-            for (DocumentSnapshot entrega : tEntregas.getResult()) {
-
-                AtividadeInfo atividade = atividades.get(entrega.getString("atividadeId"));
-                Double nota = entrega.getDouble("nota");
-                String alunoId = entrega.getString("alunoId");
-
-                if (atividade == null || nota == null || alunoId == null
-                        || !Boolean.TRUE.equals(entrega.getBoolean("avaliado"))) {
-                    continue;
                 }
-
-                pontuacoes.add(new Pontuacao(
-                        alunoId,
-                        atividade.disciplinaId,
-                        bimestreDa(atividade.prazo),
-                        nota
-                ));
             }
 
-            Map<String, Date> datasAulas = new HashMap<>();
-
-            for (DocumentSnapshot aula : tAulas.getResult()) {
-                datasAulas.put(aula.getId(), converterData(aula.getString("data")));
+            if (!professor) {
+                entregas.addAll(servicos.atividades.minhasEntregas());
             }
 
-            for (DocumentSnapshot ausencia : ausencias) {
+            List<Participante> listaAlunos = new ArrayList<>(alunos.values());
+            Collections.sort(listaAlunos, (a, b) -> a.nome.compareToIgnoreCase(b.nome));
 
-                faltas.add(new Falta(
-                        ausencia.getString("alunoId"),
-                        ausencia.getString("disciplinaId"),
-                        bimestreDa(datasAulas.get(ausencia.getString("aulaId"))),
-                        STATUS_FALTA_JUSTIFICADA.equals(ausencia.getString("status"))
-                ));
+            Desempenho desempenho = new Desempenho(bimestres, atividades, entregas, aulas,
+                    servicos.frequencias.frequencias());
+
+            return new Dados(eu, bimestres, desempenho, listaAlunos, disciplinas);
+
+        }, new Tarefas.Retorno<Dados>() {
+            @Override
+            public void sucesso(Dados carregados) {
+
+                dados = carregados;
+                lerPeriodos(carregados.bimestres, carregados.desempenho);
+                mostrarBimestre();
             }
 
-            return null;
+            @Override
+            public void erro(ErroApi erro) {
+
+                progressDesempenho.setVisibility(View.GONE);
+
+                Toast.makeText(
+                        DesempenhoActivity.this,
+                        "Erro ao carregar desempenho.",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
         });
     }
 
-    // Faz consultas whereIn em lotes e junta os resultados.
-    // campo == null busca pelo ID do documento.
-    private Task<List<DocumentSnapshot>> buscarEmLotes(
-            String colecao,
-            String campo,
-            Collection<String> valores
-    ) {
+    // Texto do período de cada aba e seleção do bimestre em curso
+    private void lerPeriodos(List<Bimestre> bimestres, Desempenho desempenho) {
 
-        List<String> lista = new ArrayList<>(valores);
-        List<Task<QuerySnapshot>> consultas = new ArrayList<>();
+        Set<Integer> definidos = new HashSet<>();
 
-        for (int i = 0; i < lista.size(); i += TAMANHO_LOTE) {
+        for (Bimestre b : bimestres) {
 
-            List<String> lote = new ArrayList<>(
-                    lista.subList(i, Math.min(i + TAMANHO_LOTE, lista.size()))
-            );
-
-            Query consulta = campo == null
-                    ? db.collection(colecao).whereIn(FieldPath.documentId(), lote)
-                    : db.collection(colecao).whereIn(campo, lote);
-
-            consultas.add(consulta.get());
+            if (b.numero >= 1 && b.numero <= 4 && b.inicio != null && b.fim != null) {
+                definidos.add(b.numero);
+                periodosTexto[b.numero] = Datas.formatar(b.inicio) + " - " + Datas.formatar(b.fim);
+            }
         }
 
-        return Tasks.whenAllSuccess(consultas).continueWith(tarefa -> {
+        int atual = desempenho.bimestreDa(LocalDate.now());
 
-            List<DocumentSnapshot> documentos = new ArrayList<>();
-
-            for (Object resultado : tarefa.getResult()) {
-                documentos.addAll(((QuerySnapshot) resultado).getDocuments());
-            }
-
-            return documentos;
-        });
+        if (definidos.contains(atual)) {
+            bimestreSelecionado = atual;
+        }
     }
 
     // =====================================================
@@ -521,7 +302,7 @@ public class DesempenhoActivity extends AppCompatActivity {
                 periodosTexto[n] != null ? periodosTexto[n] : "Período não definido"
         );
 
-        if (!dadosCarregados) {
+        if (dados == null) {
             return;
         }
 
@@ -543,119 +324,50 @@ public class DesempenhoActivity extends AppCompatActivity {
 
         tvSemDados.setText("Nenhum aluno matriculado nas suas disciplinas.");
 
-        for (Map.Entry<String, String> aluno : nomesAlunos.entrySet()) {
+        for (Participante aluno : dados.alunos) {
 
-            String alunoId = aluno.getKey();
-
-            double pontos = 0;
-            int qtdFaltas = 0;
-            int justificadas = 0;
-
-            for (Pontuacao p : pontuacoes) {
-                if (p.bimestre == n && alunoId.equals(p.alunoId)) {
-                    pontos += p.nota;
-                }
-            }
-
-            for (Falta f : faltas) {
-                if (f.bimestre == n && alunoId.equals(f.alunoId)) {
-                    if (f.justificada) {
-                        justificadas++;
-                    } else {
-                        qtdFaltas++;
-                    }
-                }
-            }
+            Desempenho.Resumo resumo = dados.desempenho.doAluno(aluno.perfilId, n);
 
             linhas.add(new Linha(
-                    aluno.getValue(),
-                    corPara(alunoId),
+                    aluno.nome,
+                    corPara(aluno.perfilId),
                     null,
-                    formatarPontos(pontos),
-                    qtdFaltas + (qtdFaltas == 1 ? " falta" : " faltas")
-                            + " · " + justificadas + " justificada(s)",
+                    formatarPontos(resumo.pontos),
+                    resumo.faltas + (resumo.faltas == 1 ? " falta" : " faltas")
+                            + " · " + resumo.justificadas + " justificada(s)",
                     true,
-                    fotosAlunos.get(alunoId)
+                    aluno.fotoPath,
+                    aluno.fotoGoogleUrl
             ));
         }
-    }
-
-    // Busca a foto de cada aluno na coleção "alunos" (em lotes de até 10,
-    // limite do whereIn do Firestore) e atualiza a lista já exibida.
-    private void carregarFotosAlunos(List<String> idsAlunos) {
-
-        buscarEmLotes("alunos", null, idsAlunos).addOnSuccessListener(documentos -> {
-
-            Set<String> existentes = new HashSet<>();
-
-            for (DocumentSnapshot documento : documentos) {
-                existentes.add(documento.getId());
-                fotosAlunos.put(documento.getId(), documento.getString("fotoUrl"));
-            }
-
-            // Aluno excluído (matrícula ficou para trás) não aparece
-            nomesAlunos.keySet().retainAll(existentes);
-
-            mostrarBimestre();
-        });
     }
 
     private void montarLinhasAluno(int n) {
 
         tvSemDados.setText("Você ainda não está matriculado em disciplinas.");
 
-        double totalPontos = 0;
-        int qtdFaltas = 0;
-        int justificadas = 0;
+        String meuId = dados.eu.id;
+        Desempenho.Resumo total = dados.desempenho.doAluno(meuId, n);
 
-        for (Falta f : faltas) {
-            if (f.bimestre == n && uid.equals(f.alunoId)) {
-                if (f.justificada) {
-                    justificadas++;
-                } else {
-                    qtdFaltas++;
-                }
-            }
-        }
+        for (Map.Entry<String, String> disciplina : dados.disciplinas.entrySet()) {
 
-        for (Map.Entry<String, String> disciplina : nomesDisciplinas.entrySet()) {
-
-            String disciplinaId = disciplina.getKey();
-
-            double pontos = 0;
-            int avaliadas = 0;
-            int total = 0;
-
-            for (AtividadeInfo atividade : atividades.values()) {
-                if (disciplinaId.equals(atividade.disciplinaId)
-                        && bimestreDa(atividade.prazo) == n) {
-                    total++;
-                }
-            }
-
-            for (Pontuacao p : pontuacoes) {
-                if (p.bimestre == n && disciplinaId.equals(p.disciplinaId)) {
-                    pontos += p.nota;
-                    avaliadas++;
-                }
-            }
-
-            totalPontos += pontos;
+            Desempenho.Resumo resumo = dados.desempenho.daDisciplina(meuId, disciplina.getKey(), n);
 
             linhas.add(new Linha(
                     disciplina.getValue(),
-                    corPara(disciplinaId),
-                    avaliadas + " de " + total + " atividade(s) avaliada(s)",
-                    formatarPontos(pontos) + " pts",
+                    corPara(disciplina.getKey()),
+                    resumo.avaliadas + " de " + resumo.atividades + " atividade(s) avaliada(s)",
+                    formatarPontos(resumo.pontos) + " pts",
                     null,
                     false,
+                    null,
                     null
             ));
         }
 
-        tvPontosBimestre.setText(formatarPontos(totalPontos) + " pts");
-        tvFaltasBimestre.setText(String.valueOf(qtdFaltas));
-        tvJustificadasBimestre.setText(String.valueOf(justificadas));
+        tvPontosBimestre.setText(formatarPontos(total.pontos) + " pts");
+        tvFaltasBimestre.setText(String.valueOf(total.faltas));
+        tvJustificadasBimestre.setText(String.valueOf(total.justificadas));
     }
 
     private void aplicarFundos() {
@@ -678,36 +390,6 @@ public class DesempenhoActivity extends AppCompatActivity {
     // =====================================================
     // UTILITÁRIOS
     // =====================================================
-
-    private int bimestreDa(Date data) {
-
-        if (data == null) {
-            return 0;
-        }
-
-        for (int i = 1; i <= 4; i++) {
-
-            if (iniciosBimestre[i] != null && finsBimestre[i] != null
-                    && !data.before(iniciosBimestre[i]) && !data.after(finsBimestre[i])) {
-                return i;
-            }
-        }
-
-        return 0;
-    }
-
-    private Date converterData(String texto) {
-
-        if (texto == null || texto.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            return formatoData.parse(texto.trim());
-        } catch (ParseException e) {
-            return null;
-        }
-    }
 
     private String formatarPontos(double pontos) {
 
@@ -734,47 +416,6 @@ public class DesempenhoActivity extends AppCompatActivity {
     // MODELOS
     // =====================================================
 
-    private static class AtividadeInfo {
-
-        final String disciplinaId;
-        final Date prazo;
-
-        AtividadeInfo(String disciplinaId, Date prazo) {
-            this.disciplinaId = disciplinaId;
-            this.prazo = prazo;
-        }
-    }
-
-    private static class Pontuacao {
-
-        final String alunoId;
-        final String disciplinaId;
-        final int bimestre;
-        final double nota;
-
-        Pontuacao(String alunoId, String disciplinaId, int bimestre, double nota) {
-            this.alunoId = alunoId;
-            this.disciplinaId = disciplinaId;
-            this.bimestre = bimestre;
-            this.nota = nota;
-        }
-    }
-
-    private static class Falta {
-
-        final String alunoId;
-        final String disciplinaId;
-        final int bimestre;
-        final boolean justificada;
-
-        Falta(String alunoId, String disciplinaId, int bimestre, boolean justificada) {
-            this.alunoId = alunoId;
-            this.disciplinaId = disciplinaId;
-            this.bimestre = bimestre;
-            this.justificada = justificada;
-        }
-    }
-
     private static class Linha {
 
         final String nome;
@@ -783,7 +424,8 @@ public class DesempenhoActivity extends AppCompatActivity {
         final String pontos;
         final String faltas;
         final boolean mostrarIconePessoa;
-        final String fotoUrl;
+        final String fotoPath;
+        final String fotoGoogleUrl;
 
         Linha(
                 String nome,
@@ -792,7 +434,8 @@ public class DesempenhoActivity extends AppCompatActivity {
                 String pontos,
                 String faltas,
                 boolean mostrarIconePessoa,
-                String fotoUrl
+                String fotoPath,
+                String fotoGoogleUrl
         ) {
             this.nome = nome;
             this.cor = cor;
@@ -800,7 +443,13 @@ public class DesempenhoActivity extends AppCompatActivity {
             this.pontos = pontos;
             this.faltas = faltas;
             this.mostrarIconePessoa = mostrarIconePessoa;
-            this.fotoUrl = fotoUrl;
+            this.fotoPath = fotoPath;
+            this.fotoGoogleUrl = fotoGoogleUrl;
+        }
+
+        boolean temFoto() {
+            return (fotoPath != null && !fotoPath.isEmpty())
+                    || (fotoGoogleUrl != null && !fotoGoogleUrl.isEmpty());
         }
     }
 
@@ -830,7 +479,7 @@ public class DesempenhoActivity extends AppCompatActivity {
                     linha.mostrarIconePessoa ? View.VISIBLE : View.GONE
             );
 
-            if (linha.mostrarIconePessoa && linha.fotoUrl != null && !linha.fotoUrl.isEmpty()) {
+            if (linha.mostrarIconePessoa && linha.temFoto()) {
 
                 holder.circulo.setBackground(null);
 
@@ -843,10 +492,8 @@ public class DesempenhoActivity extends AppCompatActivity {
                 holder.imgPessoa.setImageTintList(null);
                 holder.imgPessoa.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
-                com.bumptech.glide.Glide.with(DesempenhoActivity.this)
-                        .load(linha.fotoUrl)
-                        .circleCrop()
-                        .into(holder.imgPessoa);
+                PerfilFotoUtil.mostrar(DesempenhoActivity.this, linha.fotoPath, linha.fotoGoogleUrl,
+                        holder.imgPessoa);
 
             } else {
 

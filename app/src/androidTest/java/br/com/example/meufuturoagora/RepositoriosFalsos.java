@@ -54,6 +54,7 @@ final class RepositoriosFalsos {
     final List<Entrega> entregas = new ArrayList<>();
     final List<Aula> aulas = new ArrayList<>();
     final List<EntradaDiario> diario = new ArrayList<>();
+    final List<LinhaRanking> linhasRanking = new ArrayList<>();
     ErroApi erroNoDiario;
     final List<Frequencia> frequencias = new ArrayList<>();
     final List<Participante> participantes = new ArrayList<>();
@@ -467,7 +468,8 @@ final class RepositoriosFalsos {
 
         @Override
         public List<LinhaRanking> ranking(String turmaId) {
-            return new ArrayList<>();
+            chamadas.add("ranking.ranking " + turmaId);
+            return new ArrayList<>(linhasRanking);
         }
 
         @Override

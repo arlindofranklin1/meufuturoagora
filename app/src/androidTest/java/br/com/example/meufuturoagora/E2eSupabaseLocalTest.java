@@ -558,6 +558,68 @@ public class E2eSupabaseLocalTest {
     }
 
     @Test
+    public void notaViraPontosNoRankingERefazerAvaliacaoTiraOsPontos() throws Exception {
+        local.entrar(MARTA);
+        String lia = idDaLia();
+
+        String atividadeId = java.util.UUID.randomUUID().toString();
+        local.servicos.atividades.criar(atividadeId, LOGICA, "E2E: trilha do ranking", "", 6,
+                java.time.LocalDate.now().plusDays(7), null, null, null);
+
+        try {
+
+            local.entrar(LIA);
+            br.com.example.meufuturoagora.dados.Entrega entrega =
+                    local.servicos.atividades.entregar(atividadeId, "Pronto", null, null);
+            int antes = local.servicos.ranking.pontuacao(lia, null);
+
+            local.entrar(MARTA);
+            local.servicos.atividades.avaliar(entrega.id, 4, "Bom");
+
+            // A professora vê a turma inteira, com a Lia e a pontuação nova
+            java.util.List<br.com.example.meufuturoagora.dados.Turma> turmas = local.servicos.ranking.turmasDoRanking();
+            assertTrue("a professora vê a turma da disciplina dela", !turmas.isEmpty());
+            boolean achouLia = false;
+
+            for (br.com.example.meufuturoagora.dados.Turma turma : turmas) {
+                for (br.com.example.meufuturoagora.dados.LinhaRanking linha : local.servicos.ranking.ranking(turma.id)) {
+                    if (linha.perfilId.equals(lia)) {
+                        achouLia = true;
+                        assertEquals(antes + 4, linha.pontos);
+                    }
+                }
+            }
+
+            assertTrue("a Lia aparece no ranking da turma", achouLia);
+
+            // A aluna vê o pódio e a própria linha, e o total bate com a pontuação
+            local.entrar(LIA);
+            assertEquals(antes + 4, local.servicos.ranking.pontuacao(lia, null));
+            boolean eu = false;
+
+            for (br.com.example.meufuturoagora.dados.LinhaRanking linha :
+                    local.servicos.ranking.ranking(local.servicos.ranking.turmasDoRanking().get(0).id)) {
+                assertTrue("aluno só vê o pódio e a si mesmo", linha.posicao <= 3 || linha.ehVoce);
+                eu |= linha.ehVoce;
+            }
+
+            assertTrue(eu);
+            assertNotNull(local.servicos.ranking.minhaPosicao());
+
+            // Refazer a avaliação tira a nota da pontuação
+            local.entrar(MARTA);
+            local.servicos.atividades.refazerAvaliacao(entrega.id);
+            local.entrar(LIA);
+            assertEquals(antes, local.servicos.ranking.pontuacao(lia, null));
+
+        } finally {
+
+            local.entrar(MARTA);
+            local.servicos.atividades.excluir(atividadeId);
+        }
+    }
+
+    @Test
     public void professorComumNaoTemAreaDoAdministrador() throws Exception {
         local.entrar(JOAO);
 

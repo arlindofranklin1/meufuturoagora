@@ -181,6 +181,30 @@ não leem o diário do aluno). Aluno contra aluno: pgTAP 090.
 | 6.5 | Aluno | Apagar uma página | Pede confirmação; depois a página some | | pendente |
 | 6.6 | Aluno | Fechar e reabrir o app | As páginas continuam lá | | pendente |
 
+## Módulo 7: desempenho e ranking
+
+A pontuação e a ordem do ranking são calculadas no servidor (ano letivo atual). O
+desempenho por bimestre é calculado no aparelho (`dados/Desempenho`) com o que o RLS
+deixa o usuário ler: pontos no bimestre do **prazo** da atividade, faltas no bimestre da
+**data** da aula. O `PontuacaoUtil` e o `PenalidadeFaltaUtil` (e os testes deles) saíram;
+na `TelaInicialAluno` só a pontuação e a posição foram migradas, o resto fica para o módulo 9.
+
+Automático (30/10/2026): 8 de JVM (`DesempenhoTest`), 9 de tela (`RankingEDesempenhoTest`) e
+1 de ponta a ponta (nota vira pontos no ranking real e refazer a avaliação tira os pontos).
+
+| # | Perfil | Ação | Esperado | Obtido | Resultado |
+|---|---|---|---|---|---|
+| 7.1 | Professor | Ranking → escolher cada turma do seletor | Só as turmas em que dá aula; pódio e turma inteira recarregam a cada troca | | pendente |
+| 7.2 | Aluno | Ranking | Seletor travado na própria turma; 3 primeiros e, na 4ª linha, "Você" com a posição real | | pendente |
+| 7.3 | Professor | Dar uma nota; abrir o ranking | Os pontos do aluno sobem na hora (sem o recálculo lento de antes) | | pendente |
+| 7.4 | Professor | Refazer a avaliação | A nota sai da pontuação do aluno | | pendente |
+| 7.5 | Aluno | Faltar numa aula (duas aulas no mesmo dia) | Desconta 5 pontos uma vez só no ranking | | pendente |
+| 7.6 | Aluno | Tela inicial | Pontuação total e posição ("3º") batem com o ranking | | pendente |
+| 7.7 | Aluno | Desempenho → cada bimestre | Pontos, faltas e justificadas do período; linhas por disciplina com "x de y atividade(s) avaliada(s)" | | pendente |
+| 7.8 | Aluno | Aba de um bimestre sem período definido pelo admin | "Período não definido" e tudo zerado | | pendente |
+| 7.9 | Professor | Desempenho | Uma linha por aluno das disciplinas dele, por nome, com pontos e faltas | | pendente |
+| 7.10 | Professor | Conferir um aluno com nota num bimestre e prazo noutro | Os pontos entram no bimestre do prazo da atividade | | pendente |
+
 ## Segurança: login só com Google (decisão D15)
 
 Conferir sempre que mexer em autenticação, na revisão final (Fase 7) e ao criar o
