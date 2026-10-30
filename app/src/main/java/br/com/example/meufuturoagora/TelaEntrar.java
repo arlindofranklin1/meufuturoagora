@@ -154,11 +154,7 @@ public class TelaEntrar extends AppCompatActivity {
 
                         Toast.makeText(TelaEntrar.this, "Bem-vindo, " + perfil.nome, Toast.LENGTH_SHORT).show();
 
-                        PonteFirebase.entrar(idToken, () -> {
-                            if (!isFinishing() && !isDestroyed()) {
-                                RotaInicial.abrir(TelaEntrar.this, perfil);
-                            }
-                        });
+                        RotaInicial.abrir(TelaEntrar.this, perfil);
                     }
 
                     @Override

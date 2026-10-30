@@ -151,8 +151,6 @@ public class ConfiguracoesActivity extends AppCompatActivity {
             }
         });
 
-        PonteFirebase.sair();
-
         Intent intent = new Intent(this, TelaEntrar.class);
 
         intent.setFlags(

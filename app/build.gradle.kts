@@ -23,7 +23,6 @@ if (supabaseChavePublica.startsWith("sb_secret_") || supabaseChavePublica.contai
 
 plugins {
     alias(libs.plugins.android.application)
-    id("com.google.gms.google-services")
 }
 
 android {
@@ -51,7 +50,7 @@ android {
     }
 
     // Keystore de debug compartilhado (no Git) para que todos os computadores
-    // gerem o mesmo SHA-1 já cadastrado no Firebase (login com Google).
+    // gerem o mesmo SHA-1 cadastrado no cliente OAuth do Google (login com Google).
     signingConfigs {
         getByName("debug") {
             storeFile = file("debug.keystore")
@@ -84,7 +83,7 @@ android {
         jacocoVersion = libs.versions.jacoco.get()
     }
 
-    // Robolectric executa as tarefas do Firestore na thread principal simulada
+    // Robolectric nos testes JVM que precisam de classes do Android (sessão, SharedPreferences)
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
@@ -119,11 +118,6 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.espresso.intents)
     androidTestImplementation(libs.test.rules)
-    implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-storage")
 
     // Google Login
     implementation("androidx.credentials:credentials:1.3.0")

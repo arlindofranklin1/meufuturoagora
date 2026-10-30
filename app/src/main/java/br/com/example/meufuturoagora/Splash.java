@@ -59,8 +59,6 @@ public class Splash extends AppCompatActivity {
                             if (perfil != null) {
                                 RotaInicial.abrir(Splash.this, perfil);
                             } else {
-                                // Sem sessão no Supabase, a da ponte não vale
-                                PonteFirebase.sair();
                                 abrirTelaEntrar(null);
                             }
                         });
@@ -68,11 +66,6 @@ public class Splash extends AppCompatActivity {
 
                     @Override
                     public void erro(ErroApi erro) {
-
-                        if (erro.semPermissao()) {
-                            PonteFirebase.sair();
-                        }
-
                         depoisDoTempoMinimo(inicio, () -> abrirTelaEntrar(erro.getMessage()));
                     }
                 });
