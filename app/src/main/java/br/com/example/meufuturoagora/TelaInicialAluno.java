@@ -1,7 +1,6 @@
 package br.com.example.meufuturoagora;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,29 +12,27 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
+
+import br.com.example.meufuturoagora.dados.Atividade;
+import br.com.example.meufuturoagora.dados.Datas;
+import br.com.example.meufuturoagora.dados.Disciplina;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Frequencia;
+import br.com.example.meufuturoagora.dados.PosicaoRanking;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 public class TelaInicialAluno extends AppCompatActivity {
 
-    private FirebaseFirestore db;
+    // Quantas trilhas recentes aparecem na tela
+    private static final int QUANTIDADE_PROXIMAS = 2;
 
-    private String alunoId;
-    private long pontuacaoAluno = 0;
-
+    private TextView tvSaudacaoAluno;
     private TextView tvPontuacaoTotalAluno;
     private TextView tvPosicaoRankingAluno;
     private TextView tvFrequenciaPercentual;
@@ -52,7 +49,14 @@ public class TelaInicialAluno extends AppCompatActivity {
         super.onResume();
 
         // Atualiza a foto ao voltar do perfil (o aluno pode ter trocado)
-        PerfilFotoUtil.carregarFotoDoUsuario(this, findViewById(R.id.imgAluno), false);
+        PerfilFotoUtil.carregarFotoDoUsuario(this, findViewById(R.id.imgAluno));
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        carregarTela();
     }
 
     @Override
@@ -61,10 +65,8 @@ public class TelaInicialAluno extends AppCompatActivity {
 
         setContentView(R.layout.activity_tela_inicial_aluno);
 
-        db = FirebaseFirestore.getInstance();
-
         ImageView imgAluno = findViewById(R.id.imgAluno);
-        TextView tvSaudacaoAluno = findViewById(R.id.tvSaudacaoAluno);
+        tvSaudacaoAluno = findViewById(R.id.tvSaudacaoAluno);
 
         tvPontuacaoTotalAluno = findViewById(R.id.tvPontuacaoTotalAluno);
         tvPosicaoRankingAluno = findViewById(R.id.tvPosicaoRankingAluno);
@@ -78,8 +80,8 @@ public class TelaInicialAluno extends AppCompatActivity {
         adapter = new ProximaAtividadeAdapter(listaProximas);
         recyclerProximasAtividades.setAdapter(adapter);
 
-        BimestreUtil.carregarPeriodoAtual(
-                db,
+        PeriodoAtual.mostrar(
+                this,
                 findViewById(R.id.tvTituloBimestre),
                 findViewById(R.id.tvPeriodoBimestre)
         );
@@ -102,42 +104,10 @@ public class TelaInicialAluno extends AppCompatActivity {
                         )
         ));
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (usuario == null) {
-            return;
-        }
-
-        String nome = usuario.getDisplayName();
-        tvSaudacaoAluno.setText(nome != null && !nome.isEmpty() ? "Olá, " + primeiroNome(nome) + "!" : "Olá, Aluno!");
-
         // Tocar na foto abre o perfil (a foto é carregada no onResume)
         imgAluno.setOnClickListener(v ->
                 startActivity(new Intent(this, TelaPerfilAluno.class))
         );
-
-        alunoId = usuario.getUid();
-
-        // Mantém a pontuação em dia com as notas e faltas (inclusive as antigas)
-        // e só depois mostra a pontuação e a posição no ranking
-        PontuacaoUtil.recalcular(db, alunoId, () -> db.collection("alunos")
-                .document(alunoId)
-                .get()
-                .addOnSuccessListener(alunoDoc -> {
-
-                    if (!alunoDoc.exists()) {
-                        return;
-                    }
-
-                    Long pontuacao = alunoDoc.getLong("pontuacao");
-                    pontuacaoAluno = pontuacao != null ? pontuacao : 0;
-
-                    tvPontuacaoTotalAluno.setText(String.valueOf(pontuacaoAluno));
-
-                    carregarPosicaoRanking();
-                    carregarProximasAtividades();
-                    carregarFrequencia();
-                }));
 
         // =========================
         // BOTTOM NAVIGATION
@@ -190,165 +160,119 @@ public class TelaInicialAluno extends AppCompatActivity {
         return espaco > 0 ? nomeCompleto.substring(0, espaco) : nomeCompleto;
     }
 
-    private void carregarPosicaoRanking() {
+    // Tudo o que a tela mostra, lido de uma vez
+    private static final class Carga {
 
-        RankingActivity.carregarPosicaoNaTurma(db, alunoId, tvPosicaoRankingAluno);
-    }
+        final String nome;
+        final int pontos;
+        final PosicaoRanking posicao;
+        final int faltas;
+        final int aulasComRegistro;
+        final List<ProximaAtividade> proximas;
 
-    private void carregarFrequencia() {
-
-        db.collection("frequencias")
-                .whereEqualTo("alunoId", alunoId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-
-                    int total = querySnapshot.size();
-                    int faltas = 0;
-
-                    for (QueryDocumentSnapshot documento : querySnapshot) {
-
-                        if ("Falta".equals(documento.getString("status"))) {
-                            faltas++;
-                        }
-                    }
-
-                    int percentual = total == 0 ? 100 : Math.round((total - faltas) * 100f / total);
-
-                    tvFrequenciaPercentual.setText(percentual + "% | " + faltas + " faltas");
-                    progressFrequencia.setProgress(percentual);
-                });
-    }
-
-    private void carregarProximasAtividades() {
-
-        // Só disciplinas que ainda existem e estão ativas (com o nome atual)
-        DisciplinaUtil.carregarDoAluno(db, alunoId, disciplinas -> {
-
-                    List<String> disciplinaIds = new ArrayList<>();
-                    List<String> disciplinaNomes = new ArrayList<>();
-
-                    for (java.util.Map.Entry<String, String> item : disciplinas.entrySet()) {
-                        disciplinaIds.add(item.getKey());
-                        disciplinaNomes.add(item.getValue() != null ? item.getValue() : "Disciplina");
-                    }
-
-                    if (disciplinaIds.isEmpty()) {
-
-                        atualizarListaVazia();
-                        return;
-                    }
-
-                    // Firestore "whereIn" aceita no máximo 10 valores
-                    List<String> idsConsulta = disciplinaIds.subList(
-                            0, Math.min(10, disciplinaIds.size())
-                    );
-
-                    db.collection("atividades")
-                            .whereIn("disciplinaId", idsConsulta)
-                            .whereEqualTo("ativo", true)
-                            .get()
-                            .addOnSuccessListener(atividades -> {
-
-                                listaProximas.clear();
-
-                                for (QueryDocumentSnapshot documento : atividades) {
-
-                                    String nome = documento.getString("nome");
-                                    String prazo = documento.getString("prazo");
-                                    String disciplinaId = documento.getString("disciplinaId");
-
-                                    int indice = disciplinaIds.indexOf(disciplinaId);
-                                    String disciplinaNome = indice >= 0
-                                            ? disciplinaNomes.get(indice)
-                                            : "Disciplina";
-
-                                    if (nome != null) {
-
-                                        ProximaAtividade proxima = new ProximaAtividade(
-                                                nome,
-                                                disciplinaNome,
-                                                prazo != null ? prazo : ""
-                                        );
-
-                                        proxima.id = documento.getId();
-                                        proxima.criadoEm = documento.getTimestamp("criadoEm");
-
-                                        listaProximas.add(proxima);
-                                    }
-                                }
-
-                                // Mostra só as 2 trilhas adicionadas mais recentemente
-                                ordenarMaisRecentes(listaProximas);
-
-                                if (listaProximas.size() > 2) {
-
-                                    listaProximas.subList(2, listaProximas.size()).clear();
-                                }
-
-                                adapter.notifyDataSetChanged();
-                                atualizarListaVazia();
-                            });
-                });
-    }
-
-    // Mais recentes primeiro (data de criação). Trilhas antigas, sem essa data,
-    // ficam depois, ordenadas pelo prazo mais distante.
-    private void ordenarMaisRecentes(List<ProximaAtividade> lista) {
-
-        SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-
-        Collections.sort(lista, (a, b) -> {
-
-            if (a.criadoEm != null && b.criadoEm != null) {
-                return b.criadoEm.compareTo(a.criadoEm);
-            }
-
-            if (a.criadoEm != null) {
-                return -1;
-            }
-
-            if (b.criadoEm != null) {
-                return 1;
-            }
-
-            Date dataA = tentarConverter(formato, a.prazo);
-            Date dataB = tentarConverter(formato, b.prazo);
-
-            if (dataA == null || dataB == null) {
-                return 0;
-            }
-
-            return dataB.compareTo(dataA);
-        });
-    }
-
-    private void ordenarPorPrazo(List<ProximaAtividade> lista) {
-
-        SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-
-        Collections.sort(lista, (a, b) -> {
-
-            Date dataA = tentarConverter(formato, a.prazo);
-            Date dataB = tentarConverter(formato, b.prazo);
-
-            if (dataA == null || dataB == null) {
-                return 0;
-            }
-
-            return dataA.compareTo(dataB);
-        });
-    }
-
-    private Date tentarConverter(SimpleDateFormat formato, String texto) {
-
-        try {
-
-            return formato.parse(texto);
-
-        } catch (ParseException e) {
-
-            return null;
+        Carga(String nome, int pontos, PosicaoRanking posicao, int faltas, int aulasComRegistro,
+              List<ProximaAtividade> proximas) {
+            this.nome = nome;
+            this.pontos = pontos;
+            this.posicao = posicao;
+            this.faltas = faltas;
+            this.aulasComRegistro = aulasComRegistro;
+            this.proximas = proximas;
         }
+    }
+
+    private void carregarTela() {
+
+        Servicos servicos = Servicos.get(this);
+
+        Tarefas.executar(this, () -> {
+
+            br.com.example.meufuturoagora.dados.Perfil eu = servicos.perfis.meu();
+
+            int faltas = 0;
+            List<Frequencia> frequencias = servicos.frequencias.frequencias();
+
+            for (Frequencia f : frequencias) {
+
+                if (Frequencia.FALTA.equals(f.status)) {
+                    faltas++;
+                }
+            }
+
+            // Só as disciplinas ativas em que o aluno está matriculado
+            List<Atividade> todas = new ArrayList<>();
+            java.util.Map<String, String> nomes = new java.util.HashMap<>();
+
+            for (Disciplina d : servicos.disciplinas.listar()) {
+
+                if (!d.ativo) {
+                    continue;
+                }
+
+                nomes.put(d.id, d.nome != null ? d.nome : "Disciplina");
+                todas.addAll(servicos.atividades.daDisciplina(d.id));
+            }
+
+            // As mais recentemente criadas primeiro
+            Collections.sort(todas, (a, b) -> {
+
+                if (a.criadoEm == null || b.criadoEm == null) {
+                    return 0;
+                }
+
+                return b.criadoEm.compareTo(a.criadoEm);
+            });
+
+            List<ProximaAtividade> proximas = new ArrayList<>();
+
+            for (Atividade a : todas.subList(0, Math.min(QUANTIDADE_PROXIMAS, todas.size()))) {
+
+                proximas.add(new ProximaAtividade(
+                        a.id,
+                        a.nome,
+                        nomes.get(a.disciplinaId),
+                        a.prazo != null ? Datas.formatar(a.prazo) : ""
+                ));
+            }
+
+            return new Carga(
+                    eu != null ? eu.nome : null,
+                    servicos.ranking.pontuacao(eu.id, null),
+                    servicos.ranking.minhaPosicao(),
+                    faltas,
+                    frequencias.size(),
+                    proximas
+            );
+
+        }, new Tarefas.Retorno<Carga>() {
+            @Override
+            public void sucesso(Carga carga) {
+
+                tvSaudacaoAluno.setText(carga.nome != null && !carga.nome.isEmpty()
+                        ? "Olá, " + primeiroNome(carga.nome) + "!"
+                        : "Olá, Aluno!");
+
+                tvPontuacaoTotalAluno.setText(String.valueOf(carga.pontos));
+                tvPosicaoRankingAluno.setText(carga.posicao != null ? carga.posicao.posicao + "º" : "—");
+
+                int total = carga.aulasComRegistro;
+                int percentual = total == 0 ? 100 : Math.round((total - carga.faltas) * 100f / total);
+
+                tvFrequenciaPercentual.setText(percentual + "% | " + carga.faltas + " faltas");
+                progressFrequencia.setProgress(percentual);
+
+                listaProximas.clear();
+                listaProximas.addAll(carga.proximas);
+                adapter.notifyDataSetChanged();
+                atualizarListaVazia();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                // Os números ficam como estão no layout
+                atualizarListaVazia();
+            }
+        });
     }
 
     private void atualizarListaVazia() {
@@ -359,15 +283,15 @@ public class TelaInicialAluno extends AppCompatActivity {
 
     public static class ProximaAtividade {
 
-        String id;
-        String nome;
-        String disciplinaNome;
-        String prazo;
-        com.google.firebase.Timestamp criadoEm;
+        final String id;
+        final String nome;
+        final String disciplinaNome;
+        final String prazo;
 
-        public ProximaAtividade(String nome, String disciplinaNome, String prazo) {
+        public ProximaAtividade(String id, String nome, String disciplinaNome, String prazo) {
+            this.id = id;
             this.nome = nome;
-            this.disciplinaNome = disciplinaNome;
+            this.disciplinaNome = disciplinaNome != null ? disciplinaNome : "Disciplina";
             this.prazo = prazo;
         }
     }

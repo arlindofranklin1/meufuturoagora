@@ -19,28 +19,32 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
-
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.TreeSet;
+
+import br.com.example.meufuturoagora.dados.AnoLetivo;
+import br.com.example.meufuturoagora.dados.Bimestre;
+import br.com.example.meufuturoagora.dados.Bimestres;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.HistoricoAluno;
+import br.com.example.meufuturoagora.dados.HistoricoEntrega;
+import br.com.example.meufuturoagora.dados.HistoricoRepositorio;
+import br.com.example.meufuturoagora.dados.HistoricoTrilha;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+import br.com.example.meufuturoagora.dados.Turma;
 
 // Histórico do administrador: consulta, por ano letivo e bimestre, a pontuação
 // dos alunos, as trilhas enviadas pelos professores e as entregas dos alunos.
-// Registros novos trazem o ano letivo e o bimestre gravados; os antigos (de
-// antes dessa marcação) são encaixados pelas datas dos bimestres.
+// O servidor calcula (historico_alunos, historico_trilhas, historico_entregas)
+// e devolve só o período pedido; aqui ficam a pesquisa, o filtro por turma e
+// o agrupamento, que não precisam de nova consulta.
 public class HistoricoAnoLetivoActivity extends AppCompatActivity {
 
     private static final int ABA_ALUNOS = 0;
@@ -53,40 +57,38 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
             "Ano inteiro", "1º bimestre", "2º bimestre", "3º bimestre", "4º bimestre"
     };
 
-    private FirebaseFirestore db;
+    // A escola fica no Brasil: a data de envio aparece no horário de Brasília
+    private static final DateTimeFormatter DATA_ENVIO =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneId.of("America/Sao_Paulo"));
 
     private Spinner spinnerAno;
     private Spinner spinnerBimestre;
     private Spinner spinnerTurma;
 
-    // Opções do filtro de turma (a primeira é "Todas as turmas")
-    private final List<String> turmas = new ArrayList<>();
-    // Nomes das turmas que ainda existem na coleção "turmas"
-    private final TreeSet<String> turmasExistentes = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
     private TextView tvResumo;
     private EditText edtBuscar;
     private ProgressBar progress;
     private final TextView[] abas = new TextView[3];
 
+    // Opções do filtro de turma (a primeira é "Todas as turmas")
+    private final List<String> turmas = new ArrayList<>();
+    private final List<Integer> anos = new ArrayList<>();
+    private Integer anoAtual;
+
+    // Linhas do período escolhido, sem filtro; "linhas" é o que a lista mostra
+    private final List<Linha> base = new ArrayList<>();
     private final List<Linha> linhas = new ArrayList<>();
+    private List<Bimestre> bimestresDoAno = new ArrayList<>();
     private HistoricoAdapter adapter;
 
     private int abaSelecionada = ABA_ALUNOS;
-    private boolean dadosCarregados = false;
+    private boolean anosCarregados = false;
+    private boolean periodoCarregado = false;
 
-    // Dados carregados uma única vez e filtrados na tela
-    private DocumentSnapshot configuracao;
-    private final Map<String, DocumentSnapshot> anosLetivos = new HashMap<>();
-    private final Map<String, DocumentSnapshot> alunos = new HashMap<>();
-    private final Map<String, DocumentSnapshot> disciplinas = new HashMap<>();
-    private final Map<String, DocumentSnapshot> atividades = new HashMap<>();
-    private List<DocumentSnapshot> entregas = new ArrayList<>();
-    private List<DocumentSnapshot> penalidades = new ArrayList<>();
-
-    private final List<String> anos = new ArrayList<>();
-
-    private final SimpleDateFormat formatoData =
-            new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+    // Evita buscar duas vezes o mesmo período (o Android avisa a seleção inicial
+    // dos spinners) e descarta respostas atrasadas de uma escolha anterior
+    private String chaveSolicitada;
+    private int pedido = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,8 +98,6 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
 
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
-
-        db = FirebaseFirestore.getInstance();
 
         findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
 
@@ -136,6 +136,7 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
             abas[i].setOnClickListener(v -> {
                 abaSelecionada = aba;
                 mostrar();
+                recarregar();
             });
         }
 
@@ -143,7 +144,7 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
                 new ArrayAdapter<>(this, R.layout.item_spinner, PERIODOS);
         adapterPeriodos.setDropDownViewResource(R.layout.item_spinner_dropdown);
         spinnerBimestre.setAdapter(adapterPeriodos);
-        spinnerBimestre.setOnItemSelectedListener(new AoSelecionar());
+        spinnerBimestre.setOnItemSelectedListener(new AoSelecionar(true));
 
         RecyclerView recycler = findViewById(R.id.recyclerHistorico);
         recycler.setLayoutManager(new LinearLayoutManager(this));
@@ -151,83 +152,62 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
         recycler.setAdapter(adapter);
 
         mostrar();
-        carregarDados();
+        carregarAnosETurmas();
     }
 
     // =====================================================
     // CARREGAMENTO
     // =====================================================
 
-    private void carregarDados() {
+    private void carregarAnosETurmas() {
 
-        Task<DocumentSnapshot> tConfig = db.collection("configuracoes").document("geral").get();
-        Task<QuerySnapshot> tAnos = db.collection("anosLetivos").get();
-        Task<QuerySnapshot> tTurmas = db.collection("turmas").get();
-        Task<QuerySnapshot> tAlunos = db.collection("alunos").get();
-        Task<QuerySnapshot> tDisciplinas = db.collection("disciplinas").get();
-        Task<QuerySnapshot> tAtividades = db.collection("atividades").get();
-        Task<QuerySnapshot> tEntregas = db.collection("entregas").get();
-        Task<QuerySnapshot> tPenalidades = db.collection("penalidades").get();
+        Servicos servicos = Servicos.get(this);
 
-        Tasks.whenAllSuccess(Arrays.asList(
-                        tConfig, tAnos, tTurmas, tAlunos, tDisciplinas, tAtividades, tEntregas, tPenalidades))
-                .addOnSuccessListener(resultados -> {
+        Tarefas.executar(this, () -> {
 
-                    configuracao = tConfig.getResult();
+            List<Integer> comRegistro = servicos.historico.anos();
+            AnoLetivo atual = servicos.escola.anoAtual();
+            List<Turma> cadastradas = servicos.escola.turmas();
 
-                    for (DocumentSnapshot d : tAnos.getResult()) anosLetivos.put(d.getId(), d);
-                    for (DocumentSnapshot d : tAlunos.getResult()) alunos.put(d.getId(), d);
-                    for (DocumentSnapshot d : tDisciplinas.getResult()) disciplinas.put(d.getId(), d);
-                    for (DocumentSnapshot d : tAtividades.getResult()) atividades.put(d.getId(), d);
+            return new Base(comRegistro, atual != null ? atual.ano : null, cadastradas);
 
-                    entregas = tEntregas.getResult().getDocuments();
-                    penalidades = tPenalidades.getResult().getDocuments();
+        }, new Tarefas.Retorno<Base>() {
+            @Override
+            public void sucesso(Base carregada) {
 
-                    montarListaDeAnos();
-                    montarListaDeTurmas(tTurmas.getResult());
+                anoAtual = carregada.anoAtual;
+                montarListaDeAnos(carregada.anos);
+                montarListaDeTurmas(carregada.turmas);
 
-                    dadosCarregados = true;
-                    mostrar();
-                })
-                .addOnFailureListener(e -> {
+                anosCarregados = true;
+                recarregar();
+            }
 
-                    progress.setVisibility(View.GONE);
-                    Toast.makeText(
-                            this,
-                            "Erro ao carregar o histórico: " + e.getMessage(),
-                            Toast.LENGTH_LONG
-                    ).show();
-                });
+            @Override
+            public void erro(ErroApi erro) {
+
+                progress.setVisibility(View.GONE);
+                Toast.makeText(
+                        HistoricoAnoLetivoActivity.this,
+                        "Erro ao carregar o histórico: " + erro.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+        });
     }
 
-    private void montarListaDeAnos() {
+    private void montarListaDeAnos(List<Integer> comRegistro) {
 
         // Do mais recente para o mais antigo
-        TreeSet<String> conjunto = new TreeSet<>((a, b) -> b.compareTo(a));
+        TreeSet<Integer> conjunto = new TreeSet<>((a, b) -> b.compareTo(a));
+        conjunto.addAll(comRegistro);
 
-        String anoAtual = configuracao.getString(AnoLetivoUtil.CAMPO_ANO);
-
-        if (anoAtual != null && !anoAtual.isEmpty()) {
+        if (anoAtual != null) {
             conjunto.add(anoAtual);
         }
 
-        conjunto.addAll(anosLetivos.keySet());
-
-        List<DocumentSnapshot> todos = new ArrayList<>(atividades.values());
-        todos.addAll(entregas);
-        todos.addAll(penalidades);
-
-        for (DocumentSnapshot documento : todos) {
-
-            String ano = documento.getString(AnoLetivoUtil.CAMPO_ANO);
-
-            if (ano != null && !ano.isEmpty()) {
-                conjunto.add(ano);
-            }
-        }
-
         if (conjunto.isEmpty()) {
-            conjunto.add(String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
+            conjunto.add(Calendar.getInstance().get(Calendar.YEAR));
         }
 
         anos.clear();
@@ -235,133 +215,176 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
 
         List<String> rotulos = new ArrayList<>();
 
-        for (String ano : anos) {
-            rotulos.add(ano.equals(anoAtual) ? ano + " (atual)" : ano);
+        for (Integer ano : anos) {
+            rotulos.add(ano.equals(anoAtual) ? ano + " (atual)" : String.valueOf(ano));
         }
 
         ArrayAdapter<String> adapterAnos = new ArrayAdapter<>(this, R.layout.item_spinner, rotulos);
         adapterAnos.setDropDownViewResource(R.layout.item_spinner_dropdown);
         spinnerAno.setAdapter(adapterAnos);
         spinnerAno.setSelection(Math.max(0, anos.indexOf(anoAtual)));
-        spinnerAno.setOnItemSelectedListener(new AoSelecionar());
+        spinnerAno.setOnItemSelectedListener(new AoSelecionar(true));
     }
 
-    // Somente as turmas cadastradas (turma excluída não aparece no filtro; os
-    // registros dela ficam em "Sem turma")
-    private void montarListaDeTurmas(QuerySnapshot turmasCadastradas) {
+    // Só as turmas cadastradas; o registro de uma turma excluída fica em "Sem turma"
+    private void montarListaDeTurmas(List<Turma> cadastradas) {
 
-        turmasExistentes.clear();
-        boolean temSemTurma = false;
+        TreeSet<String> nomes = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
-        for (DocumentSnapshot turma : turmasCadastradas) {
-            String nome = turma.getString("nome");
-            if (nome != null && !nome.isEmpty()) turmasExistentes.add(nome);
-        }
-
-        List<DocumentSnapshot> comTurma = new ArrayList<>(alunos.values());
-        comTurma.addAll(disciplinas.values());
-
-        for (DocumentSnapshot documento : comTurma) {
-
-            String nome = documento.getString("turmaNome");
-
-            if (nome == null || !turmasExistentes.contains(nome)) {
-                temSemTurma = true;
-            }
+        for (Turma turma : cadastradas) {
+            nomes.add(turma.nome);
         }
 
         turmas.clear();
         turmas.add("Todas as turmas");
-        turmas.addAll(turmasExistentes);
-
-        if (temSemTurma) {
-            turmas.add(SEM_TURMA);
-        }
+        turmas.addAll(nomes);
+        turmas.add(SEM_TURMA);
 
         ArrayAdapter<String> adapterTurmas = new ArrayAdapter<>(this, R.layout.item_spinner, turmas);
         adapterTurmas.setDropDownViewResource(R.layout.item_spinner_dropdown);
         spinnerTurma.setAdapter(adapterTurmas);
-        spinnerTurma.setOnItemSelectedListener(new AoSelecionar());
+        spinnerTurma.setOnItemSelectedListener(new AoSelecionar(false));
     }
 
-    // =====================================================
-    // FILTRO POR ANO LETIVO E BIMESTRE
-    // =====================================================
+    private int anoSelecionado() {
 
-    // Documento com as datas dos bimestres do ano (configuração atual ou arquivo do ano)
-    private DocumentSnapshot datasDoAno(String ano) {
+        int posicao = Math.max(0, spinnerAno.getSelectedItemPosition());
+        return anos.get(Math.min(posicao, anos.size() - 1));
+    }
 
-        String anoAtual = configuracao.getString(AnoLetivoUtil.CAMPO_ANO);
+    private int bimestreSelecionado() {
+        return Math.max(0, spinnerBimestre.getSelectedItemPosition());
+    }
 
-        if (ano.equals(anoAtual) && temBimestres(configuracao)) {
-            return configuracao;
+    // Busca no servidor o período escolhido (ano + bimestre) da aba aberta
+    private void recarregar() {
+
+        if (!anosCarregados || anos.isEmpty()) {
+            return;
         }
 
-        return anosLetivos.get(ano);
-    }
+        int ano = anoSelecionado();
+        int bimestre = bimestreSelecionado();
+        int aba = abaSelecionada;
 
-    private boolean temBimestres(DocumentSnapshot documento) {
+        String chave = ano + "|" + bimestre + "|" + aba;
 
-        return documento != null
-                && BimestreUtil.converter(documento.getString("bimestre1Inicio")) != null;
-    }
-
-    private boolean pertence(DocumentSnapshot documento, Date data, String ano, int bimestre) {
-
-        DocumentSnapshot datas = datasDoAno(ano);
-        String anoDoRegistro = documento.getString(AnoLetivoUtil.CAMPO_ANO);
-
-        if (anoDoRegistro != null) {
-
-            if (!anoDoRegistro.equals(ano)) {
-                return false;
-            }
-
-        } else if (!dataNoAno(data, ano, datas)) {
-
-            // Registro antigo, sem ano letivo gravado: vale a data
-            return false;
+        // Já buscado (ou sendo buscado) este mesmo período
+        if (chave.equals(chaveSolicitada)) {
+            return;
         }
 
-        if (bimestre == 0) {
-            return true;
-        }
+        chaveSolicitada = chave;
+        periodoCarregado = false;
+        int meuPedido = ++pedido;
 
-        Long bimestreDoRegistro = documento.getLong(AnoLetivoUtil.CAMPO_BIMESTRE);
+        // Esvazia a lista até chegar o período novo, para não mostrar dados de outro filtro
+        mostrar();
+        progress.setVisibility(View.VISIBLE);
 
-        if (bimestreDoRegistro != null) {
-            return bimestreDoRegistro == bimestre;
-        }
+        HistoricoRepositorio historico = Servicos.get(this).historico;
+        Servicos servicos = Servicos.get(this);
 
-        return BimestreUtil.numeroDaData(datas, data) == bimestre;
-    }
+        Tarefas.executar(this, () -> {
 
-    // Dentro do período dos bimestres do ano; sem bimestres definidos, vale o ano do calendário
-    private boolean dataNoAno(Date data, String ano, DocumentSnapshot datas) {
-        return BimestreUtil.dataNoAno(data, ano, datas);
-    }
+            List<Linha> novas = new ArrayList<>();
 
-    private Date data(DocumentSnapshot documento, String... campos) {
-
-        for (String campo : campos) {
-
-            Object valor = documento.get(campo);
-
-            if (valor instanceof Timestamp) {
-                return ((Timestamp) valor).toDate();
-            }
-
-            if (valor instanceof String) {
-
-                Date convertida = BimestreUtil.converter((String) valor);
-
-                if (convertida != null) {
-                    return convertida;
+            if (aba == ABA_ALUNOS) {
+                for (HistoricoAluno aluno : historico.alunos(ano, bimestre)) {
+                    novas.add(linhaDoAluno(aluno));
+                }
+            } else if (aba == ABA_TRILHAS) {
+                for (HistoricoTrilha trilha : historico.trilhas(ano, bimestre)) {
+                    novas.add(linhaDaTrilha(trilha));
+                }
+            } else {
+                for (HistoricoEntrega entrega : historico.entregas(ano, bimestre)) {
+                    novas.add(linhaDaEntrega(entrega));
                 }
             }
-        }
 
-        return null;
+            return new Periodo(novas, servicos.escola.bimestres(ano));
+
+        }, new Tarefas.Retorno<Periodo>() {
+            @Override
+            public void sucesso(Periodo periodo) {
+
+                if (meuPedido != pedido) {
+                    return;
+                }
+
+                base.clear();
+                base.addAll(periodo.linhas);
+                bimestresDoAno = periodo.bimestres;
+                periodoCarregado = true;
+
+                progress.setVisibility(View.GONE);
+                mostrar();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+
+                if (meuPedido != pedido) {
+                    return;
+                }
+
+                chaveSolicitada = null;
+                progress.setVisibility(View.GONE);
+                Toast.makeText(
+                        HistoricoAnoLetivoActivity.this,
+                        "Erro ao carregar o histórico: " + erro.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+        });
+    }
+
+    // =====================================================
+    // LINHAS DE CADA ABA
+    // =====================================================
+
+    private static Linha linhaDoAluno(HistoricoAluno aluno) {
+
+        return new Linha(
+                aluno.nome,
+                aluno.entregas + " entrega(s) • " + aluno.diasFalta + " dia(s) com falta",
+                aluno.pontos + " pts",
+                aluno.turmaNome,
+                aluno.nome
+        );
+    }
+
+    private static Linha linhaDaTrilha(HistoricoTrilha trilha) {
+
+        return new Linha(
+                trilha.nome,
+                trilha.disciplinaNome + " • Prof. " + trilha.professorNome
+                        + "\nPrazo: " + (trilha.prazo != null ? Bimestres.formatar(trilha.prazo) : "—")
+                        + " • " + trilha.entregas + " entrega(s)",
+                trilha.pontos + " pts",
+                trilha.turmaNome,
+                trilha.nome + " " + trilha.disciplinaNome + " " + trilha.professorNome
+        );
+    }
+
+    private static Linha linhaDaEntrega(HistoricoEntrega entrega) {
+
+        String atraso = entrega.diasAtraso > 0 ? " • " + entrega.diasAtraso + " dia(s) de atraso" : "";
+
+        return new Linha(
+                entrega.alunoNome,
+                entrega.atividadeNome + " • " + entrega.disciplinaNome
+                        + "\nEnviada em " + (entrega.enviadoEm != null ? DATA_ENVIO.format(entrega.enviadoEm) : "—")
+                        + atraso,
+                entrega.avaliada() ? formatarNota(entrega.nota) + " pts" : "Pendente",
+                entrega.turmaNome,
+                entrega.alunoNome + " " + entrega.atividadeNome + " " + entrega.disciplinaNome
+        );
+    }
+
+    private static String formatarNota(double nota) {
+        return nota == Math.floor(nota) ? String.valueOf((long) nota) : String.valueOf(nota);
     }
 
     // =====================================================
@@ -388,36 +411,25 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
                 ? "Buscar trilhas, disciplinas ou professores"
                 : "Buscar alunos ou trilhas");
 
-        if (!dadosCarregados || anos.isEmpty()) {
+        if (!anosCarregados || anos.isEmpty() || !periodoCarregado) {
+
+            // Mostra a lista vazia enquanto o período novo não chega
+            linhas.clear();
+            adapter.notifyDataSetChanged();
             return;
         }
 
-        progress.setVisibility(View.GONE);
-
-        int posicaoAno = Math.max(0, spinnerAno.getSelectedItemPosition());
-        String ano = anos.get(Math.min(posicaoAno, anos.size() - 1));
-        int bimestre = Math.max(0, spinnerBimestre.getSelectedItemPosition());
-
-        linhas.clear();
-
-        if (abaSelecionada == ABA_ALUNOS) {
-            montarAlunos(ano, bimestre);
-        } else if (abaSelecionada == ABA_TRILHAS) {
-            montarTrilhas(ano, bimestre);
-        } else {
-            montarEntregas(ano, bimestre);
-        }
+        int ano = anoSelecionado();
+        int bimestre = bimestreSelecionado();
 
         String periodo = PERIODOS[bimestre].toLowerCase();
-        DocumentSnapshot datas = datasDoAno(ano);
 
-        if (bimestre > 0 && datas != null) {
+        if (bimestre > 0) {
 
-            String inicio = datas.getString("bimestre" + bimestre + "Inicio");
-            String fim = datas.getString("bimestre" + bimestre + "Fim");
-
-            if (inicio != null && !inicio.isEmpty() && fim != null && !fim.isEmpty()) {
-                periodo += " (" + inicio + " a " + fim + ")";
+            for (Bimestre b : bimestresDoAno) {
+                if (b.numero == bimestre) {
+                    periodo += " (" + Bimestres.formatar(b.inicio) + " a " + Bimestres.formatar(b.fim) + ")";
+                }
             }
         }
 
@@ -438,180 +450,23 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
     }
 
-    private void montarAlunos(String ano, int bimestre) {
-
-        Map<String, double[]> porAluno = new HashMap<>(); // {pontos, entregas, faltas}
-
-        for (DocumentSnapshot entrega : entregas) {
-
-            if (!pertence(entrega, data(entrega, "enviadoEm", "avaliadoEm"), ano, bimestre)) {
-                continue;
-            }
-
-            String alunoId = entrega.getString("alunoId");
-
-            if (alunoId == null) {
-                continue;
-            }
-
-            double[] valores = porAluno.computeIfAbsent(alunoId, k -> new double[3]);
-            valores[1]++;
-
-            Double nota = entrega.getDouble("nota");
-
-            if (Boolean.TRUE.equals(entrega.getBoolean("avaliado")) && nota != null) {
-                valores[0] += nota;
-            }
-        }
-
-        for (DocumentSnapshot penalidade : penalidades) {
-
-            if (!pertence(penalidade, data(penalidade, "criadoEm", "data"), ano, bimestre)) {
-                continue;
-            }
-
-            String alunoId = penalidade.getString("alunoId");
-
-            if (alunoId == null) {
-                continue;
-            }
-
-            double[] valores = porAluno.computeIfAbsent(alunoId, k -> new double[3]);
-            valores[0] -= PenalidadeFaltaUtil.PONTOS_POR_DIA;
-            valores[2]++;
-        }
-
-        for (Map.Entry<String, double[]> item : porAluno.entrySet()) {
-
-            DocumentSnapshot aluno = alunos.get(item.getKey());
-            double[] v = item.getValue();
-
-            String nome = aluno != null && aluno.getString("nome") != null
-                    ? aluno.getString("nome") : "Aluno removido";
-            String turma = aluno != null ? aluno.getString("turmaNome") : null;
-
-            linhas.add(new Linha(
-                    nome,
-                    (int) v[1] + " entrega(s) • " + (int) v[2] + " dia(s) com falta",
-                    Math.round(v[0]) + " pts",
-                    v[0],
-                    turma,
-                    nome
-            ));
-        }
-
-        // Ranking do período: maior pontuação primeiro
-        linhas.sort((a, b) -> Double.compare(b.ordem, a.ordem));
-    }
-
-    private void montarTrilhas(String ano, int bimestre) {
-
-        Map<String, Integer> entregasPorTrilha = new HashMap<>();
-
-        for (DocumentSnapshot entrega : entregas) {
-
-            String atividadeId = entrega.getString("atividadeId");
-
-            if (atividadeId != null) {
-                entregasPorTrilha.merge(atividadeId, 1, Integer::sum);
-            }
-        }
-
-        for (DocumentSnapshot atividade : atividades.values()) {
-
-            Date criadaEm = data(atividade, "criadoEm", "prazo");
-
-            if (!pertence(atividade, criadaEm, ano, bimestre)) {
-                continue;
-            }
-
-            DocumentSnapshot disciplina = disciplinas.get(atividade.getString("disciplinaId"));
-
-            String disciplinaNome = disciplina != null && disciplina.getString("nome") != null
-                    ? disciplina.getString("nome") : "Disciplina removida";
-            String professorNome = disciplina != null && disciplina.getString("professorNome") != null
-                    ? disciplina.getString("professorNome") : "Professor";
-            String prazo = atividade.getString("prazo");
-            Long pontos = atividade.getLong("pontos");
-            int qtdEntregas = entregasPorTrilha.getOrDefault(atividade.getId(), 0);
-
-            String nome = atividade.getString("nome") != null ? atividade.getString("nome") : "Trilha";
-
-            if (Boolean.FALSE.equals(atividade.getBoolean("ativo"))) {
-                nome += " (excluída)";
-            }
-
-            linhas.add(new Linha(
-                    nome,
-                    disciplinaNome + " • Prof. " + professorNome
-                            + "\nPrazo: " + (prazo != null ? prazo : "—")
-                            + " • " + qtdEntregas + " entrega(s)",
-                    (pontos != null ? pontos : 0) + " pts",
-                    criadaEm != null ? criadaEm.getTime() : 0,
-                    disciplina != null ? disciplina.getString("turmaNome") : null,
-                    nome + " " + disciplinaNome + " " + professorNome
-            ));
-        }
-
-        // Mais recentes primeiro
-        linhas.sort((a, b) -> Double.compare(b.ordem, a.ordem));
-    }
-
-    private void montarEntregas(String ano, int bimestre) {
-
-        for (DocumentSnapshot entrega : entregas) {
-
-            Date enviadaEm = data(entrega, "enviadoEm", "avaliadoEm");
-
-            if (!pertence(entrega, enviadaEm, ano, bimestre)) {
-                continue;
-            }
-
-            DocumentSnapshot aluno = alunos.get(entrega.getString("alunoId"));
-            DocumentSnapshot atividade = atividades.get(entrega.getString("atividadeId"));
-            DocumentSnapshot disciplina = atividade != null
-                    ? disciplinas.get(atividade.getString("disciplinaId"))
-                    : null;
-
-            String alunoNome = aluno != null && aluno.getString("nome") != null
-                    ? aluno.getString("nome") : "Aluno removido";
-            String trilhaNome = atividade != null && atividade.getString("nome") != null
-                    ? atividade.getString("nome") : "Trilha removida";
-            String disciplinaNome = disciplina != null && disciplina.getString("nome") != null
-                    ? disciplina.getString("nome") : "";
-
-            Double nota = entrega.getDouble("nota");
-            boolean avaliada = Boolean.TRUE.equals(entrega.getBoolean("avaliado"));
-
-            String valor = avaliada && nota != null ? formatarNota(nota) + " pts" : "Pendente";
-
-            String turma = aluno != null && aluno.getString("turmaNome") != null
-                    ? aluno.getString("turmaNome")
-                    : disciplina != null ? disciplina.getString("turmaNome") : null;
-
-            linhas.add(new Linha(
-                    alunoNome,
-                    trilhaNome + (disciplinaNome.isEmpty() ? "" : " • " + disciplinaNome)
-                            + "\nEnviada em " + (enviadaEm != null ? formatoData.format(enviadaEm) : "—"),
-                    valor,
-                    enviadaEm != null ? enviadaEm.getTime() : 0,
-                    turma,
-                    alunoNome + " " + trilhaNome + " " + disciplinaNome
-            ));
-        }
-
-        linhas.sort((a, b) -> Double.compare(b.ordem, a.ordem));
-    }
-
-    private String formatarNota(double nota) {
-        return nota == Math.floor(nota) ? String.valueOf((long) nota) : String.valueOf(nota);
-    }
-
+    // Ano e bimestre pedem uma nova consulta ao servidor; a turma só refiltra o que já veio
     private class AoSelecionar implements AdapterView.OnItemSelectedListener {
+
+        private final boolean pedeNovaConsulta;
+
+        AoSelecionar(boolean pedeNovaConsulta) {
+            this.pedeNovaConsulta = pedeNovaConsulta;
+        }
 
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            mostrar();
+
+            if (pedeNovaConsulta) {
+                recarregar();
+            } else {
+                mostrar();
+            }
         }
 
         @Override
@@ -628,18 +483,16 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
         final String titulo;
         final String subtitulo;
         final String valor;
-        final double ordem;
         final String turma;
         final String busca;
 
         // Cabeçalho de turma: titulo = nome da turma, valor = quantidade
         final boolean cabecalho;
 
-        Linha(String titulo, String subtitulo, String valor, double ordem, String turma, String busca) {
+        Linha(String titulo, String subtitulo, String valor, String turma, String busca) {
             this.titulo = titulo;
             this.subtitulo = subtitulo;
             this.valor = valor;
-            this.ordem = ordem;
             this.turma = turma != null && !turma.isEmpty() ? turma : SEM_TURMA;
             this.busca = busca != null ? busca.toLowerCase() : "";
             this.cabecalho = false;
@@ -649,10 +502,33 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
             this.titulo = turma;
             this.subtitulo = null;
             this.valor = String.valueOf(quantidade);
-            this.ordem = 0;
             this.turma = turma;
             this.busca = "";
             this.cabecalho = true;
+        }
+    }
+
+    private static final class Base {
+
+        final List<Integer> anos;
+        final Integer anoAtual;
+        final List<Turma> turmas;
+
+        Base(List<Integer> anos, Integer anoAtual, List<Turma> turmas) {
+            this.anos = anos;
+            this.anoAtual = anoAtual;
+            this.turmas = turmas;
+        }
+    }
+
+    private static final class Periodo {
+
+        final List<Linha> linhas;
+        final List<Bimestre> bimestres;
+
+        Periodo(List<Linha> linhas, List<Bimestre> bimestres) {
+            this.linhas = linhas;
+            this.bimestres = bimestres;
         }
     }
 
@@ -668,24 +544,21 @@ public class HistoricoAnoLetivoActivity extends AppCompatActivity {
                 : null;
 
         // Turmas em ordem alfabética, "Sem turma" no final; a ordem dentro da turma é mantida
-        Map<String, List<Linha>> porTurma = new java.util.TreeMap<>((a, b) -> {
+        Map<String, List<Linha>> porTurma = new TreeMap<>((a, b) -> {
             if (a.equals(b)) return 0;
             if (a.equals(SEM_TURMA)) return 1;
             if (b.equals(SEM_TURMA)) return -1;
             return a.compareToIgnoreCase(b);
         });
 
-        for (Linha linha : linhas) {
+        for (Linha linha : base) {
 
-            // Registro de uma turma que foi excluída entra em "Sem turma"
-            String turmaDaLinha = turmasExistentes.contains(linha.turma) ? linha.turma : SEM_TURMA;
-
-            if (turmaFiltro != null && !turmaFiltro.equalsIgnoreCase(turmaDaLinha)) {
+            if (turmaFiltro != null && !turmaFiltro.equalsIgnoreCase(linha.turma)) {
                 continue;
             }
 
             if (busca.isEmpty() || linha.busca.contains(busca)) {
-                porTurma.computeIfAbsent(turmaDaLinha, k -> new ArrayList<>()).add(linha);
+                porTurma.computeIfAbsent(linha.turma, k -> new ArrayList<>()).add(linha);
             }
         }
 

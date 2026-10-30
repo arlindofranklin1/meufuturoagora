@@ -11,23 +11,23 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+
 public class TelaDisciplinaAluno extends AppCompatActivity {
 
-    private FirebaseFirestore db;
 
     private RecyclerView recyclerDisciplinas;
     private TextView tvSemDisciplinasAluno;
@@ -46,7 +46,6 @@ public class TelaDisciplinaAluno extends AppCompatActivity {
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsTopo(this);
 
-        db = FirebaseFirestore.getInstance();
 
         recyclerDisciplinas = findViewById(R.id.recyclerDisciplinas);
         tvSemDisciplinasAluno = findViewById(R.id.tvSemDisciplinasAluno);
@@ -118,36 +117,42 @@ public class TelaDisciplinaAluno extends AppCompatActivity {
 
     private void carregarDisciplinas() {
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+        // O RLS devolve ao aluno só as disciplinas em que está matriculado; só as ativas
+        Tarefas.executar(this, () -> Servicos.get(this).disciplinas.listar(),
+                new Tarefas.Retorno<List<br.com.example.meufuturoagora.dados.Disciplina>>() {
+                    @Override
+                    public void sucesso(List<br.com.example.meufuturoagora.dados.Disciplina> disciplinas) {
 
-        if (usuario == null) {
-            return;
-        }
+                        listaDisciplinas.clear();
+                        listaDisciplinasOriginal.clear();
 
-        String alunoId = usuario.getUid();
+                        for (br.com.example.meufuturoagora.dados.Disciplina d : disciplinas) {
 
-        // Só disciplinas que ainda existem e estão ativas (com o nome atual)
-        DisciplinaUtil.carregarDoAluno(db, alunoId, disciplinas -> {
+                            if (!d.ativo) {
+                                continue;
+                            }
 
-            listaDisciplinas.clear();
-            listaDisciplinasOriginal.clear();
+                            Disciplina disciplina = new Disciplina(
+                                    d.id,
+                                    d.nome != null ? d.nome : "Disciplina",
+                                    gerarCorDisciplina(d.id)
+                            );
 
-            for (java.util.Map.Entry<String, String> item : disciplinas.entrySet()) {
+                            listaDisciplinas.add(disciplina);
+                            listaDisciplinasOriginal.add(disciplina);
+                        }
 
-                String disciplinaId = item.getKey();
-                String disciplinaNome = item.getValue() != null ? item.getValue() : "Disciplina";
+                        adapter.notifyDataSetChanged();
+                        atualizarVazio();
+                    }
 
-                Disciplina disciplina = new Disciplina(
-                        disciplinaId, disciplinaNome, gerarCorDisciplina(disciplinaId)
-                );
-
-                listaDisciplinas.add(disciplina);
-                listaDisciplinasOriginal.add(disciplina);
-            }
-
-            adapter.notifyDataSetChanged();
-            atualizarVazio();
-        });
+                    @Override
+                    public void erro(ErroApi erro) {
+                        Toast.makeText(TelaDisciplinaAluno.this,
+                                "Erro ao carregar disciplinas.", Toast.LENGTH_SHORT).show();
+                        atualizarVazio();
+                    }
+                });
     }
 
     private void atualizarVazio() {

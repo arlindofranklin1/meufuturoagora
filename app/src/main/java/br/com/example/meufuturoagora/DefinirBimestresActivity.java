@@ -11,20 +11,31 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
-import com.google.firebase.firestore.WriteBatch;
 
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
+import br.com.example.meufuturoagora.dados.AnoLetivo;
+import br.com.example.meufuturoagora.dados.Bimestre;
+import br.com.example.meufuturoagora.dados.Bimestres;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.EscolaRepositorio;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+
+// Datas dos quatro bimestres do ano letivo atual. A tela confere o básico na
+// hora (Bimestres.validar) e o servidor confere de novo ao gravar
+// (definir_bimestres), que troca todos os bimestres do ano de uma vez.
 public class DefinirBimestresActivity extends AppCompatActivity {
-
-    private FirebaseFirestore db;
 
     private final EditText[] edtInicios = new EditText[4];
     private final EditText[] edtFinais = new EditText[4];
+
+    private MaterialButton btnSalvarBimestres;
+
+    // Ano a que os bimestres pertencem; nulo até carregar (ou se não houver ano definido)
+    private Integer ano;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,8 +45,6 @@ public class DefinirBimestresActivity extends AppCompatActivity {
 
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
-
-        db = FirebaseFirestore.getInstance();
 
         ImageView btnVoltar = findViewById(R.id.btnVoltar);
         btnVoltar.setOnClickListener(v -> finish());
@@ -59,91 +68,132 @@ public class DefinirBimestresActivity extends AppCompatActivity {
             edtFinais[i] = edtFinal;
         }
 
-        MaterialButton btnSalvarBimestres = findViewById(R.id.btnSalvarBimestres);
+        btnSalvarBimestres = findViewById(R.id.btnSalvarBimestres);
         btnSalvarBimestres.setOnClickListener(v -> salvarBimestres());
 
         carregarBimestres();
     }
 
+    // Abre no dia já escolhido; sem data, em hoje
     private void abrirCalendario(EditText campo) {
 
-        Calendar calendario = Calendar.getInstance();
+        LocalDate inicial;
+
+        try {
+            LocalDate escolhida = Bimestres.ler(campo.getText().toString());
+            inicial = escolhida != null ? escolhida : LocalDate.now();
+        } catch (IllegalArgumentException e) {
+            inicial = LocalDate.now();
+        }
 
         new DatePickerDialog(
                 this,
-                (view, ano, mes, dia) -> campo.setText(
-                        String.format("%02d/%02d/%04d", dia, mes + 1, ano)
+                (view, anoEscolhido, mes, dia) -> campo.setText(
+                        Bimestres.formatar(LocalDate.of(anoEscolhido, mes + 1, dia))
                 ),
-                calendario.get(Calendar.YEAR),
-                calendario.get(Calendar.MONTH),
-                calendario.get(Calendar.DAY_OF_MONTH)
+                inicial.getYear(),
+                inicial.getMonthValue() - 1,
+                inicial.getDayOfMonth()
         ).show();
     }
 
     private void carregarBimestres() {
 
-        db.collection("configuracoes")
-                .document("geral")
-                .get()
-                .addOnSuccessListener(documento -> {
+        EscolaRepositorio escola = Servicos.get(this).escola;
 
-                    AnoLetivoUtil.atualizar(documento);
+        Tarefas.executar(this, () -> {
 
-                    if (!documento.exists()) {
-                        return;
+            AnoLetivo atual = escola.anoAtual();
+
+            return atual == null
+                    ? new Carregado(null, new ArrayList<>())
+                    : new Carregado(atual.ano, escola.bimestres(atual.ano));
+
+        }, new Tarefas.Retorno<Carregado>() {
+            @Override
+            public void sucesso(Carregado carregado) {
+
+                ano = carregado.ano;
+
+                if (ano == null) {
+                    Toast.makeText(DefinirBimestresActivity.this,
+                            "Defina o ano letivo antes dos bimestres.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                for (Bimestre bimestre : carregado.bimestres) {
+
+                    int posicao = bimestre.numero - 1;
+
+                    if (posicao >= 0 && posicao < edtInicios.length) {
+                        edtInicios[posicao].setText(Bimestres.formatar(bimestre.inicio));
+                        edtFinais[posicao].setText(Bimestres.formatar(bimestre.fim));
                     }
+                }
+            }
 
-                    for (int i = 1; i <= 4; i++) {
-
-                        String inicio = documento.getString("bimestre" + i + "Inicio");
-                        String fim = documento.getString("bimestre" + i + "Fim");
-
-                        if (inicio != null) {
-                            edtInicios[i - 1].setText(inicio);
-                        }
-
-                        if (fim != null) {
-                            edtFinais[i - 1].setText(fim);
-                        }
-                    }
-                });
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(DefinirBimestresActivity.this, "Erro ao carregar os bimestres: " + erro.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void salvarBimestres() {
 
-        Map<String, Object> dados = new HashMap<>();
-
-        for (int i = 1; i <= 4; i++) {
-
-            dados.put("bimestre" + i + "Inicio", edtInicios[i - 1].getText().toString().trim());
-            dados.put("bimestre" + i + "Fim", edtFinais[i - 1].getText().toString().trim());
+        if (ano == null) {
+            Toast.makeText(this, "Defina o ano letivo antes dos bimestres.", Toast.LENGTH_LONG).show();
+            return;
         }
 
-        // Também ficam guardados no ano letivo atual, para o histórico do administrador
-        String anoLetivo = AnoLetivoUtil.atual();
+        List<Bimestres.Entrada> entradas = new ArrayList<>();
 
-        Map<String, Object> dadosAno = new HashMap<>(dados);
-        dadosAno.put("ano", anoLetivo);
+        for (int i = 0; i < edtInicios.length; i++) {
+            entradas.add(new Bimestres.Entrada(
+                    edtInicios[i].getText().toString(),
+                    edtFinais[i].getText().toString()
+            ));
+        }
 
-        WriteBatch batch = db.batch();
-        batch.set(db.collection("configuracoes").document("geral"), dados, SetOptions.merge());
-        batch.set(db.collection("anosLetivos").document(anoLetivo), dadosAno, SetOptions.merge());
+        Bimestres.Resultado resultado = Bimestres.validar(ano, entradas);
 
-        batch.commit()
-                .addOnSuccessListener(unused -> {
+        if (!resultado.ok()) {
+            Toast.makeText(this, resultado.erro, Toast.LENGTH_LONG).show();
+            return;
+        }
 
-                    AnoLetivoUtil.carregar(db);
+        int anoDosBimestres = ano;
 
-                    // O período do ano mudou: notas e faltas antigas podem entrar ou sair
-                    PontuacaoUtil.recalcularTodos(db);
+        btnSalvarBimestres.setEnabled(false);
 
-                    Toast.makeText(this, "Bimestres salvos!", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao salvar: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+        Tarefas.executar(this, () -> {
+            Servicos.get(this).escola.definirBimestres(anoDosBimestres, resultado.bimestres);
+            return null;
+        }, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object ignorado) {
+                Toast.makeText(DefinirBimestresActivity.this, "Bimestres salvos!", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                btnSalvarBimestres.setEnabled(true);
+                Toast.makeText(DefinirBimestresActivity.this, "Erro ao salvar: " + erro.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private static final class Carregado {
+
+        final Integer ano;
+        final List<Bimestre> bimestres;
+
+        Carregado(Integer ano, List<Bimestre> bimestres) {
+            this.ano = ano;
+            this.bimestres = bimestres;
+        }
     }
 }

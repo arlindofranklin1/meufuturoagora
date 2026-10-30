@@ -9,22 +9,24 @@ import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.SetOptions;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Perfil;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+import br.com.example.meufuturoagora.dados.Turma;
+
+// Cadastro de turmas, professores e alunos pelo admin. O aluno é matriculado
+// nas disciplinas da turma pelo banco (decisão D9) e a conta Google se liga
+// ao cadastro no primeiro login (vincular_conta).
 public class CadastrarUsuarioActivity extends AppCompatActivity {
-
-    private FirebaseFirestore db;
 
     private RadioGroup radioGroupTipo;
     private EditText edtNomeUsuario;
@@ -32,6 +34,7 @@ public class CadastrarUsuarioActivity extends AppCompatActivity {
     private EditText edtAnoTurma;
     private LinearLayout containerTurma;
     private Spinner spinnerTurma;
+    private MaterialButton btnSalvarUsuario;
 
     private final List<String> turmaIds = new ArrayList<>();
     private final List<String> turmaNomes = new ArrayList<>();
@@ -44,8 +47,6 @@ public class CadastrarUsuarioActivity extends AppCompatActivity {
 
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
-
-        db = FirebaseFirestore.getInstance();
 
         ImageView btnVoltar = findViewById(R.id.btnVoltar);
         btnVoltar.setOnClickListener(v -> finish());
@@ -61,7 +62,7 @@ public class CadastrarUsuarioActivity extends AppCompatActivity {
 
         carregarTurmas();
 
-        MaterialButton btnSalvarUsuario = findViewById(R.id.btnSalvarUsuario);
+        btnSalvarUsuario = findViewById(R.id.btnSalvarUsuario);
         btnSalvarUsuario.setOnClickListener(v -> salvarUsuario());
     }
 
@@ -78,38 +79,36 @@ public class CadastrarUsuarioActivity extends AppCompatActivity {
 
     private void carregarTurmas() {
 
-        db.collection("turmas")
-                .whereEqualTo("ativo", true)
-                .get()
-                .addOnSuccessListener(turmas -> {
+        Tarefas.executar(this, () -> Servicos.get(this).escola.turmas(), new Tarefas.Retorno<List<Turma>>() {
+            @Override
+            public void sucesso(List<Turma> turmas) {
 
-                    turmaIds.clear();
-                    turmaNomes.clear();
+                turmaIds.clear();
+                turmaNomes.clear();
 
-                    for (QueryDocumentSnapshot documento : turmas) {
-
-                        String nome = documento.getString("nome");
-
-                        if (nome != null) {
-                            turmaIds.add(documento.getId());
-                            turmaNomes.add(nome);
-                        }
+                for (Turma turma : turmas) {
+                    if (turma.ativo) {
+                        turmaIds.add(turma.id);
+                        turmaNomes.add(turma.nome);
                     }
+                }
 
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                            this,
-                            R.layout.item_spinner,
-                            turmaNomes
-                    );
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                        CadastrarUsuarioActivity.this,
+                        R.layout.item_spinner,
+                        turmaNomes
+                );
 
-                    adapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
-                    spinnerTurma.setAdapter(adapter);
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao carregar turmas: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+                adapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
+                spinnerTurma.setAdapter(adapter);
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(CadastrarUsuarioActivity.this,
+                        "Erro ao carregar turmas: " + erro.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void salvarUsuario() {
@@ -127,19 +126,26 @@ public class CadastrarUsuarioActivity extends AppCompatActivity {
         if (tipo == R.id.radioTurma) {
 
             String anoTexto = edtAnoTurma.getText().toString().trim();
+            Integer serie;
 
-            if (anoTexto.isEmpty()) {
+            try {
+                serie = anoTexto.isEmpty() ? null : Integer.parseInt(anoTexto);
+            } catch (NumberFormatException e) {
+                serie = null;
+            }
+
+            if (serie == null) {
                 edtAnoTurma.setError("Digite o ano da turma");
                 return;
             }
 
-            salvarTurma(nome, Integer.parseInt(anoTexto));
+            salvarTurma(nome, serie);
             return;
         }
 
         String email = edtEmailUsuario.getText().toString().trim();
 
-        if (email.isEmpty() || !email.contains("@")) {
+        if (!email.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")) {
             edtEmailUsuario.setError("Digite um e-mail válido");
             return;
         }
@@ -153,127 +159,119 @@ public class CadastrarUsuarioActivity extends AppCompatActivity {
 
             int posicao = spinnerTurma.getSelectedItemPosition();
 
-            salvarAluno(nome, email, turmaIds.get(posicao), turmaNomes.get(posicao));
+            salvarPessoa(nome, email, Perfil.ALUNO, turmaIds.get(posicao));
 
         } else {
 
-            salvarProfessor(nome, email);
+            salvarPessoa(nome, email, Perfil.PROFESSOR, null);
         }
     }
 
-    private void salvarTurma(String nome, int ano) {
+    // "6º ano A" e "6º Ano A " são a mesma turma (o banco recusa a repetida)
+    private void salvarTurma(String nome, int serie) {
 
-        Map<String, Object> dados = new HashMap<>();
-        dados.put("nome", nome);
-        dados.put("ano", ano);
-        dados.put("ativo", true);
-
-        // A turma é identificada pelo nome (sem diferenciar maiúsculas e espaços):
-        // "6º ano A" e "6º ano B" são turmas diferentes, mesmo com o mesmo ano (6)
-        db.collection("turmas")
-                .get()
-                .addOnSuccessListener(existentes -> {
-
-                    String documentoId = null;
-
-                    for (QueryDocumentSnapshot turma : existentes) {
-
-                        String nomeExistente = turma.getString("nome");
-
-                        if (nomeExistente != null && nomeExistente.trim().equalsIgnoreCase(nome)) {
-                            documentoId = turma.getId();
-                            break;
-                        }
-                    }
-
-                    salvarDocumento("turmas", documentoId, dados);
+        executar(() -> Servicos.get(this).escola.criarTurma(nome, serie), "Turma cadastrada!",
+                "Já existe uma turma com esse nome.", () -> {
                     carregarTurmas();
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao cadastrar turma: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+                    limparCampos();
+                });
     }
 
-    private void salvarProfessor(String nome, String email) {
+    private void salvarPessoa(String nome, String email, String tipo, String turmaId) {
 
-        Map<String, Object> dados = new HashMap<>();
-        dados.put("nome", nome);
-        dados.put("email", email);
-        dados.put("ativo", true);
+        Servicos servicos = Servicos.get(this);
+        btnSalvarUsuario.setEnabled(false);
 
-        db.collection("professores")
-                .whereEqualTo("email", email)
-                .get()
-                .addOnSuccessListener(existentes -> {
-
-                    String documentoId = existentes.isEmpty()
-                            ? null
-                            : existentes.getDocuments().get(0).getId();
-
-                    salvarDocumento("professores", documentoId, dados);
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao cadastrar professor: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
-    }
-
-    private void salvarAluno(String nome, String email, String turmaId, String turmaNome) {
-
-        Map<String, Object> dados = new HashMap<>();
-        dados.put("nome", nome);
-        dados.put("email", email);
-        dados.put("ativo", true);
-        dados.put("turmaId", turmaId);
-        dados.put("turmaNome", turmaNome);
-
-        db.collection("alunos")
-                .whereEqualTo("email", email)
-                .get()
-                .addOnSuccessListener(existentes -> {
-
-                    String documentoId = existentes.isEmpty()
-                            ? null
-                            : existentes.getDocuments().get(0).getId();
-
-                    // Se o aluno já entrou no app, atualiza a conta dele (a que tem pontuação)
-                    for (DocumentSnapshot documento : existentes.getDocuments()) {
-
-                        if (documento.getLong("pontuacao") != null) {
-                            documentoId = documento.getId();
-                        }
+        Tarefas.executar(this, () -> servicos.perfis.cadastrar(email, nome, tipo, turmaId),
+                new Tarefas.Retorno<Perfil>() {
+                    @Override
+                    public void sucesso(Perfil perfil) {
+                        btnSalvarUsuario.setEnabled(true);
+                        Toast.makeText(CadastrarUsuarioActivity.this, "Cadastrado!", Toast.LENGTH_SHORT).show();
+                        limparCampos();
                     }
 
-                    salvarDocumento("alunos", documentoId, dados);
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao cadastrar aluno: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+                    @Override
+                    public void erro(ErroApi erro) {
+
+                        btnSalvarUsuario.setEnabled(true);
+
+                        if (erro.jaExiste()) {
+                            oferecerAtualizacao(nome, email, tipo, turmaId);
+                            return;
+                        }
+
+                        Toast.makeText(CadastrarUsuarioActivity.this, "Erro ao salvar: " + erro.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
-    private void salvarDocumento(String colecao, String documentoId, Map<String, Object> dados) {
+    // Decisão D10: um e-mail, um perfil. Cadastrar de novo o mesmo e-mail
+    // atualiza nome e turma, desde que seja do mesmo tipo.
+    private void oferecerAtualizacao(String nome, String email, String tipo, String turmaId) {
 
-        com.google.android.gms.tasks.Task<Void> tarefa = documentoId != null
-                ? db.collection(colecao).document(documentoId).set(dados, SetOptions.merge())
-                : db.collection(colecao).document().set(dados);
+        Servicos servicos = Servicos.get(this);
 
-        tarefa.addOnSuccessListener(unused -> {
+        Tarefas.executar(this, () -> servicos.perfis.buscarPorEmail(email), new Tarefas.Retorno<Perfil>() {
+            @Override
+            public void sucesso(Perfil existente) {
 
-                    Toast.makeText(this, "Cadastrado!", Toast.LENGTH_SHORT).show();
+                if (existente == null) {
+                    Toast.makeText(CadastrarUsuarioActivity.this, "Já existe um cadastro com esse e-mail.",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
 
-                    edtNomeUsuario.setText("");
-                    edtEmailUsuario.setText("");
-                    edtAnoTurma.setText("");
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao salvar: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+                if (!existente.tipo.equals(tipo)) {
+                    Toast.makeText(CadastrarUsuarioActivity.this,
+                            "Esse e-mail já está cadastrado como " + existente.tipo + ".", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                new AlertDialog.Builder(CadastrarUsuarioActivity.this)
+                        .setTitle("E-mail já cadastrado")
+                        .setMessage("\"" + existente.nome + "\" já usa esse e-mail. Deseja atualizar o cadastro"
+                                + (Perfil.ALUNO.equals(tipo) ? " com o novo nome e a nova turma?" : " com o novo nome?"))
+                        .setNegativeButton("Cancelar", null)
+                        .setPositiveButton("Atualizar", (dialog, which) ->
+                                executar(() -> servicos.perfis.atualizar(existente.id, email, nome, turmaId,
+                                                existente.ativo, existente.admin),
+                                        "Cadastro atualizado!", null, () -> limparCampos()))
+                        .show();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(CadastrarUsuarioActivity.this, erro.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private <T> void executar(Tarefas.Trabalho<T> trabalho, String sucesso, String seJaExiste, Runnable depois) {
+
+        btnSalvarUsuario.setEnabled(false);
+
+        Tarefas.executar(this, trabalho, new Tarefas.Retorno<T>() {
+            @Override
+            public void sucesso(T resultado) {
+                btnSalvarUsuario.setEnabled(true);
+                Toast.makeText(CadastrarUsuarioActivity.this, sucesso, Toast.LENGTH_SHORT).show();
+                depois.run();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                btnSalvarUsuario.setEnabled(true);
+                String mensagem = erro.jaExiste() && seJaExiste != null ? seJaExiste : "Erro ao salvar: " + erro.getMessage();
+                Toast.makeText(CadastrarUsuarioActivity.this, mensagem, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void limparCampos() {
+        edtNomeUsuario.setText("");
+        edtEmailUsuario.setText("");
+        edtAnoTurma.setText("");
     }
 }

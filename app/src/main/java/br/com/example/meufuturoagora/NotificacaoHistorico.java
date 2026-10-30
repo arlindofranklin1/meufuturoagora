@@ -10,11 +10,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import br.com.example.meufuturoagora.dados.Servicos;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,7 +104,7 @@ class NotificacaoHistorico {
     static synchronized List<Item> listar(Context context) {
 
         List<Item> itens = new ArrayList<>();
-        String chave = chaveUsuario();
+        String chave = chaveUsuario(context);
 
         if (chave == null) {
             return itens;
@@ -173,7 +173,7 @@ class NotificacaoHistorico {
 
     static synchronized void limpar(Context context) {
 
-        String chave = chaveUsuario();
+        String chave = chaveUsuario(context);
 
         if (chave != null) {
             prefs(context).edit().remove(chave).apply();
@@ -182,7 +182,7 @@ class NotificacaoHistorico {
 
     private static void salvar(Context context, List<Item> itens) {
 
-        String chave = chaveUsuario();
+        String chave = chaveUsuario(context);
 
         if (chave == null) {
             return;
@@ -250,10 +250,11 @@ class NotificacaoHistorico {
         return context.getApplicationContext().getSharedPreferences(PREFS_NOME, Context.MODE_PRIVATE);
     }
 
-    private static String chaveUsuario() {
+    // Uma lista por usuário, caso outra conta entre no mesmo celular
+    private static String chaveUsuario(Context context) {
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+        String usuarioId = Servicos.get(context).auth.usuarioAtualId();
 
-        return usuario != null ? "historico_" + usuario.getUid() : null;
+        return usuarioId != null ? "historico_" + usuarioId : null;
     }
 }

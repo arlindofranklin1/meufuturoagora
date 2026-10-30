@@ -453,6 +453,18 @@ produção antes da aprovação.
 
 ### Fase 3: Banco, RLS e Storage (com Supabase local)
 
+0. **Privilégios padrão (fazer antes de criar qualquer tabela).** O usuário
+   pode não ter desligado "Automatically expose new tables" no painel do Supabase
+   (Integrations > Data API > Settings). Confira o estado atual. Independente
+   disso, a primeira migração deve garantir que tabelas, sequências e funções
+   novas **não** recebam privilégios automáticos para `anon` e `authenticated`:
+   revogue os `default privileges` do esquema `public` para os papéis que criam
+   objetos (`postgres` e `supabase_admin`) e conceda `grant` explícito, tabela a
+   tabela e só ao que precisa, junto com as políticas RLS. Confirme na
+   documentação atual do Supabase a sintaxe e os papéis corretos, e não conte
+   só com a configuração do painel, porque ela pode mudar. Teste em pgTAP que
+   uma tabela criada sem `grant` não é acessível por `anon` nem `authenticated`
+   pela API.
 1. Migrações em `supabase/migrations/`: extensões, tabelas, constraints,
    índices, triggers, funções auxiliares, funções RPC, *views*, RLS e políticas.
 2. Buckets e políticas de Storage, também por migração.

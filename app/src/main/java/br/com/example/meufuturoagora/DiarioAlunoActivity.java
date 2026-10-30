@@ -23,23 +23,21 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.firebase.Timestamp;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.Query;
 
-import java.text.SimpleDateFormat;
-import java.util.HashMap;
+import br.com.example.meufuturoagora.dados.EntradaDiario;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Perfil;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 // Diário pessoal do aluno: metas e sonhos que só ele vê.
-// Fica em diarios/{uid}/entradas — as regras do Firestore liberam só o próprio dono.
+// Fica em diario_entradas — o RLS libera só o próprio dono (decisão D8). Sem tempo
+// real (N2): recarrega ao abrir a tela e depois de cada gravação.
 public class DiarioAlunoActivity extends AppCompatActivity {
 
     private static final int LIMITE_TEXTO = 1000;
@@ -52,11 +50,9 @@ public class DiarioAlunoActivity extends AppCompatActivity {
             R.color.folha_ceu
     };
 
-    private final SimpleDateFormat formatoData =
-            new SimpleDateFormat("dd 'de' MMMM 'de' yyyy", new Locale("pt", "BR"));
+    private final DateTimeFormatter formatoData =
+            DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy", new Locale("pt", "BR"));
 
-    private CollectionReference entradas;
-    private ListenerRegistration ouvinteEntradas;
 
     private EditText etNovaMeta;
     private MaterialButton btnGuardarMeta;
@@ -73,24 +69,6 @@ public class DiarioAlunoActivity extends AppCompatActivity {
         btnGuardarMeta = findViewById(R.id.btnGuardarMeta);
         containerMetas = findViewById(R.id.containerMetas);
         layoutDiarioVazio = findViewById(R.id.layoutDiarioVazio);
-
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (usuario != null) {
-
-            entradas = FirebaseFirestore.getInstance()
-                    .collection("diarios")
-                    .document(usuario.getUid())
-                    .collection("entradas");
-
-            String nome = usuario.getDisplayName();
-
-            if (nome != null && !nome.trim().isEmpty()) {
-                String primeiroNome = nome.trim().split(" ")[0];
-                ((TextView) findViewById(R.id.tvSaudacaoDiario))
-                        .setText("Oi, " + primeiroNome + "! Um cantinho só seu para sonhar alto.");
-            }
-        }
 
         animarBrilhos();
 
@@ -165,42 +143,58 @@ public class DiarioAlunoActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        if (entradas == null) {
-            mostrarEntradas(null);
-            return;
-        }
-
-        ouvinteEntradas = entradas
-                .orderBy("criadoEm", Query.Direction.DESCENDING)
-                .addSnapshotListener((snapshot, erro) -> {
-
-                    if (erro != null || snapshot == null) {
-                        return;
-                    }
-
-                    mostrarEntradas(snapshot.getDocuments());
-                });
+        carregarEntradas();
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
+    private static final class Carga {
 
-        if (ouvinteEntradas != null) {
-            ouvinteEntradas.remove();
-            ouvinteEntradas = null;
+        final Perfil aluno;
+        final List<EntradaDiario> entradas;
+
+        Carga(Perfil aluno, List<EntradaDiario> entradas) {
+            this.aluno = aluno;
+            this.entradas = entradas;
         }
+    }
+
+    private void carregarEntradas() {
+
+        Servicos servicos = Servicos.get(this);
+
+        Tarefas.executar(this,
+                () -> new Carga(servicos.perfis.meu(), servicos.diario.entradas()),
+                new Tarefas.Retorno<Carga>() {
+                    @Override
+                    public void sucesso(Carga carga) {
+
+                        String nome = carga.aluno != null ? carga.aluno.nome : null;
+
+                        if (nome != null && !nome.trim().isEmpty()) {
+                            String primeiroNome = nome.trim().split(" ")[0];
+                            ((TextView) findViewById(R.id.tvSaudacaoDiario))
+                                    .setText("Oi, " + primeiroNome + "! Um cantinho só seu para sonhar alto.");
+                        }
+
+                        mostrarEntradas(carga.entradas);
+                    }
+
+                    @Override
+                    public void erro(ErroApi erro) {
+                        Toast.makeText(DiarioAlunoActivity.this,
+                                "Não foi possível carregar o diário. Tente de novo.", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     // =========================
     // LISTA DE PÁGINAS
     // =========================
 
-    private void mostrarEntradas(List<DocumentSnapshot> documentos) {
+    private void mostrarEntradas(List<EntradaDiario> entradas) {
 
         containerMetas.removeAllViews();
 
-        boolean vazio = documentos == null || documentos.isEmpty();
+        boolean vazio = entradas == null || entradas.isEmpty();
         layoutDiarioVazio.setVisibility(vazio ? View.VISIBLE : View.GONE);
 
         if (vazio) {
@@ -209,15 +203,9 @@ public class DiarioAlunoActivity extends AppCompatActivity {
 
         LayoutInflater inflater = LayoutInflater.from(this);
 
-        for (int i = 0; i < documentos.size(); i++) {
+        for (int i = 0; i < entradas.size(); i++) {
 
-            DocumentSnapshot doc = documentos.get(i);
-            String texto = doc.getString("texto");
-            Timestamp criadoEm = doc.getTimestamp("criadoEm");
-
-            if (texto == null) {
-                continue;
-            }
+            EntradaDiario entrada = entradas.get(i);
 
             View folha = inflater.inflate(R.layout.item_meta_diario, containerMetas, false);
 
@@ -225,13 +213,15 @@ public class DiarioAlunoActivity extends AppCompatActivity {
                     ContextCompat.getColor(this, CORES_FOLHAS[i % CORES_FOLHAS.length])
             ));
 
-            ((TextView) folha.findViewById(R.id.tvTextoMeta)).setText(texto);
+            ((TextView) folha.findViewById(R.id.tvTextoMeta)).setText(entrada.texto);
             ((TextView) folha.findViewById(R.id.tvDataMeta)).setText(
-                    criadoEm != null ? formatoData.format(criadoEm.toDate()) : "Agora mesmo"
+                    entrada.criadoEm != null
+                            ? formatoData.format(entrada.criadoEm.atZoneSameInstant(ZoneId.systemDefault()))
+                            : "Agora mesmo"
             );
 
-            folha.setOnClickListener(v -> editarMeta(doc.getId(), texto));
-            folha.findViewById(R.id.btnApagarMeta).setOnClickListener(v -> confirmarApagar(doc.getId()));
+            folha.setOnClickListener(v -> editarMeta(entrada.id, entrada.texto));
+            folha.findViewById(R.id.btnApagarMeta).setOnClickListener(v -> confirmarApagar(entrada.id));
 
             containerMetas.addView(folha);
         }
@@ -240,6 +230,28 @@ public class DiarioAlunoActivity extends AppCompatActivity {
     // =========================
     // CRIAR / EDITAR / APAGAR
     // =========================
+
+    // Roda a gravação e recarrega a lista. O texto digitado só some se der certo.
+    private void gravar(Tarefas.Trabalho<Object> trabalho, String falha, Runnable aoDarCerto) {
+
+        Tarefas.executar(this, trabalho, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object resultado) {
+
+                if (aoDarCerto != null) {
+                    aoDarCerto.run();
+                }
+
+                carregarEntradas();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                btnGuardarMeta.setEnabled(true);
+                Toast.makeText(DiarioAlunoActivity.this, falha, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
     private void guardarNovaMeta() {
 
@@ -250,24 +262,18 @@ public class DiarioAlunoActivity extends AppCompatActivity {
             return;
         }
 
-        if (entradas == null) {
-            Toast.makeText(this, "Entre na sua conta para usar o diário.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        Servicos servicos = Servicos.get(this);
 
-        Map<String, Object> dados = new HashMap<>();
-        dados.put("texto", texto);
-        dados.put("criadoEm", Timestamp.now());
+        // Evita guardar duas vezes enquanto a primeira ainda está indo
+        btnGuardarMeta.setEnabled(false);
 
-        // Com o cache do Firestore a página aparece na hora, mesmo sem internet
-        entradas.add(dados)
-                .addOnFailureListener(e -> Toast.makeText(this,
-                        "Não foi possível guardar. Tente de novo.", Toast.LENGTH_SHORT).show());
+        gravar(() -> servicos.diario.escrever(texto), "Não foi possível guardar. Tente de novo.", () -> {
 
-        etNovaMeta.setText("");
-        esconderTeclado();
-
-        Toast.makeText(this, "Guardado no seu diário ✨", Toast.LENGTH_SHORT).show();
+            btnGuardarMeta.setEnabled(true);
+            etNovaMeta.setText("");
+            esconderTeclado();
+            Toast.makeText(this, "Guardado no seu diário ✨", Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void editarMeta(String idEntrada, String textoAtual) {
@@ -300,9 +306,12 @@ public class DiarioAlunoActivity extends AppCompatActivity {
                         return;
                     }
 
-                    entradas.document(idEntrada).update("texto", novoTexto)
-                            .addOnFailureListener(e -> Toast.makeText(this,
-                                    "Não foi possível salvar. Tente de novo.", Toast.LENGTH_SHORT).show());
+                    Servicos servicos = Servicos.get(this);
+
+                    gravar(() -> {
+                        servicos.diario.editar(idEntrada, novoTexto);
+                        return null;
+                    }, "Não foi possível salvar. Tente de novo.", null);
                 })
                 .show();
     }
@@ -313,10 +322,15 @@ public class DiarioAlunoActivity extends AppCompatActivity {
                 .setTitle("Apagar esta página?")
                 .setMessage("Ela vai sumir do seu diário para sempre.")
                 .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Apagar", (dialogo, qual) ->
-                        entradas.document(idEntrada).delete()
-                                .addOnFailureListener(e -> Toast.makeText(this,
-                                        "Não foi possível apagar. Tente de novo.", Toast.LENGTH_SHORT).show()))
+                .setPositiveButton("Apagar", (dialogo, qual) -> {
+
+                    Servicos servicos = Servicos.get(this);
+
+                    gravar(() -> {
+                        servicos.diario.apagar(idEntrada);
+                        return null;
+                    }, "Não foi possível apagar. Tente de novo.", null);
+                })
                 .show();
     }
 

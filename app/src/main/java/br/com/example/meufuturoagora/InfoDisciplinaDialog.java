@@ -13,18 +13,31 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldPath;
-import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import br.com.example.meufuturoagora.dados.Disciplina;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Participante;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 // Diálogo do (i) ao lado do nome da disciplina: foto e nome do professor
 // e a lista de alunos participantes (matriculados) da disciplina.
 class InfoDisciplinaDialog {
 
     private InfoDisciplinaDialog() {
+    }
+
+    private static final class Carga {
+
+        final Disciplina disciplina;
+        final List<Participante> participantes;
+
+        Carga(Disciplina disciplina, List<Participante> participantes) {
+            this.disciplina = disciplina;
+            this.participantes = participantes;
+        }
     }
 
     static void mostrar(Activity activity, String disciplinaId) {
@@ -53,177 +66,81 @@ class InfoDisciplinaDialog {
         TextView tvDisciplina = dialog.findViewById(R.id.tvDisciplinaInfoProfessor);
         TextView tvTurma = dialog.findViewById(R.id.tvTurmaInfoProfessor);
 
-        dialog.findViewById(R.id.btnFecharInfoProfessor).setOnClickListener(v -> dialog.dismiss());
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        db.collection("disciplinas")
-                .document(disciplinaId)
-                .get()
-                .addOnSuccessListener(disciplina -> {
-
-                    if (!disciplina.exists()) {
-                        return;
-                    }
-
-                    String professorNome = disciplina.getString("professorNome");
-                    String turma = disciplina.getString("turmaNome");
-
-                    tvNome.setText(professorNome != null ? professorNome : "Professor");
-                    tvDisciplina.setText(disciplina.getString("nome"));
-                    tvTurma.setText(turma != null && !turma.isEmpty() ? turma : "—");
-
-                    carregarProfessor(activity, db, disciplina, imgProfessor, tvNome, tvEmail);
-                });
-
-        carregarParticipantes(activity, dialog, db, disciplinaId);
-
-        dialog.show();
-    }
-
-    // Foto e e-mail vêm do cadastro do professor (pelo uid da conta ou pelo e-mail)
-    private static void carregarProfessor(Activity activity, FirebaseFirestore db,
-                                          DocumentSnapshot disciplina, ImageView imgProfessor,
-                                          TextView tvNome, TextView tvEmail) {
-
-        String professorId = disciplina.getString("professorId");
-        String professorEmail = disciplina.getString("professorEmail");
-
-        if (professorId == null) {
-            return;
-        }
-
-        db.collection("professores")
-                .whereEqualTo("uid", professorId)
-                .limit(1)
-                .get()
-                .addOnSuccessListener(porUid -> {
-
-                    if (!porUid.isEmpty()) {
-                        preencherProfessor(activity, porUid.getDocuments().get(0), imgProfessor, tvNome, tvEmail);
-                        return;
-                    }
-
-                    if (professorEmail == null || professorEmail.isEmpty()) {
-                        return;
-                    }
-
-                    db.collection("professores")
-                            .whereEqualTo("email", professorEmail)
-                            .limit(1)
-                            .get()
-                            .addOnSuccessListener(porEmail -> {
-
-                                if (!porEmail.isEmpty()) {
-                                    preencherProfessor(activity, porEmail.getDocuments().get(0),
-                                            imgProfessor, tvNome, tvEmail);
-                                }
-                            });
-                });
-    }
-
-    private static void preencherProfessor(Activity activity, DocumentSnapshot professor,
-                                           ImageView imgProfessor, TextView tvNome, TextView tvEmail) {
-
-        String nome = professor.getString("nome");
-        String email = professor.getString("email");
-
-        if (nome != null && !nome.isEmpty()) {
-            tvNome.setText(nome);
-        }
-
-        if (email != null && !email.isEmpty()) {
-            tvEmail.setText(email);
-            tvEmail.setVisibility(View.VISIBLE);
-        }
-
-        PerfilFotoUtil.mostrar(activity, PerfilFotoUtil.fotoDoDocumento(professor), imgProfessor);
-    }
-
-    private static void carregarParticipantes(Activity activity, Dialog dialog,
-                                              FirebaseFirestore db, String disciplinaId) {
-
         TextView tvTitulo = dialog.findViewById(R.id.tvTituloParticipantes);
         TextView tvVazio = dialog.findViewById(R.id.tvSemParticipantes);
         RecyclerView recycler = dialog.findViewById(R.id.recyclerParticipantes);
 
-        List<String[]> participantes = new ArrayList<>(); // {alunoId, nome, fotoUrl}
-        ParticipantesAdapter adapter = new ParticipantesAdapter(activity, participantes);
+        List<Participante> alunos = new ArrayList<>();
+        ParticipantesAdapter adapter = new ParticipantesAdapter(activity, alunos);
 
         recycler.setLayoutManager(new LinearLayoutManager(activity));
         recycler.setAdapter(adapter);
 
-        db.collection("matriculas")
-                .whereEqualTo("disciplinaId", disciplinaId)
-                .get()
-                .addOnSuccessListener(matriculas -> {
+        dialog.findViewById(R.id.btnFecharInfoProfessor).setOnClickListener(v -> dialog.dismiss());
 
-                    List<String> ids = new ArrayList<>();
+        Servicos servicos = Servicos.get(activity);
 
-                    for (DocumentSnapshot matricula : matriculas) {
+        // Fecha o diálogo à toa se a tela sumir: Tarefas já descarta o resultado
+        Tarefas.executar(activity, () -> new Carga(
+                servicos.disciplinas.buscar(disciplinaId),
+                servicos.disciplinas.participantes(disciplinaId)
+        ), new Tarefas.Retorno<Carga>() {
+            @Override
+            public void sucesso(Carga carga) {
 
-                        String alunoId = matricula.getString("alunoId");
-                        String nome = matricula.getString("alunoNome");
+                if (carga.disciplina != null) {
 
-                        if (alunoId != null && !ids.contains(alunoId)) {
-                            ids.add(alunoId);
-                            participantes.add(new String[]{alunoId, nome != null ? nome : "Aluno", null});
+                    tvDisciplina.setText(carga.disciplina.nome);
+                    tvTurma.setText(carga.disciplina.turmaNome != null && !carga.disciplina.turmaNome.isEmpty()
+                            ? carga.disciplina.turmaNome
+                            : "—");
+                }
+
+                tvNome.setText("Professor");
+
+                for (Participante p : carga.participantes) {
+
+                    if ("professor".equals(p.tipo)) {
+
+                        tvNome.setText(p.nome != null && !p.nome.isEmpty() ? p.nome : "Professor");
+
+                        if (p.email != null && !p.email.isEmpty()) {
+                            tvEmail.setText(p.email);
+                            tvEmail.setVisibility(View.VISIBLE);
                         }
+
+                        PerfilFotoUtil.mostrar(activity, p.fotoPath, p.fotoGoogleUrl, imgProfessor);
+
+                    } else if ("aluno".equals(p.tipo)) {
+
+                        alunos.add(p);
                     }
+                }
 
-                    participantes.sort((a, b) -> a[1].compareToIgnoreCase(b[1]));
+                alunos.sort((a, b) -> a.nome.compareToIgnoreCase(b.nome));
 
-                    tvTitulo.setText("Participantes (" + participantes.size() + ")");
-                    tvVazio.setText("Nenhum aluno participando ainda.");
-                    tvVazio.setVisibility(participantes.isEmpty() ? View.VISIBLE : View.GONE);
-                    adapter.notifyDataSetChanged();
+                tvTitulo.setText("Participantes (" + alunos.size() + ")");
+                tvVazio.setText("Nenhum aluno participando ainda.");
+                tvVazio.setVisibility(alunos.isEmpty() ? View.VISIBLE : View.GONE);
+                adapter.notifyDataSetChanged();
+            }
 
-                    carregarFotos(db, ids, participantes, adapter);
-                })
-                .addOnFailureListener(e -> tvVazio.setText("Não foi possível carregar os participantes."));
-    }
+            @Override
+            public void erro(ErroApi erro) {
+                tvVazio.setVisibility(View.VISIBLE);
+                tvVazio.setText("Não foi possível carregar os participantes.");
+            }
+        });
 
-    // Fotos (e nomes atualizados) dos alunos, em lotes de 30 (limite do whereIn)
-    private static void carregarFotos(FirebaseFirestore db, List<String> ids,
-                                      List<String[]> participantes, ParticipantesAdapter adapter) {
-
-        for (int i = 0; i < ids.size(); i += 30) {
-
-            List<String> lote = ids.subList(i, Math.min(i + 30, ids.size()));
-
-            db.collection("alunos")
-                    .whereIn(FieldPath.documentId(), new ArrayList<>(lote))
-                    .get()
-                    .addOnSuccessListener(alunos -> {
-
-                        for (DocumentSnapshot aluno : alunos) {
-
-                            for (String[] participante : participantes) {
-
-                                if (participante[0].equals(aluno.getId())) {
-
-                                    String nome = aluno.getString("nome");
-
-                                    if (nome != null && !nome.isEmpty()) {
-                                        participante[1] = nome;
-                                    }
-
-                                    participante[2] = aluno.getString("fotoUrl");
-                                }
-                            }
-                        }
-
-                        adapter.notifyDataSetChanged();
-                    });
-        }
+        dialog.show();
     }
 
     private static class ParticipantesAdapter extends RecyclerView.Adapter<ParticipantesAdapter.ViewHolder> {
 
         private final Activity activity;
-        private final List<String[]> participantes;
+        private final List<Participante> participantes;
 
-        ParticipantesAdapter(Activity activity, List<String[]> participantes) {
+        ParticipantesAdapter(Activity activity, List<Participante> participantes) {
             this.activity = activity;
             this.participantes = participantes;
         }
@@ -237,12 +154,12 @@ class InfoDisciplinaDialog {
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
 
-            String[] participante = participantes.get(position);
+            Participante participante = participantes.get(position);
 
-            holder.tvNome.setText(participante[1]);
+            holder.tvNome.setText(participante.nome);
             com.bumptech.glide.Glide.with(activity).clear(holder.imgFoto);
             holder.imgFoto.setImageResource(R.drawable.ic_perfil);
-            PerfilFotoUtil.mostrar(activity, participante[2], holder.imgFoto);
+            PerfilFotoUtil.mostrar(activity, participante.fotoPath, participante.fotoGoogleUrl, holder.imgFoto);
         }
 
         @Override

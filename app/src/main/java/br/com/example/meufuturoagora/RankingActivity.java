@@ -9,21 +9,26 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.LinhaRanking;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+import br.com.example.meufuturoagora.dados.Turma;
+
+// A pontuação e a ordem do ranking são calculadas no servidor (notas e faltas do
+// ano letivo atual). Professor: turma inteira, só as turmas em que dá aula (D2).
+// Aluno: o pódio e a própria linha.
 public class RankingActivity extends AppCompatActivity {
 
     public static final String EXTRA_PERFIL = "perfil";
@@ -31,8 +36,6 @@ public class RankingActivity extends AppCompatActivity {
     public static final String PERFIL_ALUNO = "aluno";
 
     private boolean modoProfessor;
-
-    private FirebaseFirestore db;
 
     private TextView tvNomePrimeiro, tvPontosPrimeiro;
     private TextView tvNomeSegundo, tvPontosSegundo;
@@ -47,14 +50,12 @@ public class RankingActivity extends AppCompatActivity {
     // Lista exibida abaixo do pódio (professor: todos; aluno: só a própria posição)
     private final List<Aluno> listaAlunos = new ArrayList<>();
 
-    // Todos os alunos da turma selecionada, ordenados por pontuação
+    // Os alunos da turma selecionada na ordem do ranking (aluno: só o pódio e ele)
     private final List<Aluno> rankingTurma = new ArrayList<>();
 
     private Spinner spinnerTurma;
     private final List<String> turmaIds = new ArrayList<>();
     private final List<String> turmaNomes = new ArrayList<>();
-
-    private String alunoLogadoId;
 
     private String turmaSelecionada;
 
@@ -66,8 +67,6 @@ public class RankingActivity extends AppCompatActivity {
 
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsTopo(this);
-
-        db = FirebaseFirestore.getInstance();
 
         modoProfessor = PERFIL_PROFESSOR.equals(
                 getIntent().getStringExtra(EXTRA_PERFIL)
@@ -163,94 +162,62 @@ public class RankingActivity extends AppCompatActivity {
 
     private void carregarTurmas() {
 
-        db.collection("turmas")
-                .whereEqualTo("ativo", true)
-                .get()
-                .addOnSuccessListener(turmas -> {
+        Tarefas.executar(this, () -> Servicos.get(this).ranking.turmasDoRanking(),
+                new Tarefas.Retorno<List<Turma>>() {
+                    @Override
+                    public void sucesso(List<Turma> turmas) {
 
-                    turmaIds.clear();
-                    turmaNomes.clear();
+                        turmaIds.clear();
+                        turmaNomes.clear();
 
-                    List<String[]> lista = new ArrayList<>();
-
-                    for (QueryDocumentSnapshot documento : turmas) {
-
-                        String nome = documento.getString("nome");
-
-                        if (nome != null) {
-                            lista.add(new String[]{documento.getId(), nome});
+                        // O servidor já devolve só as turmas que o perfil pode ver, por nome
+                        for (Turma turma : turmas) {
+                            turmaIds.add(turma.id);
+                            turmaNomes.add(turma.nome);
                         }
-                    }
 
-                    Collections.sort(lista, (a, b) -> a[1].compareToIgnoreCase(b[1]));
-
-                    for (String[] turma : lista) {
-                        turmaIds.add(turma[0]);
-                        turmaNomes.add(turma[1]);
-                    }
-
-                    ArrayAdapter<String> adapterTurmas = new ArrayAdapter<>(
-                            this,
-                            R.layout.item_spinner,
-                            turmaNomes
-                    );
-                    adapterTurmas.setDropDownViewResource(
-                            R.layout.item_spinner_dropdown
-                    );
-                    spinnerTurma.setAdapter(adapterTurmas);
-
-                    if (modoProfessor) {
-
-                        // Professor escolhe a turma; o ranking recarrega a cada troca
-                        spinnerTurma.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-
-                            @Override
-                            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                                carregarRanking(turmaIds.get(position));
-                            }
-
-                            @Override
-                            public void onNothingSelected(AdapterView<?> parent) {
-                            }
-                        });
+                        ArrayAdapter<String> adapterTurmas = new ArrayAdapter<>(
+                                RankingActivity.this,
+                                R.layout.item_spinner,
+                                turmaNomes
+                        );
+                        adapterTurmas.setDropDownViewResource(
+                                R.layout.item_spinner_dropdown
+                        );
+                        spinnerTurma.setAdapter(adapterTurmas);
 
                         if (turmaIds.isEmpty()) {
                             mostrarLista();
+                            return;
                         }
 
-                    } else {
+                        if (modoProfessor) {
 
-                        selecionarTurmaDoAluno();
-                    }
-                })
-                .addOnFailureListener(e -> mostrarLista());
-    }
+                            // Professor escolhe a turma; o ranking recarrega a cada troca
+                            spinnerTurma.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
-    // O aluno só vê o ranking da própria turma
-    private void selecionarTurmaDoAluno() {
+                                @Override
+                                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                                    carregarRanking(turmaIds.get(position));
+                                }
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+                                @Override
+                                public void onNothingSelected(AdapterView<?> parent) {
+                                }
+                            });
 
-        if (usuario == null) {
-            return;
-        }
+                        } else {
 
-        alunoLogadoId = usuario.getUid();
-
-        db.collection("alunos")
-                .document(alunoLogadoId)
-                .get()
-                .addOnSuccessListener(documento -> {
-
-                    int indice = turmaIds.indexOf(documento.getString("turmaId"));
-
-                    if (indice >= 0) {
-
-                        spinnerTurma.setSelection(indice);
-                        carregarRanking(turmaIds.get(indice));
+                            // O aluno só vê o ranking da própria turma
+                            spinnerTurma.setEnabled(false);
+                            carregarRanking(turmaIds.get(0));
+                        }
                     }
 
-                    spinnerTurma.setEnabled(false);
+                    @Override
+                    public void erro(ErroApi erro) {
+                        mostrarLista();
+                    }
                 });
     }
 
@@ -258,128 +225,75 @@ public class RankingActivity extends AppCompatActivity {
     // RANKING DA TURMA
     // =========================
 
-    // Recalcula a pontuação de cada aluno da turma (notas e faltas) e depois monta o ranking
     private void carregarRanking(String turmaId) {
 
         turmaSelecionada = turmaId;
 
-        db.collection("alunos")
-                .whereEqualTo("turmaId", turmaId)
-                .get()
-                .addOnSuccessListener(alunos -> {
+        Tarefas.executar(this, () -> Servicos.get(this).ranking.ranking(turmaId),
+                new Tarefas.Retorno<List<LinhaRanking>>() {
+                    @Override
+                    public void sucesso(List<LinhaRanking> linhas) {
 
-                    List<String> ids = new ArrayList<>();
-
-                    for (QueryDocumentSnapshot documento : alunos) {
-
-                        if (documento.getLong("pontuacao") != null) {
-                            ids.add(documento.getId());
+                        // Se o professor já trocou de turma, ignora o resultado antigo
+                        if (!turmaId.equals(turmaSelecionada)) {
+                            return;
                         }
+
+                        exibirRanking(linhas);
                     }
 
-                    if (ids.isEmpty()) {
-                        exibirRanking(turmaId);
-                        return;
+                    @Override
+                    public void erro(ErroApi erro) {
+
+                        if (!turmaId.equals(turmaSelecionada)) {
+                            return;
+                        }
+
+                        Toast.makeText(RankingActivity.this,
+                                "Erro ao carregar o ranking.", Toast.LENGTH_SHORT).show();
+
+                        exibirRanking(new ArrayList<>());
                     }
-
-                    int[] restantes = {ids.size()};
-
-                    for (String id : ids) {
-
-                        PontuacaoUtil.recalcular(db, id, () -> {
-
-                            restantes[0]--;
-
-                            if (restantes[0] == 0) {
-                                exibirRanking(turmaId);
-                            }
-                        });
-                    }
-                })
-                .addOnFailureListener(e -> exibirRanking(turmaId));
+                });
     }
 
-    private void exibirRanking(String turmaId) {
+    private void exibirRanking(List<LinhaRanking> linhas) {
 
-        // Se o professor já trocou de turma, ignora o resultado antigo
-        if (!turmaId.equals(turmaSelecionada)) {
-            return;
+        rankingTurma.clear();
+
+        for (LinhaRanking linha : linhas) {
+            rankingTurma.add(new Aluno(linha));
         }
 
-        db.collection("alunos")
-                .whereEqualTo("turmaId", turmaId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
+        preencherPodio();
 
-                    rankingTurma.clear();
+        listaAlunos.clear();
 
-                    for (QueryDocumentSnapshot documento : querySnapshot) {
+        if (modoProfessor) {
 
-                        String nome = documento.getString("nome");
-                        Long pontuacao = documento.getLong("pontuacao");
+            // Professor vê todos os alunos da turma
+            listaAlunos.addAll(rankingTurma);
 
-                        // Só contas de alunos que já entraram no app (as autorizações
-                        // cadastradas pela coordenação não têm pontuação)
-                        if (nome == null || pontuacao == null
-                                || Boolean.FALSE.equals(documento.getBoolean("ativo"))) {
-                            continue;
-                        }
+        } else {
 
-                        rankingTurma.add(new Aluno(
-                                documento.getId(),
-                                nome,
-                                pontuacao,
-                                documento.getString("fotoUrl")
-                        ));
-                    }
+            // Aluno vê os 3 primeiros e, na 4ª linha, a própria posição como "Você"
+            // (mesmo que ele já esteja entre os 3 primeiros)
+            for (Aluno aluno : rankingTurma) {
 
-                    Collections.sort(rankingTurma, (a, b) -> {
+                if (aluno.posicao <= 3) {
+                    listaAlunos.add(aluno);
+                }
+            }
 
-                        int porPontos = Long.compare(b.pontuacao, a.pontuacao);
-                        return porPontos != 0 ? porPontos : a.nome.compareToIgnoreCase(b.nome);
-                    });
+            for (Aluno aluno : rankingTurma) {
 
-                    for (int i = 0; i < rankingTurma.size(); i++) {
-                        rankingTurma.get(i).posicao = i + 1;
-                    }
+                if (aluno.ehVoce) {
+                    listaAlunos.add(aluno.comoVoce());
+                }
+            }
+        }
 
-                    preencherPodio();
-
-                    listaAlunos.clear();
-
-                    if (modoProfessor) {
-
-                        // Professor vê todos os alunos da turma
-                        listaAlunos.addAll(rankingTurma);
-
-                    } else {
-
-                        // Aluno vê os 3 primeiros e, na 4ª linha, a própria posição como "Você"
-                        // (mesmo que ele já esteja entre os 3 primeiros)
-                        for (int i = 0; i < Math.min(3, rankingTurma.size()); i++) {
-                            listaAlunos.add(rankingTurma.get(i));
-                        }
-
-                        for (Aluno aluno : rankingTurma) {
-
-                            if (aluno.id.equals(alunoLogadoId)) {
-
-                                Aluno voce = new Aluno(aluno.id, "Você", aluno.pontuacao, aluno.fotoUrl);
-                                voce.posicao = aluno.posicao;
-                                listaAlunos.add(voce);
-                            }
-                        }
-                    }
-
-                    mostrarLista();
-                })
-                .addOnFailureListener(e -> {
-
-                    rankingTurma.clear();
-                    listaAlunos.clear();
-                    preencherPodio();
-                    mostrarLista();
-                });
+        mostrarLista();
     }
 
     private void mostrarLista() {
@@ -397,93 +311,59 @@ public class RankingActivity extends AppCompatActivity {
 
     private void preencherPodio() {
 
-        preencherLugar(0, tvNomePrimeiro, tvPontosPrimeiro, imgPrimeiro);
-        preencherLugar(1, tvNomeSegundo, tvPontosSegundo, imgSegundo);
-        preencherLugar(2, tvNomeTerceiro, tvPontosTerceiro, imgTerceiro);
+        preencherLugar(1, tvNomePrimeiro, tvPontosPrimeiro, imgPrimeiro);
+        preencherLugar(2, tvNomeSegundo, tvPontosSegundo, imgSegundo);
+        preencherLugar(3, tvNomeTerceiro, tvPontosTerceiro, imgTerceiro);
     }
 
     // Limpa o lugar do pódio quando a turma tem menos de 3 alunos
-    private void preencherLugar(int indice, TextView tvNome, TextView tvPontos, ImageView img) {
+    private void preencherLugar(int posicao, TextView tvNome, TextView tvPontos, ImageView img) {
 
         img.setImageResource(R.drawable.ic_perfil);
 
-        if (rankingTurma.size() > indice) {
+        for (Aluno aluno : rankingTurma) {
 
-            Aluno aluno = rankingTurma.get(indice);
+            if (aluno.posicao == posicao) {
 
-            tvNome.setText(aluno.nome);
-            tvPontos.setText(aluno.pontuacao + " pts");
-            FotoUtil.carregar(this, aluno.fotoUrl, img);
-
-        } else {
-
-            tvNome.setText("—");
-            tvPontos.setText("0 pts");
+                tvNome.setText(aluno.nome);
+                tvPontos.setText(aluno.pontuacao + " pts");
+                PerfilFotoUtil.mostrar(this, aluno.fotoPath, aluno.fotoGoogleUrl, img);
+                return;
+            }
         }
-    }
 
-    // Posição do aluno no ranking da própria turma (usado na tela inicial e no perfil)
-    static void carregarPosicaoNaTurma(FirebaseFirestore db, String alunoId, TextView destino) {
-
-        db.collection("alunos")
-                .document(alunoId)
-                .get()
-                .addOnSuccessListener(alunoDoc -> {
-
-                    String turmaId = alunoDoc.getString("turmaId");
-                    Long minhaPontuacao = alunoDoc.getLong("pontuacao");
-                    String meuNome = alunoDoc.getString("nome");
-
-                    if (turmaId == null || minhaPontuacao == null) {
-                        return;
-                    }
-
-                    db.collection("alunos")
-                            .whereEqualTo("turmaId", turmaId)
-                            .get()
-                            .addOnSuccessListener(turma -> {
-
-                                int posicao = 1;
-
-                                for (QueryDocumentSnapshot documento : turma) {
-
-                                    Long pontuacao = documento.getLong("pontuacao");
-                                    String nome = documento.getString("nome");
-
-                                    if (documento.getId().equals(alunoId) || nome == null
-                                            || pontuacao == null
-                                            || Boolean.FALSE.equals(documento.getBoolean("ativo"))) {
-                                        continue;
-                                    }
-
-                                    // Mesmo critério da tela de ranking: pontos e, no empate, nome
-                                    boolean naFrente = pontuacao > minhaPontuacao
-                                            || (pontuacao.equals(minhaPontuacao) && meuNome != null
-                                            && nome.compareToIgnoreCase(meuNome) < 0);
-
-                                    if (naFrente) {
-                                        posicao++;
-                                    }
-                                }
-
-                                destino.setText(posicao + "º");
-                            });
-                });
+        tvNome.setText("—");
+        tvPontos.setText("0 pts");
     }
 
     public static class Aluno {
 
-        String id;
-        String nome;
-        long pontuacao;
-        String fotoUrl;
-        int posicao;
+        final String id;
+        final String nome;
+        final int pontuacao;
+        final String fotoPath;
+        final String fotoGoogleUrl;
+        final int posicao;
+        final boolean ehVoce;
 
-        public Aluno(String id, String nome, long pontuacao, String fotoUrl) {
+        Aluno(LinhaRanking linha) {
+            this(linha.perfilId, linha.nome, linha.pontos, linha.fotoPath, linha.fotoGoogleUrl,
+                    linha.posicao, linha.ehVoce);
+        }
+
+        private Aluno(String id, String nome, int pontuacao, String fotoPath, String fotoGoogleUrl,
+                      int posicao, boolean ehVoce) {
             this.id = id;
             this.nome = nome;
             this.pontuacao = pontuacao;
-            this.fotoUrl = fotoUrl;
+            this.fotoPath = fotoPath;
+            this.fotoGoogleUrl = fotoGoogleUrl;
+            this.posicao = posicao;
+            this.ehVoce = ehVoce;
+        }
+
+        Aluno comoVoce() {
+            return new Aluno(id, "Você", pontuacao, fotoPath, fotoGoogleUrl, posicao, true);
         }
     }
 
@@ -514,7 +394,8 @@ public class RankingActivity extends AppCompatActivity {
             holder.tvPosicao.setText(String.valueOf(aluno.posicao));
             holder.tvNomeAluno.setText(aluno.nome);
             holder.tvPontosAluno.setText(aluno.pontuacao + " pts");
-            FotoUtil.carregar(RankingActivity.this, aluno.fotoUrl, holder.imgAvatar);
+            holder.imgAvatar.setImageResource(R.drawable.ic_perfil);
+            PerfilFotoUtil.mostrar(RankingActivity.this, aluno.fotoPath, aluno.fotoGoogleUrl, holder.imgAvatar);
         }
 
         @Override

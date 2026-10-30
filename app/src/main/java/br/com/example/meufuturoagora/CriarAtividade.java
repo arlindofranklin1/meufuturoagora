@@ -1,38 +1,39 @@
 package br.com.example.meufuturoagora;
 
 import android.app.DatePickerDialog;
-import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.OpenableColumns;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
-import android.widget.Button;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.android.material.button.MaterialButton;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
+
+import br.com.example.meufuturoagora.dados.Arquivos;
+import br.com.example.meufuturoagora.dados.Atividade;
+import br.com.example.meufuturoagora.dados.Datas;
+import br.com.example.meufuturoagora.dados.Disciplina;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Perfil;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 public class CriarAtividade extends AppCompatActivity {
-
-    private FirebaseFirestore db;
 
     private EditText edtNomeAtividade;
     private EditText edtDescricao;
@@ -43,31 +44,25 @@ public class CriarAtividade extends AppCompatActivity {
     private Spinner spinnerDisciplina;
 
     private MaterialButton btnSelecionarArquivo;
+    private Button btnSalvar;
 
     private String disciplinaId;
-    private String disciplinaCor;
     private String atividadeId;
 
     private boolean modoEdicao = false;
 
-    // =============================
-    // ARQUIVO
-    // =============================
+    // Trilha que está sendo editada (guarda o anexo atual, que fica se não escolherem outro)
+    private Atividade atividadeAtual;
+
 
     private Uri arquivoSelecionadoUri;
     private String nomeArquivoSelecionado;
+    private String tipoArquivoSelecionado;
 
-    private ActivityResultLauncher<String> selecionarArquivoLauncher;
+    private ActivityResultLauncher<String[]> selecionarArquivoLauncher;
 
-    // =============================
-    // DISCIPLINAS
-    // =============================
-
-    private final List<String> nomesDisciplinas =
-            new ArrayList<>();
-
-    private final List<String> idsDisciplinas =
-            new ArrayList<>();
+    private final List<String> nomesDisciplinas = new ArrayList<>();
+    private final List<String> idsDisciplinas = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,557 +73,207 @@ public class CriarAtividade extends AppCompatActivity {
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
 
-        // =============================
-        // FIREBASE
-        // =============================
+        disciplinaId = getIntent().getStringExtra("disciplinaId");
+        atividadeId = getIntent().getStringExtra("atividadeId");
+        modoEdicao = atividadeId != null && !atividadeId.isEmpty();
 
-        db = FirebaseFirestore.getInstance();
+        edtNomeAtividade = findViewById(R.id.edtNomeAtividade);
+        edtDescricao = findViewById(R.id.edtDescricao);
+        edtPontos = findViewById(R.id.edtPontos);
+        edtPrazo = findViewById(R.id.edtPrazo);
+        edtLink = findViewById(R.id.edtLink);
+        spinnerDisciplina = findViewById(R.id.spinnerDisciplina);
+        btnSalvar = findViewById(R.id.btnSalvar);
+        btnSelecionarArquivo = findViewById(R.id.btnSelecionarArquivo);
 
-
-        // =============================
-        // RECEBER DADOS DA TELA ANTERIOR
-        // =============================
-
-        disciplinaId =
-                getIntent().getStringExtra("disciplinaId");
-
-        disciplinaCor =
-                getIntent().getStringExtra("disciplinaCor");
-
-        atividadeId =
-                getIntent().getStringExtra("atividadeId");
-
-        modoEdicao =
-                atividadeId != null &&
-                        !atividadeId.isEmpty();
-
-        // =============================
-        // COMPONENTES
-        // =============================
-
-        edtNomeAtividade =
-                findViewById(R.id.edtNomeAtividade);
-
-        edtDescricao =
-                findViewById(R.id.edtDescricao);
-
-        edtPontos =
-                findViewById(R.id.edtPontos);
-
-        edtPrazo =
-                findViewById(R.id.edtPrazo);
-
-        edtLink =
-                findViewById(R.id.edtLink);
-
-        spinnerDisciplina =
-                findViewById(R.id.spinnerDisciplina);
-
-        Button btnSalvar =
-                findViewById(R.id.btnSalvar);
-
-        ImageView btnVoltar =
-                findViewById(R.id.btnVoltar);
-
-        btnSelecionarArquivo =
-                findViewById(R.id.btnSelecionarArquivo);
-
-        // =============================
-        // SELECIONAR ARQUIVO
-        // =============================
-
-        selecionarArquivoLauncher =
-                registerForActivityResult(
-                        new ActivityResultContracts.GetContent(),
-                        uri -> {
-
-                            if (uri != null) {
-
-                                long tamanho = ArquivoUtil.obterTamanho(
-                                        getContentResolver(), uri
-                                );
-
-                                if (tamanho > ArquivoUtil.LIMITE_TAMANHO_BYTES) {
-
-                                    Toast.makeText(
-                                            this,
-                                            "O arquivo deve ter até 3 MB.",
-                                            Toast.LENGTH_LONG
-                                    ).show();
-
-                                    return;
-                                }
-
-                                arquivoSelecionadoUri = uri;
-
-                                nomeArquivoSelecionado =
-                                        obterNomeArquivo(uri);
-
-                                btnSelecionarArquivo.setText(
-                                        nomeArquivoSelecionado
-                                );
-                            }
-                        }
-                );
-
-        btnSelecionarArquivo.setOnClickListener(v -> {
-
-            selecionarArquivoLauncher.launch("*/*");
-
-        });
-
-        // =============================
-        // VOLTAR
-        // =============================
-
+        ImageView btnVoltar = findViewById(R.id.btnVoltar);
         btnVoltar.setOnClickListener(v -> finish());
 
-        // =============================
-        // DATA
-        // =============================
+        selecionarArquivoLauncher = registerForActivityResult(
+                new ActivityResultContracts.OpenDocument(),
+                uri -> {
 
-        edtPrazo.setOnClickListener(v ->
-                abrirCalendario()
+                    if (uri == null) {
+                        return;
+                    }
+
+                    String problema = ArquivoUtil.validar(getContentResolver(), uri);
+
+                    if (problema != null) {
+
+                        Toast.makeText(this, problema, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    arquivoSelecionadoUri = uri;
+                    tipoArquivoSelecionado = getContentResolver().getType(uri);
+                    nomeArquivoSelecionado = ArquivoUtil.obterNome(getContentResolver(), uri);
+                    btnSelecionarArquivo.setText(nomeArquivoSelecionado);
+                }
         );
 
-        // =============================
-        // CARREGAR DISCIPLINAS
-        // =============================
+        btnSelecionarArquivo.setOnClickListener(v ->
+                selecionarArquivoLauncher.launch(ArquivoUtil.TIPOS_DO_SELETOR));
 
-        carregarDisciplinas();
-
-        // =============================
-        // MODO EDIÇÃO
-        // =============================
+        edtPrazo.setOnClickListener(v -> abrirCalendario());
 
         if (modoEdicao) {
-
-            btnSalvar.setText(
-                    "Salvar alterações"
-            );
-
-            carregarAtividadeParaEdicao();
+            btnSalvar.setText("Salvar alterações");
         }
 
-        // =============================
-        // SALVAR
-        // =============================
+        carregarTela();
 
-        btnSalvar.setOnClickListener(v ->
-                salvarAtividade()
-        );
+        btnSalvar.setOnClickListener(v -> salvarAtividade());
     }
 
-    // =========================================================
-    // CARREGAR DISCIPLINAS
-    // =========================================================
+    private static final class Carga {
 
-    private void carregarDisciplinas() {
+        final List<Disciplina> disciplinas;
+        final Atividade atividade;
 
-        FirebaseUser usuario =
-                FirebaseAuth.getInstance()
-                        .getCurrentUser();
+        Carga(List<Disciplina> disciplinas, Atividade atividade) {
+            this.disciplinas = disciplinas;
+            this.atividade = atividade;
+        }
+    }
 
-        if (usuario == null) {
+    // Disciplinas ativas do professor e, na edição, a trilha
+    private void carregarTela() {
+
+        Servicos servicos = Servicos.get(this);
+
+        Tarefas.executar(this, () -> {
+
+            Perfil eu = servicos.perfis.meu();
+            List<Disciplina> minhas = new ArrayList<>();
+
+            for (Disciplina d : servicos.disciplinas.listar()) {
+
+                if (d.ativo && eu.id.equals(d.professorId)) {
+                    minhas.add(d);
+                }
+            }
+
+            return new Carga(minhas, modoEdicao ? servicos.atividades.buscar(atividadeId) : null);
+
+        }, new Tarefas.Retorno<Carga>() {
+            @Override
+            public void sucesso(Carga carga) {
+
+                if (modoEdicao && carga.atividade == null) {
+
+                    Toast.makeText(CriarAtividade.this, "Trilha não encontrada.", Toast.LENGTH_SHORT).show();
+                    finish();
+                    return;
+                }
+
+                mostrarDisciplinas(carga.disciplinas);
+
+                if (carga.atividade != null) {
+                    preencherParaEdicao(carga.atividade);
+                }
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(CriarAtividade.this, "Erro ao carregar a tela: " + erro.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void mostrarDisciplinas(List<Disciplina> disciplinas) {
+
+        nomesDisciplinas.clear();
+        idsDisciplinas.clear();
+
+        for (Disciplina d : disciplinas) {
+
+            idsDisciplinas.add(d.id);
+            nomesDisciplinas.add(d.nome);
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.item_spinner, nomesDisciplinas);
+        adapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
+        spinnerDisciplina.setAdapter(adapter);
+
+        // Toda trilha precisa de uma disciplina
+        if (idsDisciplinas.isEmpty()) {
+
+            Toast.makeText(this, "Crie uma disciplina primeiro para depois criar uma trilha.",
+                    Toast.LENGTH_LONG).show();
+
+            finish();
             return;
         }
 
-        String uidProfessor =
-                usuario.getUid();
-
-        db.collection("disciplinas")
-                .whereEqualTo(
-                        "professorId",
-                        uidProfessor
-                )
-                .whereEqualTo(
-                        "ativo",
-                        true
-                )
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-
-                    nomesDisciplinas.clear();
-                    idsDisciplinas.clear();
-
-                    for (QueryDocumentSnapshot documento :
-                            querySnapshot) {
-
-                        String id =
-                                documento.getId();
-
-                        String nome =
-                                documento.getString("nome");
-
-                        if (nome != null) {
-
-                            idsDisciplinas.add(id);
-
-                            nomesDisciplinas.add(nome);
-                        }
-                    }
-
-                    ArrayAdapter<String> adapter =
-                            new ArrayAdapter<>(
-                                    CriarAtividade.this,
-                                    R.layout.item_spinner,
-                                    nomesDisciplinas
-                            );
-
-                    adapter.setDropDownViewResource(
-                            R.layout.item_spinner_dropdown
-                    );
-
-                    spinnerDisciplina.setAdapter(adapter);
-
-                    // Toda trilha precisa de uma disciplina
-                    if (idsDisciplinas.isEmpty()) {
-
-                        Toast.makeText(
-                                CriarAtividade.this,
-                                "Crie uma disciplina primeiro para depois criar uma trilha.",
-                                Toast.LENGTH_LONG
-                        ).show();
-
-                        finish();
-                        return;
-                    }
-
-                    // =============================
-                    // SELECIONAR DISCIPLINA
-                    // =============================
-
-                    if (disciplinaId != null) {
-
-                        selecionarDisciplina(
-                                disciplinaId
-                        );
-                    }
-
-                })
-                .addOnFailureListener(e -> {
-
-                    Toast.makeText(
-                            CriarAtividade.this,
-                            "Erro ao carregar disciplinas.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
-    }
-
-    // =========================================================
-    // CARREGAR ATIVIDADE PARA EDIÇÃO
-    // =========================================================
-
-    private void carregarAtividadeParaEdicao() {
-
-        db.collection("atividades")
-                .document(atividadeId)
-                .get()
-                .addOnSuccessListener(documento -> {
-
-                    if (!documento.exists()) {
-
-                        Toast.makeText(
-                                this,
-                                "Trilha não encontrada.",
-                                Toast.LENGTH_SHORT
-                        ).show();
-
-                        finish();
-
-                        return;
-                    }
-
-                    // =============================
-                    // NOME
-                    // =============================
-
-                    String nome =
-                            documento.getString("nome");
-
-                    if (nome != null) {
-
-                        edtNomeAtividade.setText(nome);
-                    }
-
-                    // =============================
-                    // DESCRIÇÃO
-                    // =============================
-
-                    String descricao =
-                            documento.getString("descricao");
-
-                    if (descricao != null) {
-
-                        edtDescricao.setText(
-                                descricao
-                        );
-                    }
-
-                    // =============================
-                    // PONTOS
-                    // =============================
-
-                    Long pontos =
-                            documento.getLong("pontos");
-
-                    if (pontos != null) {
-
-                        edtPontos.setText(
-                                String.valueOf(pontos)
-                        );
-                    }
-
-                    // =============================
-                    // PRAZO
-                    // =============================
-
-                    String prazo =
-                            documento.getString("prazo");
-
-                    if (prazo != null) {
-
-                        edtPrazo.setText(prazo);
-                    }
-
-                    // =============================
-                    // DISCIPLINA
-                    // =============================
-
-                    String idDisciplina =
-                            documento.getString(
-                                    "disciplinaId"
-                            );
-
-                    if (idDisciplina != null) {
-
-                        disciplinaId =
-                                idDisciplina;
-
-                        selecionarDisciplina(
-                                idDisciplina
-                        );
-                    }
-
-                    // =============================
-                    // LINK
-                    // =============================
-
-                    String link =
-                            documento.getString("link");
-
-                    if (link != null) {
-
-                        edtLink.setText(link);
-                    }
-
-                    // =============================
-                    // ARQUIVO
-                    // =============================
-
-                    String arquivoNome =
-                            documento.getString(
-                                    "arquivoNome"
-                            );
-
-                    if (arquivoNome != null &&
-                            !arquivoNome.isEmpty()) {
-
-                        nomeArquivoSelecionado =
-                                arquivoNome;
-
-                        btnSelecionarArquivo.setText(
-                                arquivoNome
-                        );
-                    }
-
-                })
-                .addOnFailureListener(e -> {
-
-                    Toast.makeText(
-                            this,
-                            "Erro ao carregar trilha.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
-    }
-
-    // =========================================================
-    // SELECIONAR DISCIPLINA
-    // =========================================================
-
-    private void selecionarDisciplina(
-            String idDisciplina
-    ) {
-
-        for (int i = 0;
-             i < idsDisciplinas.size();
-             i++) {
-
-            if (idsDisciplinas
-                    .get(i)
-                    .equals(idDisciplina)) {
-
-                spinnerDisciplina.setSelection(i);
-
-                break;
-            }
+        if (disciplinaId != null) {
+            selecionarDisciplina(disciplinaId);
         }
     }
 
-    // =========================================================
-    // CALENDÁRIO
-    // =========================================================
+    private void preencherParaEdicao(Atividade atividade) {
+
+        atividadeAtual = atividade;
+
+        edtNomeAtividade.setText(atividade.nome);
+
+        if (atividade.descricao != null) {
+            edtDescricao.setText(atividade.descricao);
+        }
+
+        edtPontos.setText(String.valueOf(atividade.pontos));
+
+        if (atividade.prazo != null) {
+
+            edtPrazo.setText(Datas.formatar(atividade.prazo));
+        }
+
+        if (atividade.link != null) {
+            edtLink.setText(atividade.link);
+        }
+
+        // O anexo fica no Storage sob a disciplina: a trilha não muda de disciplina
+        disciplinaId = atividade.disciplinaId;
+        selecionarDisciplina(atividade.disciplinaId);
+        spinnerDisciplina.setEnabled(false);
+
+        if (atividade.arquivoNome != null && !atividade.arquivoNome.isEmpty()) {
+            btnSelecionarArquivo.setText(atividade.arquivoNome);
+        }
+    }
+
+    private void selecionarDisciplina(String idDisciplina) {
+
+        int posicao = idsDisciplinas.indexOf(idDisciplina);
+
+        if (posicao >= 0) {
+            spinnerDisciplina.setSelection(posicao);
+        }
+    }
 
     private void abrirCalendario() {
 
-        Calendar calendario =
-                Calendar.getInstance();
+        Calendar calendario = Calendar.getInstance();
 
-        int ano =
-                calendario.get(Calendar.YEAR);
+        new DatePickerDialog(
+                this,
+                (view, ano, mes, dia) -> {
 
-        int mes =
-                calendario.get(Calendar.MONTH);
-
-        int dia =
-                calendario.get(Calendar.DAY_OF_MONTH);
-
-        DatePickerDialog dialog =
-                new DatePickerDialog(
-                        this,
-                        (view,
-                         anoSelecionado,
-                         mesSelecionado,
-                         diaSelecionado) -> {
-
-                            String data =
-                                    String.format(
-                                            "%02d/%02d/%04d",
-                                            diaSelecionado,
-                                            mesSelecionado + 1,
-                                            anoSelecionado
-                                    );
-
-                            edtPrazo.setText(data);
-                        },
-                        ano,
-                        mes,
-                        dia
-                );
-
-        dialog.show();
+                    edtPrazo.setText(Datas.formatar(LocalDate.of(ano, mes + 1, dia)));
+                },
+                calendario.get(Calendar.YEAR),
+                calendario.get(Calendar.MONTH),
+                calendario.get(Calendar.DAY_OF_MONTH)
+        ).show();
     }
-
-    // =========================================================
-    // OBTER NOME DO ARQUIVO
-    // =========================================================
-
-    private String obterNomeArquivo(Uri uri) {
-
-        String resultado = null;
-
-        if ("content".equals(uri.getScheme())) {
-
-            Cursor cursor =
-                    getContentResolver().query(
-                            uri,
-                            null,
-                            null,
-                            null,
-                            null
-                    );
-
-            try {
-
-                if (cursor != null &&
-                        cursor.moveToFirst()) {
-
-                    int indice =
-                            cursor.getColumnIndex(
-                                    OpenableColumns.DISPLAY_NAME
-                            );
-
-                    if (indice >= 0) {
-
-                        resultado =
-                                cursor.getString(indice);
-                    }
-                }
-
-            } finally {
-
-                if (cursor != null) {
-
-                    cursor.close();
-                }
-            }
-        }
-
-        if (resultado == null) {
-
-            resultado =
-                    uri.getLastPathSegment();
-        }
-
-        return resultado;
-    }
-
-    // =========================================================
-    // SALVAR ATIVIDADE
-    // =========================================================
 
     private void salvarAtividade() {
 
-        FirebaseUser usuario =
-                FirebaseAuth.getInstance()
-                        .getCurrentUser();
-
-        if (usuario == null) {
-
-            Toast.makeText(
-                    this,
-                    "Usuário não está logado.",
-                    Toast.LENGTH_SHORT
-            ).show();
-
-            return;
-        }
-
-        // =============================
-        // PEGAR DADOS
-        // =============================
-
-        String nome =
-                edtNomeAtividade
-                        .getText()
-                        .toString()
-                        .trim();
-
-        String descricao =
-                edtDescricao
-                        .getText()
-                        .toString()
-                        .trim();
-
-        String pontosTexto =
-                edtPontos
-                        .getText()
-                        .toString()
-                        .trim();
-
-        String prazo =
-                edtPrazo
-                        .getText()
-                        .toString()
-                        .trim();
-
-        String link =
-                edtLink
-                        .getText()
-                        .toString()
-                        .trim();
+        String nome = edtNomeAtividade.getText().toString().trim();
+        String descricao = edtDescricao.getText().toString().trim();
+        String pontosTexto = edtPontos.getText().toString().trim();
+        String link = edtLink.getText().toString().trim();
 
         // Só links seguros (https). Sem o início, o https:// é colocado
         // automaticamente; links http:// são recusados
@@ -638,345 +283,170 @@ public class CriarAtividade extends AppCompatActivity {
 
             if (linkMinusculo.startsWith("http://")) {
 
-                edtLink.setError(
-                        "Use um link seguro, que comece com https://"
-                );
-
+                edtLink.setError("Use um link seguro, que comece com https://");
                 return;
             }
 
             if (!linkMinusculo.startsWith("https://")) {
-
                 link = "https://" + link;
             }
 
-            if (link.contains(" ")
-                    || !android.util.Patterns.WEB_URL.matcher(link).matches()) {
+            if (link.contains(" ") || !android.util.Patterns.WEB_URL.matcher(link).matches()) {
 
-                edtLink.setError(
-                        "Digite um link válido (ex: https://site.com)"
-                );
-
+                edtLink.setError("Digite um link válido (ex: https://site.com)");
                 return;
             }
         }
 
-        // =============================
-        // VALIDAÇÕES
-        // =============================
-
         if (nome.isEmpty()) {
 
-            edtNomeAtividade.setError(
-                    "Digite o título da trilha"
-            );
-
+            edtNomeAtividade.setError("Digite o título da trilha");
             return;
         }
 
         if (pontosTexto.isEmpty()) {
 
-            edtPontos.setError(
-                    "Digite a pontuação"
-            );
-
+            edtPontos.setError("Digite a pontuação");
             return;
         }
 
-        if (prazo.isEmpty()) {
-
-            edtPrazo.setError(
-                    "Selecione o prazo"
-            );
-
-            return;
-        }
-
-        if (spinnerDisciplina
-                .getSelectedItemPosition() < 0 ||
-                idsDisciplinas.isEmpty()) {
-
-            Toast.makeText(
-                    this,
-                    "Selecione uma disciplina.",
-                    Toast.LENGTH_SHORT
-            ).show();
-
-            return;
-        }
-
-        // =============================
-        // DISCIPLINA
-        // =============================
-
-        int posicao =
-                spinnerDisciplina
-                        .getSelectedItemPosition();
-
-        String idDisciplina =
-                idsDisciplinas.get(posicao);
-
-        String professorId =
-                usuario.getUid();
-
-        // =============================
-        // PONTOS
-        // =============================
-
-        long pontos;
+        LocalDate prazo;
 
         try {
+            prazo = Datas.ler(edtPrazo.getText().toString());
+        } catch (IllegalArgumentException e) {
 
-            pontos =
-                    Long.parseLong(pontosTexto);
+            edtPrazo.setError("Data inválida");
+            return;
+        }
 
+        if (prazo == null) {
+
+            edtPrazo.setError("Selecione o prazo");
+            return;
+        }
+
+        if (spinnerDisciplina.getSelectedItemPosition() < 0 || idsDisciplinas.isEmpty()) {
+
+            Toast.makeText(this, "Selecione uma disciplina.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int pontos;
+
+        try {
+            pontos = Integer.parseInt(pontosTexto);
         } catch (NumberFormatException e) {
 
-            edtPontos.setError(
-                    "Digite uma pontuação válida"
-            );
-
+            edtPontos.setError("Digite uma pontuação válida");
             return;
         }
 
         if (pontos < 1 || pontos > 10) {
 
-            edtPontos.setError(
-                    "A pontuação máxima deve ser entre 1 e 10"
-            );
-
+            edtPontos.setError("A pontuação máxima deve ser entre 1 e 10");
             return;
         }
 
-        // =============================
-        // MAPA DA ATIVIDADE
-        // =============================
+        String idDisciplina = idsDisciplinas.get(spinnerDisciplina.getSelectedItemPosition());
 
-        Map<String, Object> atividade =
-                new HashMap<>();
+        gravar(idDisciplina, nome, descricao, pontos, prazo, link.isEmpty() ? null : link);
+    }
 
-        atividade.put(
-                "nome",
-                nome
-        );
+    // Envia o anexo (se houver) e grava a trilha. Se a gravação falhar, o anexo
+    // novo é apagado; se der certo na edição, o anexo antigo é que sai.
+    private void gravar(String idDisciplina, String nome, String descricao, int pontos,
+                        LocalDate prazoFinal, String link) {
 
-        atividade.put(
-                "descricao",
-                descricao
-        );
+        btnSalvar.setEnabled(false);
 
-        atividade.put(
-                "pontos",
-                pontos
-        );
+        Servicos servicos = Servicos.get(this);
+        Uri uri = arquivoSelecionadoUri;
+        String nomeArquivo = nomeArquivoSelecionado;
+        String tipo = tipoArquivoSelecionado;
+        Atividade anterior = atividadeAtual;
+        boolean edicao = modoEdicao;
 
-        atividade.put(
-                "prazo",
-                prazo
-        );
-
-        atividade.put(
-                "link",
-                link
-        );
-
-        atividade.put(
-                "disciplinaId",
-                idDisciplina
-        );
-
-        atividade.put(
-                "professorId",
-                professorId
-        );
-
-        atividade.put(
-                "ativo",
-                true
-        );
-
-        // =============================
-        // ARQUIVO
-        // =============================
-
-        if (arquivoSelecionadoUri != null) {
-
-            enviarArquivo(atividade);
-
-        } else {
-
-            // Não selecionou arquivo novo
-
-            if (modoEdicao) {
-
-                atualizarAtividade(
-                        atividade
-                );
-
-            } else {
-
-                criarNovaAtividade(
-                        atividade
-                );
-            }
+        if (uri != null) {
+            Toast.makeText(this, "Enviando arquivo...", Toast.LENGTH_SHORT).show();
         }
-    }
 
-    // =========================================================
-    // ENVIAR ARQUIVO
-    // =========================================================
+        Tarefas.executar(this, () -> {
 
-    private void enviarArquivo(
-            Map<String, Object> atividade
-    ) {
+            String id = edicao ? atividadeId : UUID.randomUUID().toString();
+            String caminhoNovo = null;
 
-        String nomeArquivo =
-                nomeArquivoSelecionado;
+            if (uri != null) {
 
-        String idDisciplina =
-                (String) atividade.get(
-                        "disciplinaId"
-                );
+                byte[] conteudo;
 
-        Toast.makeText(
-                this,
-                "Enviando arquivo...",
-                Toast.LENGTH_SHORT
-        ).show();
-
-        // =============================
-        // UPLOAD (CLOUDINARY)
-        // =============================
-
-        CloudinaryUtil.enviar(
-                getContentResolver(),
-                arquivoSelecionadoUri,
-                nomeArquivo,
-                "atividades/" + idDisciplina,
-                new CloudinaryUtil.Callback() {
-
-                    @Override
-                    public void onSucesso(String url) {
-
-                        // =============================
-                        // SALVAR DADOS DO ARQUIVO
-                        // =============================
-
-                        atividade.put(
-                                "arquivoNome",
-                                nomeArquivo
-                        );
-
-                        atividade.put(
-                                "arquivoUrl",
-                                url
-                        );
-
-                        // =============================
-                        // SALVAR ATIVIDADE
-                        // =============================
-
-                        if (modoEdicao) {
-
-                            atualizarAtividade(
-                                    atividade
-                            );
-
-                        } else {
-
-                            criarNovaAtividade(
-                                    atividade
-                            );
-                        }
-                    }
-
-                    @Override
-                    public void onErro(String mensagem) {
-
-                        Toast.makeText(
-                                CriarAtividade.this,
-                                "Erro ao enviar arquivo: "
-                                        + mensagem,
-                                Toast.LENGTH_LONG
-                        ).show();
-                    }
+                try {
+                    conteudo = ArquivoUtil.ler(getContentResolver(), uri);
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
                 }
-        );
+
+                caminhoNovo = Arquivos.caminhoAtividade(idDisciplina, id, tipo);
+                servicos.arquivos.enviar(Arquivos.BUCKET_ATIVIDADES, caminhoNovo, conteudo, tipo);
+            }
+
+            // Sem arquivo novo, a edição mantém o anexo que já existia
+            String caminho = caminhoNovo != null ? caminhoNovo : (anterior != null ? anterior.arquivoPath : null);
+            String nomeFinal = caminhoNovo != null ? nomeArquivo : (anterior != null ? anterior.arquivoNome : null);
+
+            try {
+
+                if (edicao) {
+                    servicos.atividades.atualizar(id, nome, descricao, pontos, prazoFinal, link, caminho, nomeFinal);
+                } else {
+                    servicos.atividades.criar(id, idDisciplina, nome, descricao, pontos, prazoFinal, link,
+                            caminho, nomeFinal);
+                }
+
+            } catch (ErroApi e) {
+
+                apagarSilenciosamente(servicos, caminhoNovo);
+                throw e;
+            }
+
+            if (caminhoNovo != null && anterior != null) {
+                apagarSilenciosamente(servicos, anterior.arquivoPath);
+            }
+
+            return null;
+
+        }, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object resultado) {
+
+                Toast.makeText(CriarAtividade.this, edicao ? "Trilha atualizada!" : "Trilha criada!",
+                        Toast.LENGTH_SHORT).show();
+                finish();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+
+                btnSalvar.setEnabled(true);
+
+                Toast.makeText(CriarAtividade.this,
+                        (edicao ? "Erro ao atualizar trilha: " : "Erro ao criar trilha: ") + erro.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
-    // =========================================================
-    // CRIAR NOVA ATIVIDADE
-    // =========================================================
+    // Arquivo que sobrou só ocupa espaço: se não der para apagar, segue
+    private static void apagarSilenciosamente(Servicos servicos, String caminho) {
 
-    private void criarNovaAtividade(
-            Map<String, Object> atividade
-    ) {
+        if (caminho == null) {
+            return;
+        }
 
-        // Usado para notificar os alunos sobre a nova atividade
-        atividade.put(
-                "criadoEm",
-                com.google.firebase.firestore.FieldValue.serverTimestamp()
-        );
-
-        // Fica salva no ano letivo (e bimestre) em que foi criada
-        AnoLetivoUtil.marcar(atividade);
-
-        db.collection("atividades")
-                .add(atividade)
-                .addOnSuccessListener(
-                        documentReference -> {
-
-                            Toast.makeText(
-                                    this,
-                                    "Trilha criada!",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-
-                            finish();
-                        }
-                )
-                .addOnFailureListener(e -> {
-
-                    Toast.makeText(
-                            this,
-                            "Erro ao criar trilha: "
-                                    + e.getMessage(),
-                            Toast.LENGTH_LONG
-                    ).show();
-                });
-    }
-
-    // =========================================================
-    // ATUALIZAR ATIVIDADE
-    // =========================================================
-
-    private void atualizarAtividade(
-            Map<String, Object> atividade
-    ) {
-
-        db.collection("atividades")
-                .document(atividadeId)
-                .update(atividade)
-                .addOnSuccessListener(
-                        unused -> {
-
-                            Toast.makeText(
-                                    this,
-                                    "Trilha atualizada!",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-
-                            finish();
-                        }
-                )
-                .addOnFailureListener(e -> {
-
-                    Toast.makeText(
-                            this,
-                            "Erro ao atualizar trilha: "
-                                    + e.getMessage(),
-                            Toast.LENGTH_LONG
-                    ).show();
-                });
+        try {
+            servicos.arquivos.apagar(Arquivos.BUCKET_ATIVIDADES, Collections.singletonList(caminho));
+        } catch (ErroApi ignorado) {
+            // segue
+        }
     }
 }

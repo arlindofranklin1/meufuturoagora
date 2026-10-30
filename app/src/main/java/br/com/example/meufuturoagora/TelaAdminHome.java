@@ -7,15 +7,22 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.firestore.FirebaseFirestore;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+
+import br.com.example.meufuturoagora.dados.AnoLetivo;
+import br.com.example.meufuturoagora.dados.Bimestre;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.EscolaRepositorio;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
 public class TelaAdminHome extends AppCompatActivity {
-
-    private FirebaseFirestore db;
 
     private TextView tvAnoLetivoAdmin;
     private TextView tvBimestreAdmin;
@@ -27,10 +34,8 @@ public class TelaAdminHome extends AppCompatActivity {
 
         setContentView(R.layout.activity_tela_admin_home);
 
-        db = FirebaseFirestore.getInstance();
-
         // Só contas marcadas como admin no banco podem ficar nesta tela
-        AdminUtil.verificar(db, ehAdmin -> {
+        AdminUtil.verificar(this, ehAdmin -> {
 
             if (!ehAdmin && !isFinishing()) {
 
@@ -84,35 +89,65 @@ public class TelaAdminHome extends AppCompatActivity {
                 "Hoje: " + hoje.substring(0, 1).toUpperCase() + hoje.substring(1)
         );
 
-        db.collection("configuracoes")
-                .document("geral")
-                .get()
-                .addOnSuccessListener(documento -> {
+        EscolaRepositorio escola = Servicos.get(this).escola;
 
-                    AnoLetivoUtil.atualizar(documento);
+        Tarefas.executar(this, () -> {
 
-                    String ano = documento.getString("anoLetivo");
+            AnoLetivo ano = escola.anoAtual();
 
-                    tvAnoLetivoAdmin.setText(
-                            ano != null && !ano.isEmpty()
-                                    ? "Ano letivo " + ano
-                                    : "Ano letivo não definido"
-                    );
+            if (ano == null) {
+                return new Periodo(null, null);
+            }
 
-                    int numero = BimestreUtil.numeroAtual(documento);
+            // Mesmo critério do servidor: o bimestre que contém a data de hoje em Brasília
+            LocalDate dataDeHoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
 
-                    if (numero == 0) {
+            for (Bimestre bimestre : escola.bimestres(ano.ano)) {
+                if (bimestre.contem(dataDeHoje)) {
+                    return new Periodo(ano, bimestre);
+                }
+            }
 
-                        tvBimestreAdmin.setText("Fora de bimestre / não definido");
-                        tvPeriodoBimestreAdmin.setText("Defina os bimestres do ano letivo");
-                        return;
-                    }
+            return new Periodo(ano, null);
 
-                    tvBimestreAdmin.setText(numero + "º Bimestre");
-                    tvPeriodoBimestreAdmin.setText(
-                            "De " + documento.getString("bimestre" + numero + "Inicio")
-                                    + " até " + documento.getString("bimestre" + numero + "Fim")
-                    );
-                });
+        }, new Tarefas.Retorno<Periodo>() {
+            @Override
+            public void sucesso(Periodo periodo) {
+
+                AnoLetivo ano = periodo.ano;
+                Bimestre atual = periodo.bimestre;
+
+                tvAnoLetivoAdmin.setText(ano != null ? "Ano letivo " + ano.ano : "Ano letivo não definido");
+
+                if (atual == null) {
+                    tvBimestreAdmin.setText("Fora de bimestre / não definido");
+                    tvPeriodoBimestreAdmin.setText("Defina os bimestres do ano letivo");
+                    return;
+                }
+
+                DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+                tvBimestreAdmin.setText(atual.numero + "º Bimestre");
+                tvPeriodoBimestreAdmin.setText(
+                        "De " + atual.inicio.format(formato) + " até " + atual.fim.format(formato));
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                tvAnoLetivoAdmin.setText("Ano letivo indisponível");
+                Toast.makeText(TelaAdminHome.this, erro.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private static final class Periodo {
+
+        final AnoLetivo ano;
+        final Bimestre bimestre;
+
+        Periodo(AnoLetivo ano, Bimestre bimestre) {
+            this.ano = ano;
+            this.bimestre = bimestre;
+        }
     }
 }

@@ -10,22 +10,24 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import br.com.example.meufuturoagora.dados.Disciplina;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+import br.com.example.meufuturoagora.dados.Turma;
+
+// O professor cria as próprias disciplinas (decisão D1). O responsável é o
+// professor logado, o ano letivo e o bimestre vêm do servidor, e os alunos da
+// turma são matriculados na hora pelo banco (decisão D9).
 public class CriarDisciplinaActivity extends AppCompatActivity {
-
-    private FirebaseFirestore db;
 
     private EditText edtNomeDisciplina;
     private Spinner spinnerTurmaDisciplina;
+    private MaterialButton btnSalvarDisciplina;
 
     private final List<String> turmaIds = new ArrayList<>();
     private final List<String> turmaNomes = new ArrayList<>();
@@ -39,8 +41,6 @@ public class CriarDisciplinaActivity extends AppCompatActivity {
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
 
-        db = FirebaseFirestore.getInstance();
-
         ImageView btnVoltar = findViewById(R.id.btnVoltar);
         btnVoltar.setOnClickListener(v -> finish());
 
@@ -49,44 +49,42 @@ public class CriarDisciplinaActivity extends AppCompatActivity {
 
         carregarTurmas();
 
-        MaterialButton btnSalvarDisciplina = findViewById(R.id.btnSalvarDisciplina);
+        btnSalvarDisciplina = findViewById(R.id.btnSalvarDisciplina);
         btnSalvarDisciplina.setOnClickListener(v -> salvarDisciplina());
     }
 
     private void carregarTurmas() {
 
-        db.collection("turmas")
-                .whereEqualTo("ativo", true)
-                .get()
-                .addOnSuccessListener(turmas -> {
+        Tarefas.executar(this, () -> Servicos.get(this).escola.turmas(), new Tarefas.Retorno<List<Turma>>() {
+            @Override
+            public void sucesso(List<Turma> turmas) {
 
-                    turmaIds.clear();
-                    turmaNomes.clear();
+                turmaIds.clear();
+                turmaNomes.clear();
 
-                    for (QueryDocumentSnapshot documento : turmas) {
-
-                        String nome = documento.getString("nome");
-
-                        if (nome != null) {
-                            turmaIds.add(documento.getId());
-                            turmaNomes.add(nome);
-                        }
+                for (Turma turma : turmas) {
+                    if (turma.ativo) {
+                        turmaIds.add(turma.id);
+                        turmaNomes.add(turma.nome);
                     }
+                }
 
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                            this,
-                            R.layout.item_spinner,
-                            turmaNomes
-                    );
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                        CriarDisciplinaActivity.this,
+                        R.layout.item_spinner,
+                        turmaNomes
+                );
 
-                    adapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
-                    spinnerTurmaDisciplina.setAdapter(adapter);
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao carregar turmas: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+                adapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
+                spinnerTurmaDisciplina.setAdapter(adapter);
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(CriarDisciplinaActivity.this, "Erro ao carregar turmas: " + erro.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void salvarDisciplina() {
@@ -103,36 +101,24 @@ public class CriarDisciplinaActivity extends AppCompatActivity {
             return;
         }
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+        String turmaId = turmaIds.get(spinnerTurmaDisciplina.getSelectedItemPosition());
 
-        if (usuario == null) {
-            return;
-        }
+        btnSalvarDisciplina.setEnabled(false);
 
-        int posicao = spinnerTurmaDisciplina.getSelectedItemPosition();
+        Tarefas.executar(this, () -> Servicos.get(this).disciplinas.criar(nome, turmaId),
+                new Tarefas.Retorno<Disciplina>() {
+                    @Override
+                    public void sucesso(Disciplina criada) {
+                        Toast.makeText(CriarDisciplinaActivity.this, "Disciplina criada!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
 
-        Map<String, Object> dados = new HashMap<>();
-        dados.put("nome", nome);
-        dados.put("turmaId", turmaIds.get(posicao));
-        dados.put("turmaNome", turmaNomes.get(posicao));
-        dados.put("professorId", usuario.getUid());
-        dados.put("professorNome", usuario.getDisplayName() != null ? usuario.getDisplayName() : "Professor");
-        dados.put("professorEmail", usuario.getEmail() != null ? usuario.getEmail() : "");
-        dados.put("ativo", true);
-        dados.put("criadoEm", com.google.firebase.firestore.FieldValue.serverTimestamp());
-        AnoLetivoUtil.marcar(dados);
-
-        db.collection("disciplinas")
-                .add(dados)
-                .addOnSuccessListener(referencia -> {
-
-                    Toast.makeText(this, "Disciplina criada!", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao criar disciplina: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+                    @Override
+                    public void erro(ErroApi erro) {
+                        btnSalvarDisciplina.setEnabled(true);
+                        Toast.makeText(CriarDisciplinaActivity.this, "Erro ao criar disciplina: " + erro.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 }

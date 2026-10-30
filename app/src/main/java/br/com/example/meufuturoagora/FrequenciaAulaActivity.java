@@ -14,29 +14,35 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.firestore.FieldPath;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Frequencia;
+import br.com.example.meufuturoagora.dados.Participante;
+import br.com.example.meufuturoagora.dados.Perfil;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
+
+// Frequência de uma aula: um status por aluno matriculado. O servidor grava a
+// lista toda de uma vez (registrar_frequencia: tudo ou nada) e calcula o
+// desconto de 5 pontos por dia com falta sem justificativa a partir dela.
 public class FrequenciaAulaActivity extends AppCompatActivity {
 
+    // O que o professor vê; o banco guarda presente, falta e falta_justificada
     private static final String[] STATUS_OPCOES = {"Presente", "Falta", "Falta justificada"};
-
-    private FirebaseFirestore db;
+    private static final String[] STATUS_NO_BANCO = {Frequencia.PRESENTE, Frequencia.FALTA, Frequencia.FALTA_JUSTIFICADA};
 
     private String aulaId;
     private String disciplinaId;
 
-    // Data da aula (dd/MM/yyyy): a perda de pontos por falta é contada por dia
-    private String dataAula;
-
     private RecyclerView recyclerAlunosFrequencia;
     private TextView tvSemAlunos;
+    private MaterialButton btnSalvarFrequencia;
 
     private AlunoFrequenciaAdapter adapter;
     private final List<AlunoFrequencia> listaAlunos = new ArrayList<>();
@@ -49,8 +55,6 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
 
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
-
-        db = FirebaseFirestore.getInstance();
 
         aulaId = getIntent().getStringExtra("aulaId");
         disciplinaId = getIntent().getStringExtra("disciplinaId");
@@ -73,127 +77,82 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
         adapter = new AlunoFrequenciaAdapter(listaAlunos);
         recyclerAlunosFrequencia.setAdapter(adapter);
 
-        MaterialButton btnSalvarFrequencia = findViewById(R.id.btnSalvarFrequencia);
+        btnSalvarFrequencia = findViewById(R.id.btnSalvarFrequencia);
         btnSalvarFrequencia.setOnClickListener(v -> salvarFrequencia());
 
-        carregarDataAula();
-        carregarAlunosMatriculados();
+        carregarAlunos();
     }
 
-    private void carregarDataAula() {
+    // Alunos matriculados (com nome e foto) e a frequência já salva, para não
+    // voltar tudo para "Presente" ao reabrir a aula
+    private void carregarAlunos() {
 
-        if (aulaId == null) {
+        if (disciplinaId == null || aulaId == null) {
             return;
         }
 
-        db.collection("aulas")
-                .document(aulaId)
-                .get()
-                .addOnSuccessListener(documento -> dataAula = documento.getString("data"));
+        Servicos servicos = Servicos.get(this);
+
+        Tarefas.executar(this, () -> {
+
+            Map<String, String> statusPorAluno = new HashMap<>();
+
+            for (Frequencia registro : servicos.frequencias.frequenciaDaAula(aulaId)) {
+                statusPorAluno.put(registro.alunoId, registro.status);
+            }
+
+            List<AlunoFrequencia> alunos = new ArrayList<>();
+
+            for (Participante participante : servicos.disciplinas.participantes(disciplinaId)) {
+
+                if (!Perfil.ALUNO.equals(participante.tipo)) {
+                    continue;
+                }
+
+                AlunoFrequencia aluno = new AlunoFrequencia(participante.perfilId, participante.nome,
+                        participante.fotoPath, participante.fotoGoogleUrl);
+
+                String salvo = statusPorAluno.get(participante.perfilId);
+
+                if (salvo != null) {
+                    aluno.status = rotuloDoStatus(salvo);
+                }
+
+                alunos.add(aluno);
+            }
+
+            return alunos;
+
+        }, new Tarefas.Retorno<List<AlunoFrequencia>>() {
+            @Override
+            public void sucesso(List<AlunoFrequencia> alunos) {
+
+                listaAlunos.clear();
+                listaAlunos.addAll(alunos);
+                adapter.notifyDataSetChanged();
+
+                tvSemAlunos.setVisibility(listaAlunos.isEmpty() ? View.VISIBLE : View.GONE);
+                recyclerAlunosFrequencia.setVisibility(listaAlunos.isEmpty() ? View.GONE : View.VISIBLE);
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(FrequenciaAulaActivity.this, "Erro ao carregar alunos: " + erro.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    // Mostra a frequência já salva desta aula, para não voltar tudo para "Presente"
-    private void carregarFrequenciaSalva() {
+    private static String rotuloDoStatus(String statusNoBanco) {
 
-        if (aulaId == null) {
-            return;
-        }
-
-        db.collection("frequencias")
-                .whereEqualTo("aulaId", aulaId)
-                .get()
-                .addOnSuccessListener(registros -> {
-
-                    Map<String, String> statusPorAluno = new HashMap<>();
-
-                    for (QueryDocumentSnapshot registro : registros) {
-                        statusPorAluno.put(registro.getString("alunoId"), registro.getString("status"));
-                    }
-
-                    for (AlunoFrequencia aluno : listaAlunos) {
-
-                        String status = statusPorAluno.get(aluno.alunoId);
-
-                        if (status != null) {
-                            aluno.status = status;
-                        }
-                    }
-
-                    adapter.notifyDataSetChanged();
-                });
+        int posicao = Arrays.asList(STATUS_NO_BANCO).indexOf(statusNoBanco);
+        return posicao >= 0 ? STATUS_OPCOES[posicao] : STATUS_OPCOES[0];
     }
 
-    private void carregarAlunosMatriculados() {
+    private static String statusNoBanco(String rotulo) {
 
-        if (disciplinaId == null) {
-            return;
-        }
-
-        db.collection("matriculas")
-                .whereEqualTo("disciplinaId", disciplinaId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-
-                    listaAlunos.clear();
-
-                    List<String> idsAlunos = new ArrayList<>();
-
-                    for (QueryDocumentSnapshot documento : querySnapshot) {
-
-                        String alunoId = documento.getString("alunoId");
-                        String alunoNome = documento.getString("alunoNome");
-
-                        if (alunoId != null && alunoNome != null) {
-
-                            listaAlunos.add(new AlunoFrequencia(alunoId, alunoNome));
-                            idsAlunos.add(alunoId);
-                        }
-                    }
-
-                    adapter.notifyDataSetChanged();
-
-                    tvSemAlunos.setVisibility(listaAlunos.isEmpty() ? View.VISIBLE : View.GONE);
-                    recyclerAlunosFrequencia.setVisibility(
-                            listaAlunos.isEmpty() ? View.GONE : View.VISIBLE
-                    );
-
-                    carregarFotosAlunos(idsAlunos);
-                    carregarFrequenciaSalva();
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this, "Erro ao carregar alunos.", Toast.LENGTH_SHORT
-                ).show());
-    }
-
-    // Busca a foto de cada aluno na coleção "alunos" (em lotes de até 10,
-    // limite do whereIn do Firestore) e preenche na lista já exibida.
-    private void carregarFotosAlunos(List<String> idsAlunos) {
-
-        for (int i = 0; i < idsAlunos.size(); i += 10) {
-
-            List<String> lote = idsAlunos.subList(i, Math.min(i + 10, idsAlunos.size()));
-
-            db.collection("alunos")
-                    .whereIn(FieldPath.documentId(), lote)
-                    .get()
-                    .addOnSuccessListener(alunosSnapshot -> {
-
-                        Map<String, String> fotosPorId = new HashMap<>();
-
-                        for (QueryDocumentSnapshot documento : alunosSnapshot) {
-                            fotosPorId.put(documento.getId(), documento.getString("fotoUrl"));
-                        }
-
-                        for (AlunoFrequencia aluno : listaAlunos) {
-
-                            if (fotosPorId.containsKey(aluno.alunoId)) {
-                                aluno.fotoUrl = fotosPorId.get(aluno.alunoId);
-                            }
-                        }
-
-                        adapter.notifyDataSetChanged();
-                    });
-        }
+        int posicao = Arrays.asList(STATUS_OPCOES).indexOf(rotulo);
+        return STATUS_NO_BANCO[Math.max(0, posicao)];
     }
 
     private void salvarFrequencia() {
@@ -204,46 +163,52 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
             return;
         }
 
-        for (AlunoFrequencia aluno : listaAlunos) {
+        if (listaAlunos.isEmpty()) {
 
-            Map<String, Object> registro = new HashMap<>();
-
-            registro.put("aulaId", aulaId);
-            registro.put("disciplinaId", disciplinaId);
-            registro.put("alunoId", aluno.alunoId);
-            registro.put("alunoNome", aluno.alunoNome);
-            registro.put("status", aluno.status);
-            AnoLetivoUtil.marcar(registro);
-
-            if (dataAula != null) {
-                registro.put("data", dataAula);
-            }
-
-            String alunoId = aluno.alunoId;
-
-            // Depois de gravar, confere a perda de 5 pontos do dia (falta sem justificativa)
-            db.collection("frequencias")
-                    .document(aulaId + "_" + alunoId)
-                    .set(registro)
-                    .addOnSuccessListener(unused ->
-                            PenalidadeFaltaUtil.recalcular(db, alunoId, dataAula)
-                    );
+            Toast.makeText(this, "Não há alunos matriculados nesta disciplina.", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        Toast.makeText(this, "Frequência salva!", Toast.LENGTH_SHORT).show();
-        finish();
+        List<Frequencia> registros = new ArrayList<>();
+
+        for (AlunoFrequencia aluno : listaAlunos) {
+            registros.add(new Frequencia(aulaId, aluno.alunoId, statusNoBanco(aluno.status)));
+        }
+
+        btnSalvarFrequencia.setEnabled(false);
+
+        Tarefas.executar(this, () -> Servicos.get(this).frequencias.registrar(aulaId, registros),
+                new Tarefas.Retorno<Integer>() {
+                    @Override
+                    public void sucesso(Integer total) {
+
+                        Toast.makeText(FrequenciaAulaActivity.this, "Frequência salva!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+
+                    @Override
+                    public void erro(ErroApi erro) {
+
+                        btnSalvarFrequencia.setEnabled(true);
+                        Toast.makeText(FrequenciaAulaActivity.this, "Erro ao salvar a frequência: " + erro.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
     public static class AlunoFrequencia {
 
         String alunoId;
         String alunoNome;
-        String fotoUrl;
-        String status = "Presente";
+        String fotoPath;
+        String fotoGoogleUrl;
+        String status = STATUS_OPCOES[0];
 
-        public AlunoFrequencia(String alunoId, String alunoNome) {
+        public AlunoFrequencia(String alunoId, String alunoNome, String fotoPath, String fotoGoogleUrl) {
             this.alunoId = alunoId;
             this.alunoNome = alunoNome;
+            this.fotoPath = fotoPath;
+            this.fotoGoogleUrl = fotoGoogleUrl;
         }
     }
 
@@ -273,7 +238,8 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
 
             holder.tvNomeAlunoFrequencia.setText(aluno.alunoNome);
             holder.imgAlunoFrequencia.setImageResource(R.drawable.ic_perfil);
-            FotoUtil.carregar(FrequenciaAulaActivity.this, aluno.fotoUrl, holder.imgAlunoFrequencia);
+            PerfilFotoUtil.mostrar(FrequenciaAulaActivity.this, aluno.fotoPath, aluno.fotoGoogleUrl,
+                    holder.imgAlunoFrequencia);
 
             ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
                     FrequenciaAulaActivity.this,
@@ -288,7 +254,7 @@ public class FrequenciaAulaActivity extends AppCompatActivity {
             holder.spinnerStatusFrequencia.setAdapter(spinnerAdapter);
 
             holder.spinnerStatusFrequencia.setSelection(
-                    Math.max(0, java.util.Arrays.asList(STATUS_OPCOES).indexOf(aluno.status))
+                    Math.max(0, Arrays.asList(STATUS_OPCOES).indexOf(aluno.status))
             );
 
             holder.spinnerStatusFrequencia.setOnItemSelectedListener(
