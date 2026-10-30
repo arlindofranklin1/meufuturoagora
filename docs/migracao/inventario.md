@@ -533,7 +533,7 @@ descontados. A tela avisa disso antes de excluir. Testes: pgTAP `120_excluir_aul
 
 ### 8.3 Login por e-mail e senha no projeto remoto
 
-Em 30/10/2026 o projeto de desenvolvimento aceita cadastro por e-mail e senha
+Em 29/10/2026 o projeto de desenvolvimento aceita cadastro por e-mail e senha
 (`/auth/v1/settings`: `external.email = true`, `disable_signup = false`), com
 confirmação de e-mail obrigatória (`mailer_autoconfirm = false`). O app só usa
 Google. A confirmação obrigatória já protege o `vincular_conta`, que recusa
