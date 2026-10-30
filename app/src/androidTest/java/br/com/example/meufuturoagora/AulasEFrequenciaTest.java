@@ -16,6 +16,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withSpinnerText;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -153,7 +154,9 @@ public class AulasEFrequenciaTest {
         onView(withText("Excluir")).perform(click());
 
         Espera.ate(() -> assertTrue(falsos.chamou("frequencias.excluirAula au1")));
-        Espera.ate(() -> onView(withText("Frações")).check(doesNotExist()));
+        // A lista fica oculta (GONE) sem redesenhar, então a linha antiga ainda está na hierarquia
+        Espera.ate(() -> onView(withId(R.id.tvSemAulas)).check(matches(isDisplayed())));
+        onView(withId(R.id.recyclerAulas)).check(matches(not(isDisplayed())));
     }
 
     @Test
