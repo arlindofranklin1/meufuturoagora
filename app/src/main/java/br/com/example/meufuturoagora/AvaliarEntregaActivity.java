@@ -20,6 +20,8 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
 
     private String atividadeId;
     private String alunoId;
+    // Vem da notificação de nova entrega, que sabe o id da entrega e não o do aluno
+    private String entregaId;
 
     // A entrega do aluno nesta trilha; null enquanto carrega
     private Entrega entrega;
@@ -41,6 +43,7 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
 
         atividadeId = getIntent().getStringExtra("atividadeId");
         alunoId = getIntent().getStringExtra("alunoId");
+        entregaId = getIntent().getStringExtra("entregaId");
         String alunoNome = getIntent().getStringExtra("alunoNome");
 
         ImageView btnVoltar = findViewById(R.id.btnVoltar);
@@ -64,7 +67,7 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
 
     private void carregarEntrega() {
 
-        if (atividadeId == null || alunoId == null) {
+        if (atividadeId == null || (alunoId == null && entregaId == null)) {
             return;
         }
 
@@ -72,7 +75,7 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
 
             for (Entrega e : Servicos.get(this).atividades.entregasDaAtividade(atividadeId)) {
 
-                if (alunoId.equals(e.alunoId)) {
+                if (alunoId != null ? alunoId.equals(e.alunoId) : entregaId.equals(e.id)) {
                     return e;
                 }
             }

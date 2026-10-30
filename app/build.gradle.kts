@@ -132,6 +132,7 @@ dependencies {
 
     // Verificação periódica de novidades para as notificações
     implementation("androidx.work:work-runtime:2.10.1")
+    androidTestImplementation("androidx.work:work-testing:2.10.1")
 
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")

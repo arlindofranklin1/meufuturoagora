@@ -619,6 +619,71 @@ public class E2eSupabaseLocalTest {
         }
     }
 
+    private static br.com.example.meufuturoagora.dados.Novidade novidadeDe(
+            java.util.List<br.com.example.meufuturoagora.dados.Novidade> lista, String tipo, String nome) {
+
+        for (br.com.example.meufuturoagora.dados.Novidade n : lista) {
+            if (tipo.equals(n.tipo) && nome.equals(n.nome)) {
+                return n;
+            }
+        }
+
+        return null;
+    }
+
+    @Test
+    public void novidadesChegamParaQuemPodeVerEPelaFuncaoDoServidor() throws Exception {
+        java.time.OffsetDateTime desde = java.time.OffsetDateTime.now().minusHours(1);
+        String nome = "E2E: trilha das novidades";
+
+        local.entrar(MARTA);
+        String atividadeId = java.util.UUID.randomUUID().toString();
+        local.servicos.atividades.criar(atividadeId, LOGICA, nome, "", 6,
+                java.time.LocalDate.now().plusDays(7), null, null, null);
+
+        try {
+
+            // A aluna matriculada vê a trilha nova; ainda não há avaliação
+            local.entrar(LIA);
+            java.util.List<br.com.example.meufuturoagora.dados.Novidade> daLia = local.servicos.novidades.desde(desde);
+            br.com.example.meufuturoagora.dados.Novidade nova = novidadeDe(daLia, "atividade", nome);
+            assertNotNull("a Lia vê a trilha nova", nova);
+            assertEquals(atividadeId, nova.atividadeId);
+            assertEquals("Lógica de Programação", nova.disciplinaNome);
+            assertEquals(null, novidadeDe(daLia, "avaliacao", nome));
+
+            br.com.example.meufuturoagora.dados.Entrega entrega =
+                    local.servicos.atividades.entregar(atividadeId, "Pronto", null, null);
+
+            // A professora da disciplina vê a entrega, com o nome do aluno, e não vê a trilha como novidade
+            local.entrar(MARTA);
+            br.com.example.meufuturoagora.dados.Novidade deEntrega =
+                    novidadeDe(local.servicos.novidades.desde(desde), "entrega", nome);
+            assertNotNull("a professora vê a entrega", deEntrega);
+            assertEquals(entrega.id, deEntrega.itemId);
+            assertEquals("Lia Fictícia", deEntrega.alunoNome);
+            assertEquals(null, novidadeDe(local.servicos.novidades.desde(desde), "atividade", nome));
+
+            local.servicos.atividades.avaliar(entrega.id, 3, "Bom");
+
+            // Outro professor não vê a entrega; a aluna vê a avaliação
+            local.entrar(JOAO);
+            assertEquals(null, novidadeDe(local.servicos.novidades.desde(desde), "entrega", nome));
+
+            local.entrar(LIA);
+            assertNotNull("a Lia vê a avaliação", novidadeDe(local.servicos.novidades.desde(desde), "avaliacao", nome));
+
+            // "Desde agora" não traz o que já passou
+            assertEquals(null, novidadeDe(local.servicos.novidades.desde(java.time.OffsetDateTime.now().plusMinutes(5)),
+                    "atividade", nome));
+
+        } finally {
+
+            local.entrar(MARTA);
+            local.servicos.atividades.excluir(atividadeId);
+        }
+    }
+
     @Test
     public void professorComumNaoTemAreaDoAdministrador() throws Exception {
         local.entrar(JOAO);

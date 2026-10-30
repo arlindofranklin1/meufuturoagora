@@ -55,6 +55,9 @@ final class RepositoriosFalsos {
     final List<Aula> aulas = new ArrayList<>();
     final List<EntradaDiario> diario = new ArrayList<>();
     final List<LinhaRanking> linhasRanking = new ArrayList<>();
+    // Mais antigas primeiro, como o servidor devolve
+    final List<Novidade> novidades = new ArrayList<>();
+    ErroApi erroNasNovidades;
     ErroApi erroNoDiario;
     final List<Frequencia> frequencias = new ArrayList<>();
     final List<Participante> participantes = new ArrayList<>();
@@ -538,8 +541,18 @@ final class RepositoriosFalsos {
     final class Novidades implements NovidadeRepositorio {
 
         @Override
-        public List<Novidade> desde(OffsetDateTime momento) {
-            return new ArrayList<>();
+        public List<Novidade> desde(OffsetDateTime momento) throws ErroApi {
+            chamadas.add("novidades.desde " + momento);
+            if (erroNasNovidades != null) {
+                throw erroNasNovidades;
+            }
+            List<Novidade> lista = new ArrayList<>();
+            for (Novidade n : novidades) {
+                if (n.momento.isAfter(momento)) {
+                    lista.add(n);
+                }
+            }
+            return lista;
         }
     }
 

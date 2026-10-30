@@ -31,6 +31,11 @@ final class AuthFalso implements AuthRepositorio {
         saiu = true;
     }
 
+    @Override
+    public String usuarioAtualId() {
+        return perfil != null ? perfil.usuarioId : null;
+    }
+
     static Perfil perfil(String tipo, boolean admin) {
         return new Perfil("p1", "u1", "teste@escola.test", "Teste", tipo, admin, true,
                 Perfil.ALUNO.equals(tipo) ? "t1" : null, null, null);

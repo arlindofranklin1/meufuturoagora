@@ -205,6 +205,33 @@ Automático (30/10/2026): 8 de JVM (`DesempenhoTest`), 9 de tela (`RankingEDesem
 | 7.9 | Professor | Desempenho | Uma linha por aluno das disciplinas dele, por nome, com pontos e faltas | | pendente |
 | 7.10 | Professor | Conferir um aluno com nota num bimestre e prazo noutro | Os pontos entram no bimestre do prazo da atividade | | pendente |
 
+## Módulo 8: notificações
+
+O `NotificacaoWorker` (a cada 15 minutos e ao abrir a tela inicial) pergunta ao servidor
+`novidades_desde(marco)` e grava a lista do sino. Há um marco só por usuário, com a hora que
+o servidor devolve. Na primeira vez de cada usuário o Worker só marca o ponto de partida,
+sem avisar o passado. O sino, o diálogo e o aviso na barra seguem como eram; a chave da
+lista passou a ser o id do Auth (`AuthRepositorio.usuarioAtualId`).
+
+Mudanças visíveis: a notificação de avaliação não mostra mais a nota (a função do servidor
+não devolve); a de nova entrega abre a avaliação pelo id da entrega.
+
+Automático (30/10/2026): 6 de JVM (textos), 8 instrumentados (o Worker rodando de verdade
+com repositórios falsos: sem sessão, primeira vez, marco que avança, uma lista por usuário,
+erro de rede e sessão expirada, destino da entrega) e 1 de ponta a ponta (o que cada perfil
+enxerga na função `novidades_desde`).
+
+| # | Perfil | Ação | Esperado | Obtido | Resultado |
+|---|---|---|---|---|---|
+| 8.1 | Aluno | Entrar pela primeira vez neste celular | Nenhuma notificação do passado; o sino não tem bolinha | | pendente |
+| 8.2 | Professor | Criar uma trilha na disciplina da turma do aluno; esperar até 15 min ou reabrir o app do aluno | O aluno recebe "Nova atividade em <disciplina>"; tocar abre a trilha | | pendente |
+| 8.3 | Professor | Avaliar a entrega do aluno | O aluno recebe "Atividade avaliada em <disciplina>" (sem a nota) | | pendente |
+| 8.4 | Aluno | Entregar uma trilha | O professor da disciplina recebe "Nova entrega"; tocar abre a tela de avaliação daquele aluno | | pendente |
+| 8.5 | Admin | Criar uma disciplina na turma do aluno | O aluno recebe "Nova disciplina"; tocar abre a disciplina | | pendente |
+| 8.6 | Aluno | Abrir o sino, tocar numa notificação, voltar | A bolinha some depois de lida; a lista guarda as últimas | | pendente |
+| 8.7 | Aluno | Desligar as notificações em Configurações | Nada aparece na barra do celular, mas o sino continua enchendo | | pendente |
+| 8.8 | Aluno | Sair e entrar com outra conta no mesmo celular | Cada conta vê só a própria lista | | pendente |
+
 ## Segurança: login só com Google (decisão D15)
 
 Conferir sempre que mexer em autenticação, na revisão final (Fase 7) e ao criar o

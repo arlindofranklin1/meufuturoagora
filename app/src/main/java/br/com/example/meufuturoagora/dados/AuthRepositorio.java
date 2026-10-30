@@ -10,4 +10,7 @@ public interface AuthRepositorio {
     Perfil restaurarSessao() throws ErroApi;
 
     void sair();
+
+    // Id do usuário (Auth) da sessão que já está aberta, ou null; sem rede. Chave do histórico das notificações.
+    String usuarioAtualId();
 }

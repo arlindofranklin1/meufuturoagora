@@ -35,6 +35,12 @@ public class AuthRepositorioSupabase implements AuthRepositorio {
         sessao.sair();
     }
 
+    @Override
+    public String usuarioAtualId() {
+        Sessao atual = sessao.atual();
+        return atual != null ? atual.usuarioId : null;
+    }
+
     // Recusado (e-mail fora do cadastro, perfil inativo): não deixa sessão
     // aberta, como o acessoNaoAutorizado() da TelaEntrar
     private Perfil vincularOuSair() throws ErroApi {
