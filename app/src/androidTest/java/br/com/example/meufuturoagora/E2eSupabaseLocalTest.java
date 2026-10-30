@@ -417,6 +417,108 @@ public class E2eSupabaseLocalTest {
         }
     }
 
+    private interface Acao {
+        void executar() throws Exception;
+    }
+
+    private static void assertSemAcesso(String o_que, Acao acao) throws Exception {
+
+        try {
+            acao.executar();
+            fail(o_que + ": deveria ser recusado");
+        } catch (ErroApi esperado) {
+            // recusado pelo Storage ou pelo RLS
+        }
+    }
+
+    @Test
+    public void trilhaComArquivosEntregaAvaliacaoEExclusaoLimpamOStorage() throws Exception {
+        local.entrar(MARTA);
+        String lia = idDaLia();
+
+        String atividadeId = java.util.UUID.randomUUID().toString();
+        String anexo = br.com.example.meufuturoagora.dados.Arquivos.caminhoAtividade(LOGICA, atividadeId, "application/pdf");
+        byte[] conteudoAnexo = "anexo da professora".getBytes();
+
+        local.servicos.arquivos.enviar(br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ATIVIDADES, anexo,
+                conteudoAnexo, "application/pdf");
+        local.servicos.atividades.criar(atividadeId, LOGICA, "E2E: trilha com arquivos", "Descrição", 6,
+                java.time.LocalDate.now().plusDays(7), null, anexo, "lista.pdf");
+        boolean excluida = false;
+
+        try {
+
+            // A aluna matriculada baixa o anexo e entrega com arquivo
+            local.entrar(LIA);
+            assertEquals("anexo igual ao enviado", new String(conteudoAnexo), new String(
+                    local.servicos.arquivos.baixar(br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ATIVIDADES, anexo)));
+
+            String caminhoEntrega = br.com.example.meufuturoagora.dados.Arquivos.caminhoEntrega(atividadeId, lia, "application/pdf");
+            byte[] conteudoEntrega = "entrega da aluna".getBytes();
+            local.servicos.arquivos.enviar(br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ENTREGAS, caminhoEntrega,
+                    conteudoEntrega, "application/pdf");
+            br.com.example.meufuturoagora.dados.Entrega entrega = local.servicos.atividades.entregar(
+                    atividadeId, "Segue o arquivo", caminhoEntrega, "entrega.pdf");
+            assertEquals(0, entrega.diasAtraso);
+
+            // Outro tipo de arquivo é recusado pelo bucket (D5)
+            assertSemAcesso("arquivo executável", () -> local.servicos.arquivos.enviar(
+                    br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ENTREGAS,
+                    br.com.example.meufuturoagora.dados.Arquivos.caminhoEntrega(atividadeId, lia, "application/pdf"),
+                    new byte[]{1}, "application/x-msdownload"));
+
+            // O professor de outra disciplina não lê a entrega nem o anexo (o colega: pgTAP 100)
+            local.entrar(JOAO);
+            assertSemAcesso("outro professor lendo a entrega", () -> local.servicos.arquivos.baixar(
+                    br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ENTREGAS, caminhoEntrega));
+            assertSemAcesso("outro professor lendo o anexo", () -> local.servicos.arquivos.baixar(
+                    br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ATIVIDADES, anexo));
+
+            // A professora da disciplina lê a entrega por link assinado e avalia
+            local.entrar(MARTA);
+            assertEquals("entrega igual à enviada", new String(conteudoEntrega), new String(
+                    local.servicos.arquivos.baixar(br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ENTREGAS, caminhoEntrega)));
+            assertNotNull(local.servicos.arquivos.urlAssinada(
+                    br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ENTREGAS, caminhoEntrega, 60));
+
+            try {
+                local.servicos.atividades.avaliar(entrega.id, 7, "Fora da escala");
+                fail("nota maior que os pontos da trilha");
+            } catch (ErroApi esperado) {
+                // o servidor confere a escala
+            }
+
+            local.servicos.atividades.avaliar(entrega.id, 5.5, "Bom trabalho");
+
+            // Exclusão: arquivos primeiro (Storage), depois a linha
+            br.com.example.meufuturoagora.dados.AtividadeRepositorio.ArquivosDaAtividade arquivos =
+                    local.servicos.atividades.arquivosDaAtividade(atividadeId);
+            assertEquals(anexo, arquivos.anexo);
+            assertEquals(java.util.Collections.singletonList(caminhoEntrega), arquivos.entregas);
+
+            local.servicos.arquivos.apagar(br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ATIVIDADES,
+                    java.util.Collections.singletonList(arquivos.anexo));
+            local.servicos.arquivos.apagar(br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ENTREGAS, arquivos.entregas);
+            local.servicos.atividades.excluir(atividadeId);
+            excluida = true;
+
+            assertSemAcesso("anexo depois de apagado", () -> local.servicos.arquivos.baixar(
+                    br.com.example.meufuturoagora.dados.Arquivos.BUCKET_ATIVIDADES, anexo));
+            assertEquals("a trilha some", null, local.servicos.atividades.buscar(atividadeId));
+
+        } finally {
+
+            if (!excluida) {
+                local.entrar(MARTA);
+                try {
+                    local.servicos.atividades.excluir(atividadeId);
+                } catch (ErroApi ignorado) {
+                    // já não existe
+                }
+            }
+        }
+    }
+
     @Test
     public void professorComumNaoTemAreaDoAdministrador() throws Exception {
         local.entrar(JOAO);

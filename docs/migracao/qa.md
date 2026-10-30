@@ -134,6 +134,37 @@ testes novos em `E2eSupabaseLocalTest`. Os de tela ainda **não rodaram**
 | 4.11 | Professor | Sem internet, salvar a frequência | Mensagem de erro e o botão volta a funcionar (antes mostrava "salva" mesmo falhando) | | pendente |
 | 4.12 | Outro professor | Tentar excluir ou registrar frequência numa aula alheia | Recusado (403) | | pendente |
 
+## Módulo 5: trilhas, entregas e arquivos
+
+Telas: lista de trilhas do professor e do aluno, Criar trilha, Entregas da trilha,
+Avaliar entrega e a tela da trilha do aluno. Os arquivos vão para os buckets
+privados `atividades` e `entregas`; para abrir, o app pede um link assinado de 10 minutos.
+O `CloudinaryUtil` saiu do código.
+
+Automático (29–30/10/2026): 15 testes de tela (`AtividadesEEntregasTest`), 1 de ponta a
+ponta no Storage e no RLS locais (anexo, entrega com arquivo, tipo recusado, outro
+professor sem acesso, nota fora da escala recusada, exclusão que limpa o Storage) e 6 de
+JVM do `ArquivoUtil`. Fora do automático: a escolha do arquivo no seletor do Android e o
+calendário do prazo.
+
+| # | Perfil | Ação | Esperado | Obtido | Resultado |
+|---|---|---|---|---|---|
+| 5.1 | Professor | Disciplina → "+" → criar trilha com título, 1 a 10 pontos, prazo e um PDF | "Trilha criada!"; a trilha aparece na lista | | pendente |
+| 5.2 | Professor | Anexar um arquivo que não é PDF nem imagem (ex.: .zip) ou maior que 3 MB | O seletor só oferece PDF e imagens; arquivo grande é recusado com aviso | | pendente |
+| 5.3 | Professor | Editar a trilha e trocar o anexo | "Trilha atualizada!"; o anexo antigo some do Storage; a disciplina fica travada | | pendente |
+| 5.4 | Aluno | Abrir a trilha e tocar no anexo do professor | O arquivo abre (link assinado) | | pendente |
+| 5.5 | Aluno | Entregar só com comentário; depois com arquivo (outra trilha) | Aviso "não poderá ser modificada"; "Entrega enviada!" | | pendente |
+| 5.6 | Aluno | Entregar sem comentário e sem arquivo | Pede comentário ou arquivo; nada é enviado | | pendente |
+| 5.7 | Aluno | Reabrir uma trilha já entregue | Campos travados, sem botão de enviar | | pendente |
+| 5.8 | Aluno | Entregar depois do prazo | Aceita e mostra "(N dias de atraso)" no status | | pendente |
+| 5.9 | Professor | Entregas da trilha → alunos | Só alunos, com foto e "Entregue", "Avaliado" ou "Não entregue" | | pendente |
+| 5.10 | Professor | Abrir a entrega, tocar no anexo do aluno | O arquivo abre | | pendente |
+| 5.11 | Professor | Avaliar com nota 7,5 (vírgula) numa trilha de 10 pontos; depois com nota 11 | A primeira é salva; a segunda é recusada com a mensagem do servidor | | pendente |
+| 5.12 | Aluno | Ver a entrega avaliada | Mostra "Avaliada", a nota e o comentário do professor | | pendente |
+| 5.13 | Professor | Menu da entrega avaliada → Refazer avaliação | Nota antiga some do ranking; abre a tela para dar a nova nota | | pendente |
+| 5.14 | Professor | Excluir uma trilha com entregas | O aviso diz quantas entregas e arquivos serão apagados; depois some tudo | | pendente |
+| 5.15 | Outro professor | Tentar abrir/baixar arquivos de uma trilha alheia | Recusado | | pendente |
+
 ## Segurança: login só com Google (decisão D15)
 
 Conferir sempre que mexer em autenticação, na revisão final (Fase 7) e ao criar o

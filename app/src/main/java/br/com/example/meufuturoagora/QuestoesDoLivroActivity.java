@@ -1,7 +1,6 @@
 package br.com.example.meufuturoagora;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,24 +14,25 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class QuestoesDoLivroActivity extends AppCompatActivity {
+import br.com.example.meufuturoagora.dados.Arquivos;
+import br.com.example.meufuturoagora.dados.Atividade;
+import br.com.example.meufuturoagora.dados.Datas;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Participante;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
-    private FirebaseFirestore db;
+public class QuestoesDoLivroActivity extends AppCompatActivity {
 
     private String atividadeId;
     private String disciplinaId;
 
-    private String arquivoUrl;
+    private String arquivoPath;
 
     private TextView tabDescricao, tabEntregas;
     private View linhaAbaDescricao, linhaAbaEntregas;
@@ -52,8 +52,6 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
 
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
-
-        db = FirebaseFirestore.getInstance();
 
         atividadeId = getIntent().getStringExtra("atividadeId");
         disciplinaId = getIntent().getStringExtra("disciplinaId");
@@ -87,8 +85,7 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
 
         findViewById(R.id.itemAnexo).setOnClickListener(v -> abrirAnexo());
 
-        carregarAtividade();
-        carregarEntregas();
+        carregarTela();
     }
 
     private void mostrarAba(boolean descricao) {
@@ -115,181 +112,133 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
 
     private void abrirAnexo() {
 
-        if (arquivoUrl == null || arquivoUrl.isEmpty()) {
+        if (arquivoPath == null || arquivoPath.isEmpty()) {
 
             Toast.makeText(this, "Nenhum anexo disponível.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(arquivoUrl)));
+        ArquivoUtil.abrir(this, Arquivos.BUCKET_ATIVIDADES, arquivoPath);
     }
 
-    private void carregarAtividade() {
+    private void preencherAtividade(Atividade atividade) {
 
-        if (atividadeId == null) {
-            return;
-        }
-
-        db.collection("atividades")
-                .document(atividadeId)
-                .get()
-                .addOnSuccessListener(this::preencherAtividade)
-                .addOnFailureListener(e -> Toast.makeText(
-                        this, "Erro ao carregar trilha.", Toast.LENGTH_SHORT
-                ).show());
-    }
-
-    private void preencherAtividade(DocumentSnapshot documento) {
-
-        if (!documento.exists()) {
-            return;
-        }
-
-        String nome = documento.getString("nome");
-        String descricao = documento.getString("descricao");
-        Long pontos = documento.getLong("pontos");
-        String prazo = documento.getString("prazo");
-        String arquivoNome = documento.getString("arquivoNome");
-
-        arquivoUrl = documento.getString("arquivoUrl");
+        arquivoPath = atividade.arquivoPath;
 
         TextView tvTituloAtividade = findViewById(R.id.tvTituloAtividade);
-        if (nome != null) {
-            tvTituloAtividade.setText(nome);
+        if (atividade.nome != null) {
+            tvTituloAtividade.setText(atividade.nome);
         }
 
         TextView tvDescricaoAtividade = findViewById(R.id.tvDescricaoAtividade);
         tvDescricaoAtividade.setText(
-                descricao != null && !descricao.isEmpty() ? descricao : "Sem descrição."
+                atividade.descricao != null && !atividade.descricao.isEmpty()
+                        ? atividade.descricao
+                        : "Sem descrição."
         );
 
         TextView tvNomeAnexo = findViewById(R.id.tvNomeAnexo);
         tvNomeAnexo.setText(
-                arquivoNome != null && !arquivoNome.isEmpty() ? arquivoNome : "Nenhum anexo"
+                atividade.arquivoNome != null && !atividade.arquivoNome.isEmpty()
+                        ? atividade.arquivoNome
+                        : "Nenhum anexo"
         );
 
         TextView tvPontuacaoMaxima = findViewById(R.id.tvPontuacaoMaxima);
-        tvPontuacaoMaxima.setText((pontos != null ? pontos : 0) + " pts");
+        tvPontuacaoMaxima.setText(atividade.pontos + " pts");
 
         TextView tvPrazoFinal = findViewById(R.id.tvPrazoFinal);
-        tvPrazoFinal.setText(prazo != null ? prazo : "");
+        tvPrazoFinal.setText(atividade.prazo != null ? Datas.formatar(atividade.prazo) : "");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
+        // Volta da tela de avaliação: o status do aluno mudou
         if (adapter != null) {
-            carregarEntregas();
+            carregarTela();
         }
     }
 
-    private void carregarEntregas() {
+    private static final class Carga {
 
-        if (disciplinaId == null || atividadeId == null) {
+        final Atividade atividade;
+        final List<Entrega> entregas;
+
+        Carga(Atividade atividade, List<Entrega> entregas) {
+            this.atividade = atividade;
+            this.entregas = entregas;
+        }
+    }
+
+    // A trilha, os alunos da disciplina (com foto) e quem já entregou
+    private void carregarTela() {
+
+        if (atividadeId == null) {
             return;
         }
 
-        db.collection("matriculas")
-                .whereEqualTo("disciplinaId", disciplinaId)
-                .get()
-                .addOnSuccessListener(matriculas -> {
+        Servicos servicos = Servicos.get(this);
 
-                    List<String[]> alunos = new ArrayList<>();
+        Tarefas.executar(this, () -> {
 
-                    for (QueryDocumentSnapshot documento : matriculas) {
+            Atividade atividade = servicos.atividades.buscar(atividadeId);
+            Map<String, br.com.example.meufuturoagora.dados.Entrega> porAluno = new HashMap<>();
 
-                        String alunoId = documento.getString("alunoId");
-                        String alunoNome = documento.getString("alunoNome");
+            for (br.com.example.meufuturoagora.dados.Entrega e : servicos.atividades.entregasDaAtividade(atividadeId)) {
+                porAluno.put(e.alunoId, e);
+            }
 
-                        if (alunoId != null && alunoNome != null) {
-                            alunos.add(new String[]{alunoId, alunoNome});
-                        }
+            List<Entrega> lista = new ArrayList<>();
+
+            if (disciplinaId != null) {
+
+                for (Participante p : servicos.disciplinas.participantes(disciplinaId)) {
+
+                    if (!"aluno".equals(p.tipo)) {
+                        continue;
                     }
 
-                    db.collection("entregas")
-                            .whereEqualTo("atividadeId", atividadeId)
-                            .get()
-                            .addOnSuccessListener(entregas -> {
+                    br.com.example.meufuturoagora.dados.Entrega entrega = porAluno.get(p.perfilId);
 
-                                Map<String, Boolean> enviouMapa = new HashMap<>();
-                                Map<String, Boolean> avaliadoMapa = new HashMap<>();
+                    lista.add(new Entrega(p.perfilId, p.nome, p.fotoPath, p.fotoGoogleUrl,
+                            entrega != null, entrega != null && entrega.avaliada()));
+                }
+            }
 
-                                for (QueryDocumentSnapshot documento : entregas) {
+            return new Carga(atividade, lista);
 
-                                    String alunoId = documento.getString("alunoId");
+        }, new Tarefas.Retorno<Carga>() {
+            @Override
+            public void sucesso(Carga carga) {
 
-                                    if (alunoId != null) {
-                                        enviouMapa.put(alunoId, true);
-                                        avaliadoMapa.put(
-                                                alunoId,
-                                                Boolean.TRUE.equals(documento.getBoolean("avaliado"))
-                                        );
-                                    }
-                                }
+                if (carga.atividade != null) {
+                    preencherAtividade(carga.atividade);
+                }
 
-                                listaEntregas.clear();
+                listaEntregas.clear();
+                listaEntregas.addAll(carga.entregas);
+                adapter.notifyDataSetChanged();
 
-                                List<String> idsAlunos = new ArrayList<>();
+                boolean vazio = listaEntregas.isEmpty();
+                boolean abaEntregasAtiva =
+                        recyclerEntregas.getVisibility() == View.VISIBLE
+                                || tvSemEntregas.getVisibility() == View.VISIBLE;
 
-                                for (String[] aluno : alunos) {
+                if (abaEntregasAtiva) {
 
-                                    listaEntregas.add(new Entrega(
-                                            aluno[0],
-                                            aluno[1],
-                                            Boolean.TRUE.equals(enviouMapa.get(aluno[0])),
-                                            Boolean.TRUE.equals(avaliadoMapa.get(aluno[0]))
-                                    ));
+                    recyclerEntregas.setVisibility(vazio ? View.GONE : View.VISIBLE);
+                    tvSemEntregas.setVisibility(vazio ? View.VISIBLE : View.GONE);
+                }
+            }
 
-                                    idsAlunos.add(aluno[0]);
-                                }
-
-                                adapter.notifyDataSetChanged();
-                                carregarFotosAlunos(idsAlunos);
-
-                                boolean vazio = listaEntregas.isEmpty();
-                                boolean abaEntregasAtiva =
-                                        recyclerEntregas.getVisibility() == View.VISIBLE
-                                                || tvSemEntregas.getVisibility() == View.VISIBLE;
-
-                                if (abaEntregasAtiva) {
-
-                                    recyclerEntregas.setVisibility(vazio ? View.GONE : View.VISIBLE);
-                                    tvSemEntregas.setVisibility(vazio ? View.VISIBLE : View.GONE);
-                                }
-                            });
-                });
-    }
-
-    // Busca a foto de cada aluno na coleção "alunos" (em lotes de até 10,
-    // limite do whereIn do Firestore) e preenche na lista já exibida.
-    private void carregarFotosAlunos(List<String> idsAlunos) {
-
-        for (int i = 0; i < idsAlunos.size(); i += 10) {
-
-            List<String> lote = idsAlunos.subList(i, Math.min(i + 10, idsAlunos.size()));
-
-            db.collection("alunos")
-                    .whereIn(com.google.firebase.firestore.FieldPath.documentId(), lote)
-                    .get()
-                    .addOnSuccessListener(alunosSnapshot -> {
-
-                        Map<String, String> fotosPorId = new HashMap<>();
-
-                        for (QueryDocumentSnapshot documento : alunosSnapshot) {
-                            fotosPorId.put(documento.getId(), documento.getString("fotoUrl"));
-                        }
-
-                        for (Entrega entrega : listaEntregas) {
-
-                            if (fotosPorId.containsKey(entrega.alunoId)) {
-                                entrega.fotoUrl = fotosPorId.get(entrega.alunoId);
-                            }
-                        }
-
-                        adapter.notifyDataSetChanged();
-                    });
-        }
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(QuestoesDoLivroActivity.this, "Erro ao carregar trilha: " + erro.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     // =====================================================
@@ -310,44 +259,63 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
 
     private void refazerAvaliacao(Entrega entrega) {
 
-        Map<String, Object> dados = new HashMap<>();
-        dados.put("avaliado", false);
-        dados.put("nota", FieldValue.delete());
-        dados.put("comentarioProfessor", FieldValue.delete());
-        dados.put("avaliadoEm", FieldValue.delete());
+        Servicos servicos = Servicos.get(this);
 
-        db.collection("entregas")
-                .document(atividadeId + "_" + entrega.alunoId)
-                .update(dados)
-                .addOnSuccessListener(unused -> {
+        Tarefas.executar(this, () -> {
 
-                    // A nota antiga sai da pontuação do aluno
-                    PontuacaoUtil.recalcular(db, entrega.alunoId);
+            // A RPC pede o id da entrega, que o app acha pela trilha e pelo aluno
+            for (br.com.example.meufuturoagora.dados.Entrega e : servicos.atividades.entregasDaAtividade(atividadeId)) {
 
-                    // Abre direto a tela de avaliação para dar a nova nota
-                    startActivity(new Intent(this, AvaliarEntregaActivity.class)
-                            .putExtra("atividadeId", atividadeId)
-                            .putExtra("alunoId", entrega.alunoId)
-                            .putExtra("alunoNome", entrega.alunoNome));
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao refazer avaliação: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+                if (entrega.alunoId.equals(e.alunoId)) {
+
+                    // A nota antiga sai da pontuação do aluno no próprio servidor
+                    servicos.atividades.refazerAvaliacao(e.id);
+                    return true;
+                }
+            }
+
+            return false;
+
+        }, new Tarefas.Retorno<Boolean>() {
+            @Override
+            public void sucesso(Boolean refeita) {
+
+                if (!refeita) {
+
+                    Toast.makeText(QuestoesDoLivroActivity.this, "Entrega não encontrada.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Abre direto a tela de avaliação para dar a nova nota
+                startActivity(new Intent(QuestoesDoLivroActivity.this, AvaliarEntregaActivity.class)
+                        .putExtra("atividadeId", atividadeId)
+                        .putExtra("alunoId", entrega.alunoId)
+                        .putExtra("alunoNome", entrega.alunoNome));
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(QuestoesDoLivroActivity.this,
+                        "Erro ao refazer avaliação: " + erro.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     public static class Entrega {
 
         String alunoId;
         String alunoNome;
-        String fotoUrl;
+        String fotoPath;
+        String fotoGoogleUrl;
         boolean entregue;
         boolean avaliado;
 
-        public Entrega(String alunoId, String alunoNome, boolean entregue, boolean avaliado) {
+        public Entrega(String alunoId, String alunoNome, String fotoPath, String fotoGoogleUrl,
+                       boolean entregue, boolean avaliado) {
             this.alunoId = alunoId;
             this.alunoNome = alunoNome;
+            this.fotoPath = fotoPath;
+            this.fotoGoogleUrl = fotoGoogleUrl;
             this.entregue = entregue;
             this.avaliado = avaliado;
         }
@@ -375,7 +343,8 @@ public class QuestoesDoLivroActivity extends AppCompatActivity {
 
             holder.tvNomeAlunoEntrega.setText(entrega.alunoNome);
             holder.imgAlunoEntrega.setImageResource(R.drawable.ic_perfil);
-            FotoUtil.carregar(QuestoesDoLivroActivity.this, entrega.fotoUrl, holder.imgAlunoEntrega);
+            PerfilFotoUtil.mostrar(QuestoesDoLivroActivity.this, entrega.fotoPath, entrega.fotoGoogleUrl,
+                    holder.imgAlunoEntrega);
 
             if (entrega.entregue) {
 

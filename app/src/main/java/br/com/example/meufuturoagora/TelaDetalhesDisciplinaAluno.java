@@ -6,28 +6,31 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import br.com.example.meufuturoagora.dados.Atividade;
+import br.com.example.meufuturoagora.dados.Datas;
+import br.com.example.meufuturoagora.dados.Entrega;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
 
     private enum Aba { TODOS, ENTREGUES, AVALIADAS }
 
-    private FirebaseFirestore db;
 
     private String disciplinaId;
-    private String alunoId;
 
     private TextView tabTodos, tabEntregues, tabAvaliadas;
     private View linhaAbaTodos, linhaAbaEntregues, linhaAbaAvaliadas;
@@ -50,7 +53,6 @@ public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
 
-        db = FirebaseFirestore.getInstance();
 
         disciplinaId = getIntent().getStringExtra("disciplinaId");
         String disciplinaNome = getIntent().getStringExtra("disciplinaNome");
@@ -148,74 +150,51 @@ public class TelaDetalhesDisciplinaAluno extends AppCompatActivity {
             return;
         }
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+        Servicos servicos = Servicos.get(this);
 
-        if (usuario == null) {
-            return;
-        }
+        Tarefas.executar(this, () -> {
 
-        alunoId = usuario.getUid();
+            Map<String, Entrega> entregas = new HashMap<>();
 
-        db.collection("atividades")
-                .whereEqualTo("disciplinaId", disciplinaId)
-                .whereEqualTo("ativo", true)
-                .get()
-                .addOnSuccessListener(this::processarAtividades);
-    }
+            for (Entrega e : servicos.atividades.minhasEntregas()) {
+                entregas.put(e.atividadeId, e);
+            }
 
-    private void processarAtividades(com.google.firebase.firestore.QuerySnapshot atividadesSnapshot) {
+            List<AtividadeAluno> lista = new ArrayList<>();
 
-        listaCompleta.clear();
+            for (Atividade a : servicos.atividades.daDisciplina(disciplinaId)) {
 
-        List<QueryDocumentSnapshot> documentos = new ArrayList<>();
+                Entrega entrega = entregas.get(a.id);
+                Status status = entrega == null
+                        ? Status.PENDENTE
+                        : (entrega.avaliada() ? Status.AVALIADA : Status.ENTREGUE);
 
-        for (QueryDocumentSnapshot documento : atividadesSnapshot) {
-            documentos.add(documento);
-        }
+                lista.add(new AtividadeAluno(
+                        a.id,
+                        a.nome != null ? a.nome : "Trilha",
+                        a.prazo != null ? Datas.formatar(a.prazo) : "",
+                        status,
+                        entrega != null ? entrega.nota : null
+                ));
+            }
 
-        if (documentos.isEmpty()) {
-            aplicarFiltro();
-            return;
-        }
+            return lista;
 
-        int[] restantes = {documentos.size()};
+        }, new Tarefas.Retorno<List<AtividadeAluno>>() {
+            @Override
+            public void sucesso(List<AtividadeAluno> atividades) {
 
-        for (QueryDocumentSnapshot documento : documentos) {
+                listaCompleta.clear();
+                listaCompleta.addAll(atividades);
+                aplicarFiltro();
+            }
 
-            String atividadeId = documento.getId();
-            String nome = documento.getString("nome");
-            String prazo = documento.getString("prazo");
-
-            db.collection("entregas")
-                    .document(atividadeId + "_" + alunoId)
-                    .get()
-                    .addOnSuccessListener(entregaDoc -> {
-
-                        Status status = Status.PENDENTE;
-                        Double nota = null;
-
-                        if (entregaDoc.exists()) {
-
-                            Boolean avaliado = entregaDoc.getBoolean("avaliado");
-                            status = Boolean.TRUE.equals(avaliado) ? Status.AVALIADA : Status.ENTREGUE;
-                            nota = entregaDoc.getDouble("nota");
-                        }
-
-                        listaCompleta.add(new AtividadeAluno(
-                                atividadeId,
-                                nome != null ? nome : "Trilha",
-                                prazo != null ? prazo : "",
-                                status,
-                                nota
-                        ));
-
-                        restantes[0]--;
-
-                        if (restantes[0] == 0) {
-                            aplicarFiltro();
-                        }
-                    });
-        }
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(TelaDetalhesDisciplinaAluno.this,
+                        "Erro ao carregar trilhas: " + erro.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private enum Status { PENDENTE, ENTREGUE, AVALIADA }

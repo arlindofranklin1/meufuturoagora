@@ -24,23 +24,21 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.firestore.FieldPath;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+
+import br.com.example.meufuturoagora.dados.Arquivos;
+import br.com.example.meufuturoagora.dados.AtividadeRepositorio;
+import br.com.example.meufuturoagora.dados.Datas;
+import br.com.example.meufuturoagora.dados.Disciplina;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Participante;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 public class TelaDetalhesDisciplinaProfessor
         extends AppCompatActivity {
-
-    // =====================================================
-    // FIRESTORE
-    // =====================================================
-
-    private FirebaseFirestore db;
 
     // =====================================================
     // DISCIPLINA
@@ -125,12 +123,6 @@ public class TelaDetalhesDisciplinaProfessor
                     return insets;
                 }
         );
-
-        // =================================================
-        // FIRESTORE
-        // =================================================
-
-        db = FirebaseFirestore.getInstance();
 
         // =================================================
         // RECEBER DADOS DA DISCIPLINA
@@ -353,33 +345,34 @@ public class TelaDetalhesDisciplinaProfessor
             return;
         }
 
-        db.collection("matriculas")
-                .whereEqualTo("disciplinaId", disciplinaId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
+        Tarefas.executar(this, () -> {
 
-                    listaNomesAlunos.clear();
+            List<AlunoItem> alunos = new ArrayList<>();
 
-                    List<String> idsAlunos = new ArrayList<>();
+            for (Participante p : Servicos.get(this).disciplinas.participantes(disciplinaId)) {
 
-                    for (QueryDocumentSnapshot documento : querySnapshot) {
+                if ("aluno".equals(p.tipo)) {
+                    alunos.add(new AlunoItem(p.perfilId, p.nome, p.fotoPath, p.fotoGoogleUrl));
+                }
+            }
 
-                        String alunoNome = documento.getString("alunoNome");
-                        String alunoId = documento.getString("alunoId");
+            return alunos;
 
-                        if (alunoNome != null) {
+        }, new Tarefas.Retorno<List<AlunoItem>>() {
+            @Override
+            public void sucesso(List<AlunoItem> alunos) {
 
-                            listaNomesAlunos.add(new AlunoItem(alunoId, alunoNome, null));
+                listaNomesAlunos.clear();
+                listaNomesAlunos.addAll(alunos);
+                mostrarAlunos();
+            }
 
-                            if (alunoId != null) {
-                                idsAlunos.add(alunoId);
-                            }
-                        }
-                    }
-
-                    mostrarAlunos();
-                    carregarFotosAlunos(idsAlunos);
-                });
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(TelaDetalhesDisciplinaProfessor.this,
+                        "Erro ao carregar alunos: " + erro.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void mostrarAlunos() {
@@ -398,41 +391,6 @@ public class TelaDetalhesDisciplinaProfessor
         }
     }
 
-    // Busca a foto de cada aluno na coleção "alunos" (em lotes de até 10,
-    // limite do whereIn do Firestore) e preenche na lista já exibida.
-    private void carregarFotosAlunos(List<String> idsAlunos) {
-
-        for (int i = 0; i < idsAlunos.size(); i += 10) {
-
-            List<String> lote = idsAlunos.subList(i, Math.min(i + 10, idsAlunos.size()));
-
-            db.collection("alunos")
-                    .whereIn(FieldPath.documentId(), lote)
-                    .get()
-                    .addOnSuccessListener(alunosSnapshot -> {
-
-                        Map<String, String> fotosPorId = new HashMap<>();
-
-                        for (QueryDocumentSnapshot documento : alunosSnapshot) {
-                            fotosPorId.put(documento.getId(), documento.getString("fotoUrl"));
-                        }
-
-                        // Aluno deste lote que não existe mais (foi excluído) sai da lista
-                        listaNomesAlunos.removeIf(item -> item.id != null
-                                && lote.contains(item.id) && !fotosPorId.containsKey(item.id));
-
-                        for (AlunoItem item : listaNomesAlunos) {
-
-                            if (item.id != null && fotosPorId.containsKey(item.id)) {
-                                item.fotoUrl = fotosPorId.get(item.id);
-                            }
-                        }
-
-                        mostrarAlunos();
-                    });
-        }
-    }
-
     // =====================================================
     // CARREGAR DISCIPLINA
     // =====================================================
@@ -443,28 +401,26 @@ public class TelaDetalhesDisciplinaProfessor
             return;
         }
 
-        db.collection("disciplinas")
-                .document(disciplinaId)
-                .get()
-                .addOnSuccessListener(documento -> {
+        Tarefas.executar(this, () -> Servicos.get(this).disciplinas.buscar(disciplinaId),
+                new Tarefas.Retorno<Disciplina>() {
+                    @Override
+                    public void sucesso(Disciplina disciplina) {
 
-                    if (documento.exists()) {
-
-                        String nome =
-                                documento.getString("nome");
-
-                        String turmaNome =
-                                documento.getString("turmaNome");
-
-                        if (nome != null) {
-
-                            // Nome da disciplina com a turma entre parênteses
-                            tvNomeDisciplina.setText(
-                                    turmaNome != null && !turmaNome.isEmpty()
-                                            ? nome + " (" + turmaNome + ")"
-                                            : nome
-                            );
+                        if (disciplina == null || disciplina.nome == null) {
+                            return;
                         }
+
+                        // Nome da disciplina com a turma entre parênteses
+                        tvNomeDisciplina.setText(
+                                disciplina.turmaNome != null && !disciplina.turmaNome.isEmpty()
+                                        ? disciplina.nome + " (" + disciplina.turmaNome + ")"
+                                        : disciplina.nome
+                        );
+                    }
+
+                    @Override
+                    public void erro(ErroApi erro) {
+                        // O nome fica como está no layout
                     }
                 });
     }
@@ -479,69 +435,31 @@ public class TelaDetalhesDisciplinaProfessor
             return;
         }
 
-        db.collection("atividades")
-                .whereEqualTo(
-                        "disciplinaId",
-                        disciplinaId
-                )
-                .whereEqualTo(
-                        "ativo",
-                        true
-                )
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
+        Tarefas.executar(this, () -> Servicos.get(this).atividades.daDisciplina(disciplinaId),
+                new Tarefas.Retorno<List<br.com.example.meufuturoagora.dados.Atividade>>() {
+                    @Override
+                    public void sucesso(List<br.com.example.meufuturoagora.dados.Atividade> atividades) {
 
-                    listaAtividades.clear();
+                        listaAtividades.clear();
 
-                    for (
-                            QueryDocumentSnapshot documento :
-                            querySnapshot
-                    ) {
+                        for (br.com.example.meufuturoagora.dados.Atividade a : atividades) {
 
-                        String id =
-                                documento.getId();
-
-                        String nome =
-                                documento.getString(
-                                        "nome"
-                                );
-
-                        Long pontos =
-                                documento.getLong(
-                                        "pontos"
-                                );
-
-                        String prazo =
-                                documento.getString(
-                                        "prazo"
-                                );
-
-                        if (nome != null) {
-
-                            listaAtividades.add(
-                                    new Atividade(
-                                            id,
-                                            nome,
-                                            pontos != null
-                                                    ? pontos
-                                                    : 0,
-                                            prazo != null
-                                                    ? prazo
-                                                    : ""
-                                    )
-                            );
+                            listaAtividades.add(new Atividade(
+                                    a.id,
+                                    a.nome,
+                                    a.pontos,
+                                    a.prazo != null ? Datas.formatar(a.prazo) : ""
+                            ));
                         }
+
+                        adapter.notifyDataSetChanged();
                     }
 
-                    adapter.notifyDataSetChanged();
-                })
-                .addOnFailureListener(e -> {
-
-                    Toast.makeText(
-                            this,
-                            "Erro ao carregar trilhas.",
-                            Toast.LENGTH_SHORT
-                    ).show();
+                    @Override
+                    public void erro(ErroApi erro) {
+                        Toast.makeText(TelaDetalhesDisciplinaProfessor.this,
+                                "Erro ao carregar trilhas.", Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 
@@ -549,48 +467,71 @@ public class TelaDetalhesDisciplinaProfessor
     // EXCLUIR ATIVIDADE
     // =====================================================
 
+    // Decisão D6: o aviso diz quantas entregas serão apagadas junto
     private void confirmarExclusao(String atividadeId) {
 
-        new AlertDialog.Builder(this)
-                .setTitle("Excluir trilha")
-                .setMessage(
-                        "Tem certeza que deseja excluir esta trilha?"
-                )
-                .setNegativeButton(
-                        "Cancelar",
-                        null
-                )
-                .setPositiveButton(
-                        "Excluir",
-                        (dialog, which) ->
-                                excluirAtividade(atividadeId)
-                )
-                .show();
+        Tarefas.executar(this, () -> Servicos.get(this).atividades.entregasDaAtividade(atividadeId).size(),
+                new Tarefas.Retorno<Integer>() {
+                    @Override
+                    public void sucesso(Integer entregas) {
+
+                        String aviso = entregas == 0
+                                ? "Nenhum aluno entregou esta trilha."
+                                : (entregas == 1
+                                ? "A entrega de 1 aluno e o arquivo dela serão apagados junto."
+                                : "As entregas de " + entregas + " alunos e os arquivos delas serão apagados junto.");
+
+                        new AlertDialog.Builder(TelaDetalhesDisciplinaProfessor.this)
+                                .setTitle("Excluir trilha")
+                                .setMessage("Tem certeza que deseja excluir esta trilha?\n\n" + aviso
+                                        + "\n\nEsta ação não pode ser desfeita.")
+                                .setNegativeButton("Cancelar", null)
+                                .setPositiveButton("Excluir", (dialog, which) -> excluirAtividade(atividadeId))
+                                .show();
+                    }
+
+                    @Override
+                    public void erro(ErroApi erro) {
+                        Toast.makeText(TelaDetalhesDisciplinaProfessor.this,
+                                "Erro ao excluir trilha: " + erro.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
+    // O Storage não apaga por SQL: o app tira os arquivos de lá e depois apaga a linha
     private void excluirAtividade(String atividadeId) {
 
-        db.collection("atividades")
-                .document(atividadeId)
-                .delete()
-                .addOnSuccessListener(unused -> {
+        Servicos servicos = Servicos.get(this);
 
-                    Toast.makeText(
-                            this,
-                            "Trilha excluída!",
-                            Toast.LENGTH_SHORT
-                    ).show();
+        Tarefas.executar(this, () -> {
 
-                    carregarAtividades();
-                })
-                .addOnFailureListener(e -> {
+            AtividadeRepositorio.ArquivosDaAtividade arquivos = servicos.atividades.arquivosDaAtividade(atividadeId);
 
-                    Toast.makeText(
-                            this,
-                            "Erro ao excluir trilha.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
+            if (arquivos.anexo != null) {
+                servicos.arquivos.apagar(Arquivos.BUCKET_ATIVIDADES, Collections.singletonList(arquivos.anexo));
+            }
+
+            if (!arquivos.entregas.isEmpty()) {
+                servicos.arquivos.apagar(Arquivos.BUCKET_ENTREGAS, arquivos.entregas);
+            }
+
+            servicos.atividades.excluir(atividadeId);
+            return null;
+
+        }, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object resultado) {
+
+                Toast.makeText(TelaDetalhesDisciplinaProfessor.this, "Trilha excluída!", Toast.LENGTH_SHORT).show();
+                carregarAtividades();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(TelaDetalhesDisciplinaProfessor.this,
+                        "Erro ao excluir trilha: " + erro.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     // =====================================================
@@ -908,12 +849,14 @@ public class TelaDetalhesDisciplinaProfessor
 
         String id;
         String nome;
-        String fotoUrl;
+        String fotoPath;
+        String fotoGoogleUrl;
 
-        AlunoItem(String id, String nome, String fotoUrl) {
+        AlunoItem(String id, String nome, String fotoPath, String fotoGoogleUrl) {
             this.id = id;
             this.nome = nome;
-            this.fotoUrl = fotoUrl;
+            this.fotoPath = fotoPath;
+            this.fotoGoogleUrl = fotoGoogleUrl;
         }
     }
 
@@ -943,9 +886,10 @@ public class TelaDetalhesDisciplinaProfessor
 
             holder.tvNomeAlunoDisciplina.setText(item.nome);
             holder.imgAlunoDisciplina.setImageResource(R.drawable.ic_perfil);
-            FotoUtil.carregar(
+            PerfilFotoUtil.mostrar(
                     TelaDetalhesDisciplinaProfessor.this,
-                    item.fotoUrl,
+                    item.fotoPath,
+                    item.fotoGoogleUrl,
                     holder.imgAlunoDisciplina
             );
         }

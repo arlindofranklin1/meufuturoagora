@@ -1,6 +1,9 @@
 package br.com.example.meufuturoagora;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -75,5 +78,58 @@ public class ArquivoUtilTest {
 
         assertEquals(-1L, ArquivoUtil.obterTamanho(resolver, uri));
         verify(cursor).close();
+    }
+
+    private void tipoETamanho(String tipo, long tamanho) {
+        when(resolver.getType(uri)).thenReturn(tipo);
+        when(cursor.moveToFirst()).thenReturn(true);
+        when(cursor.getColumnIndex(OpenableColumns.SIZE)).thenReturn(1);
+        when(cursor.isNull(1)).thenReturn(false);
+        when(cursor.getLong(1)).thenReturn(tamanho);
+    }
+
+    @Test
+    public void validarAceitaPdfEImagensAteOLimite() {
+        for (String tipo : new String[]{"application/pdf", "image/jpeg", "image/png", "image/webp"}) {
+            tipoETamanho(tipo, ArquivoUtil.LIMITE_TAMANHO_BYTES);
+            assertNull(tipo, ArquivoUtil.validar(resolver, uri));
+        }
+    }
+
+    @Test
+    public void validarRecusaOutrosTiposESemTipo() {
+        for (String tipo : new String[]{"application/zip", "text/html", "video/mp4", null}) {
+            tipoETamanho(tipo, 10);
+            assertNotNull(String.valueOf(tipo), ArquivoUtil.validar(resolver, uri));
+        }
+    }
+
+    @Test
+    public void validarRecusaArquivoMaiorQueOLimite() {
+        tipoETamanho("application/pdf", ArquivoUtil.LIMITE_TAMANHO_BYTES + 1);
+
+        assertEquals("O arquivo deve ter até 3 MB.", ArquivoUtil.validar(resolver, uri));
+    }
+
+    @Test
+    public void lerDevolveOConteudo() throws Exception {
+        when(resolver.openInputStream(uri)).thenReturn(new java.io.ByteArrayInputStream(new byte[]{1, 2, 3}));
+
+        assertArrayEquals(new byte[]{1, 2, 3}, ArquivoUtil.ler(resolver, uri));
+    }
+
+    @Test(expected = java.io.IOException.class)
+    public void lerRecusaArquivoMaiorQueOLimiteMesmoSemTamanhoInformado() throws Exception {
+        byte[] grande = new byte[(int) ArquivoUtil.LIMITE_TAMANHO_BYTES + 1];
+        when(resolver.openInputStream(uri)).thenReturn(new java.io.ByteArrayInputStream(grande));
+
+        ArquivoUtil.ler(resolver, uri);
+    }
+
+    @Test(expected = java.io.IOException.class)
+    public void lerSemFluxoFalha() throws Exception {
+        when(resolver.openInputStream(uri)).thenReturn(null);
+
+        ArquivoUtil.ler(resolver, uri);
     }
 }

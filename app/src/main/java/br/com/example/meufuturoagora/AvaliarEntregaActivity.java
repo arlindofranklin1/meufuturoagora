@@ -1,7 +1,5 @@
 package br.com.example.meufuturoagora;
 
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -11,24 +9,26 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.util.HashMap;
-import java.util.Map;
+import br.com.example.meufuturoagora.dados.Arquivos;
+import br.com.example.meufuturoagora.dados.Entrega;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 public class AvaliarEntregaActivity extends AppCompatActivity {
 
-    private FirebaseFirestore db;
+    private String atividadeId;
+    private String alunoId;
 
-    private String documentoId;
-    private String arquivoUrl;
+    // A entrega do aluno nesta trilha; null enquanto carrega
+    private Entrega entrega;
 
     private TextView tvNomeAnexoAluno;
     private TextView tvComentarioAluno;
     private EditText edtNota;
     private EditText edtComentarioProfessor;
-
-    private String alunoId;
+    private MaterialButton btnAvaliar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,13 +39,9 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
 
-        db = FirebaseFirestore.getInstance();
-
-        String atividadeId = getIntent().getStringExtra("atividadeId");
+        atividadeId = getIntent().getStringExtra("atividadeId");
         alunoId = getIntent().getStringExtra("alunoId");
         String alunoNome = getIntent().getStringExtra("alunoNome");
-
-        documentoId = atividadeId + "_" + alunoId;
 
         ImageView btnVoltar = findViewById(R.id.btnVoltar);
         btnVoltar.setOnClickListener(v -> finish());
@@ -60,7 +56,7 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
 
         findViewById(R.id.itemAnexoAluno).setOnClickListener(v -> abrirAnexo());
 
-        MaterialButton btnAvaliar = findViewById(R.id.btnAvaliar);
+        btnAvaliar = findViewById(R.id.btnAvaliar);
         btnAvaliar.setOnClickListener(v -> salvarAvaliacao());
 
         carregarEntrega();
@@ -68,60 +64,77 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
 
     private void carregarEntrega() {
 
-        db.collection("entregas")
-                .document(documentoId)
-                .get()
-                .addOnSuccessListener(documento -> {
+        if (atividadeId == null || alunoId == null) {
+            return;
+        }
 
-                    if (!documento.exists()) {
-                        return;
-                    }
+        Tarefas.executar(this, () -> {
 
-                    String arquivoNome = documento.getString("arquivoNome");
-                    arquivoUrl = documento.getString("arquivoUrl");
+            for (Entrega e : Servicos.get(this).atividades.entregasDaAtividade(atividadeId)) {
 
-                    tvNomeAnexoAluno.setText(
-                            arquivoNome != null && !arquivoNome.isEmpty()
-                                    ? arquivoNome
-                                    : "Nenhum anexo"
-                    );
+                if (alunoId.equals(e.alunoId)) {
+                    return e;
+                }
+            }
 
-                    String comentarioAluno = documento.getString("comentarioAluno");
-                    tvComentarioAluno.setText(
-                            comentarioAluno != null && !comentarioAluno.isEmpty()
-                                    ? comentarioAluno
-                                    : "—"
-                    );
+            return null;
 
-                    Double nota = documento.getDouble("nota");
-                    if (nota != null) {
-                        edtNota.setText(String.valueOf(nota));
-                    }
+        }, new Tarefas.Retorno<Entrega>() {
+            @Override
+            public void sucesso(Entrega encontrada) {
 
-                    String comentarioProfessor = documento.getString("comentarioProfessor");
-                    if (comentarioProfessor != null) {
-                        edtComentarioProfessor.setText(comentarioProfessor);
-                    }
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this, "Erro ao carregar entrega.", Toast.LENGTH_SHORT
-                ).show());
+                if (encontrada == null) {
+                    return;
+                }
+
+                entrega = encontrada;
+
+                tvNomeAnexoAluno.setText(
+                        entrega.arquivoNome != null && !entrega.arquivoNome.isEmpty()
+                                ? entrega.arquivoNome
+                                : "Nenhum anexo"
+                );
+
+                tvComentarioAluno.setText(
+                        entrega.comentarioAluno != null && !entrega.comentarioAluno.isEmpty()
+                                ? entrega.comentarioAluno
+                                : "—"
+                );
+
+                if (entrega.nota != null) {
+                    edtNota.setText(String.valueOf(entrega.nota));
+                }
+
+                if (entrega.comentarioProfessor != null) {
+                    edtComentarioProfessor.setText(entrega.comentarioProfessor);
+                }
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(AvaliarEntregaActivity.this, "Erro ao carregar entrega.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void abrirAnexo() {
 
-        if (arquivoUrl == null || arquivoUrl.isEmpty()) {
+        if (entrega == null || entrega.arquivoPath == null || entrega.arquivoPath.isEmpty()) {
 
             Toast.makeText(this, "Nenhum anexo disponível.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(arquivoUrl)));
+        ArquivoUtil.abrir(this, Arquivos.BUCKET_ENTREGAS, entrega.arquivoPath);
     }
 
     private void salvarAvaliacao() {
 
-        String notaTexto = edtNota.getText().toString().trim();
+        if (entrega == null) {
+            return;
+        }
+
+        String notaTexto = edtNota.getText().toString().trim().replace(',', '.');
 
         if (notaTexto.isEmpty()) {
 
@@ -141,32 +154,31 @@ public class AvaliarEntregaActivity extends AppCompatActivity {
             return;
         }
 
-        Map<String, Object> avaliacao = new HashMap<>();
+        String comentario = edtComentarioProfessor.getText().toString().trim();
+        String entregaId = entrega.id;
 
-        avaliacao.put("nota", nota);
-        avaliacao.put(
-                "comentarioProfessor",
-                edtComentarioProfessor.getText().toString().trim()
-        );
-        avaliacao.put("avaliado", true);
-        // Usado para notificar o aluno sobre a avaliação
-        avaliacao.put("avaliadoEm", com.google.firebase.firestore.FieldValue.serverTimestamp());
+        btnAvaliar.setEnabled(false);
 
-        db.collection("entregas")
-                .document(documentoId)
-                .set(avaliacao, com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener(unused -> {
+        // O servidor confere se a nota cabe na trilha e atualiza o ranking sozinho
+        Tarefas.executar(this, () -> {
+            Servicos.get(this).atividades.avaliar(entregaId, nota, comentario);
+            return null;
+        }, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object resultado) {
 
-                    // Atualiza a pontuação do aluno no ranking com a nova nota
-                    PontuacaoUtil.recalcular(db, alunoId);
+                Toast.makeText(AvaliarEntregaActivity.this, "Avaliação salva!", Toast.LENGTH_SHORT).show();
+                finish();
+            }
 
-                    Toast.makeText(this, "Avaliação salva!", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> Toast.makeText(
-                        this,
-                        "Erro ao salvar avaliação: " + e.getMessage(),
-                        Toast.LENGTH_LONG
-                ).show());
+            @Override
+            public void erro(ErroApi erro) {
+
+                btnAvaliar.setEnabled(true);
+
+                Toast.makeText(AvaliarEntregaActivity.this,
+                        "Erro ao salvar avaliação: " + erro.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }

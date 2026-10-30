@@ -1,10 +1,8 @@
 package br.com.example.meufuturoagora;
 
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.OpenableColumns;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -18,28 +16,30 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+
+import br.com.example.meufuturoagora.dados.Arquivos;
+import br.com.example.meufuturoagora.dados.Atividade;
+import br.com.example.meufuturoagora.dados.Datas;
+import br.com.example.meufuturoagora.dados.Entrega;
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Perfil;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 public class TelaAtividadeAluno extends AppCompatActivity {
 
-    private FirebaseFirestore db;
-
     private String atividadeId;
-    private String alunoId;
-    private String documentoEntregaId;
+    private Perfil aluno;
 
-    private String arquivoProfessorUrl;
+    private String arquivoProfessorPath;
     private Uri arquivoAlunoUri;
     private String nomeArquivoAluno;
+    private String tipoArquivoAluno;
     private String linkProfessor;
 
-    private ActivityResultLauncher<String> selecionarArquivoLauncher;
+    private ActivityResultLauncher<String[]> selecionarArquivoLauncher;
 
     private TextView tvStatusEntregaAluno;
     private TextView tvNomeAnexoProfessor;
@@ -61,8 +61,6 @@ public class TelaAtividadeAluno extends AppCompatActivity {
         // Título sempre na mesma altura: margem do topo conta abaixo da barra de status
         InsetsUtil.aplicarInsetsSistema(this);
 
-        db = FirebaseFirestore.getInstance();
-
         atividadeId = getIntent().getStringExtra("atividadeId");
         String atividadeNome = getIntent().getStringExtra("atividadeNome");
 
@@ -82,12 +80,8 @@ public class TelaAtividadeAluno extends AppCompatActivity {
         btnSelecionarArquivoAluno = findViewById(R.id.btnSelecionarArquivoAluno);
         edtComentarioAluno = findViewById(R.id.edtComentarioAluno);
 
-        findViewById(R.id.itemAnexoProfessor).setOnClickListener(v -> {
-
-            if (arquivoProfessorUrl != null && !arquivoProfessorUrl.isEmpty()) {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(arquivoProfessorUrl)));
-            }
-        });
+        findViewById(R.id.itemAnexoProfessor).setOnClickListener(v ->
+                ArquivoUtil.abrir(this, Arquivos.BUCKET_ATIVIDADES, arquivoProfessorPath));
 
         findViewById(R.id.itemLinkProfessor).setOnClickListener(v -> {
 
@@ -97,88 +91,101 @@ public class TelaAtividadeAluno extends AppCompatActivity {
         });
 
         selecionarArquivoLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
+                new ActivityResultContracts.OpenDocument(),
                 uri -> {
 
-                    if (uri != null) {
-
-                        long tamanho = ArquivoUtil.obterTamanho(
-                                getContentResolver(), uri
-                        );
-
-                        if (tamanho > ArquivoUtil.LIMITE_TAMANHO_BYTES) {
-
-                            Toast.makeText(
-                                    this,
-                                    "O arquivo deve ter até 3 MB.",
-                                    Toast.LENGTH_LONG
-                            ).show();
-
-                            return;
-                        }
-
-                        arquivoAlunoUri = uri;
-                        nomeArquivoAluno = obterNomeArquivo(uri);
-                        btnSelecionarArquivoAluno.setText(nomeArquivoAluno);
+                    if (uri == null) {
+                        return;
                     }
+
+                    String problema = ArquivoUtil.validar(getContentResolver(), uri);
+
+                    if (problema != null) {
+
+                        Toast.makeText(this, problema, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    arquivoAlunoUri = uri;
+                    tipoArquivoAluno = getContentResolver().getType(uri);
+                    nomeArquivoAluno = ArquivoUtil.obterNome(getContentResolver(), uri);
+                    btnSelecionarArquivoAluno.setText(nomeArquivoAluno);
                 }
         );
 
-        btnSelecionarArquivoAluno.setOnClickListener(v -> selecionarArquivoLauncher.launch("*/*"));
+        btnSelecionarArquivoAluno.setOnClickListener(v ->
+                selecionarArquivoLauncher.launch(ArquivoUtil.TIPOS_DO_SELETOR));
 
         btnFazerEntrega = findViewById(R.id.btnFazerEntrega);
         btnFazerEntrega.setOnClickListener(v -> enviarEntrega());
 
-        carregarAtividadeEEntrega(atividadeNome);
+        carregarAtividadeEEntrega();
     }
 
-    private void carregarAtividadeEEntrega(String atividadeNomeInicial) {
+    private static final class Carga {
 
-        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+        final Perfil aluno;
+        final Atividade atividade;
+        final Entrega entrega;
 
-        if (usuario == null || atividadeId == null) {
+        Carga(Perfil aluno, Atividade atividade, Entrega entrega) {
+            this.aluno = aluno;
+            this.atividade = atividade;
+            this.entrega = entrega;
+        }
+    }
+
+    private void carregarAtividadeEEntrega() {
+
+        if (atividadeId == null) {
             return;
         }
 
-        db.collection("atividades")
-                .document(atividadeId)
-                .get()
-                .addOnSuccessListener(this::preencherAtividade);
+        Servicos servicos = Servicos.get(this);
 
-        alunoId = usuario.getUid();
-        documentoEntregaId = atividadeId + "_" + alunoId;
+        Tarefas.executar(this,
+                () -> new Carga(servicos.perfis.meu(), servicos.atividades.buscar(atividadeId),
+                        servicos.atividades.minhaEntrega(atividadeId)),
+                new Tarefas.Retorno<Carga>() {
+                    @Override
+                    public void sucesso(Carga carga) {
 
-        db.collection("entregas")
-                .document(documentoEntregaId)
-                .get()
-                .addOnSuccessListener(this::preencherEntrega);
+                        aluno = carga.aluno;
+
+                        if (carga.atividade != null) {
+                            preencherAtividade(carga.atividade);
+                        }
+
+                        preencherEntrega(carga.entrega);
+                    }
+
+                    @Override
+                    public void erro(ErroApi erro) {
+                        Toast.makeText(TelaAtividadeAluno.this,
+                                "Erro ao carregar a atividade: " + erro.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
-    private void preencherAtividade(DocumentSnapshot documento) {
+    private void preencherAtividade(Atividade atividade) {
 
-        if (!documento.exists()) {
-            return;
-        }
+        arquivoProfessorPath = atividade.arquivoPath;
+        linkProfessor = atividade.link;
 
-        String nome = documento.getString("nome");
-        String descricao = documento.getString("descricao");
-        Long pontos = documento.getLong("pontos");
-        String prazo = documento.getString("prazo");
-        String arquivoNome = documento.getString("arquivoNome");
-
-        arquivoProfessorUrl = documento.getString("arquivoUrl");
-        linkProfessor = documento.getString("link");
-
-        if (nome != null) {
-            ((TextView) findViewById(R.id.tvTituloAtividadeAluno)).setText(nome);
+        if (atividade.nome != null) {
+            ((TextView) findViewById(R.id.tvTituloAtividadeAluno)).setText(atividade.nome);
         }
 
         ((TextView) findViewById(R.id.tvDescricaoAtividadeAluno)).setText(
-                descricao != null && !descricao.isEmpty() ? descricao : "Sem descrição."
+                atividade.descricao != null && !atividade.descricao.isEmpty()
+                        ? atividade.descricao
+                        : "Sem descrição."
         );
 
         tvNomeAnexoProfessor.setText(
-                arquivoNome != null && !arquivoNome.isEmpty() ? arquivoNome : "Nenhum anexo"
+                atividade.arquivoNome != null && !atividade.arquivoNome.isEmpty()
+                        ? atividade.arquivoNome
+                        : "Nenhum anexo"
         );
 
         View itemLinkProfessor = findViewById(R.id.itemLinkProfessor);
@@ -193,16 +200,16 @@ public class TelaAtividadeAluno extends AppCompatActivity {
             itemLinkProfessor.setVisibility(View.GONE);
         }
 
-        ((TextView) findViewById(R.id.tvPontuacaoMaximaAluno)).setText(
-                (pontos != null ? pontos : 0) + " pts"
-        );
+        ((TextView) findViewById(R.id.tvPontuacaoMaximaAluno)).setText(atividade.pontos + " pts");
 
-        ((TextView) findViewById(R.id.tvPrazoFinalAluno)).setText(prazo != null ? prazo : "");
+        ((TextView) findViewById(R.id.tvPrazoFinalAluno)).setText(
+                atividade.prazo != null ? Datas.formatar(atividade.prazo) : ""
+        );
     }
 
-    private void preencherEntrega(DocumentSnapshot documento) {
+    private void preencherEntrega(Entrega entrega) {
 
-        if (!documento.exists()) {
+        if (entrega == null) {
 
             tvStatusEntregaAluno.setText("Não entregue");
             tvStatusEntregaAluno.setBackgroundResource(R.drawable.bg_pill_vermelho);
@@ -215,44 +222,41 @@ public class TelaAtividadeAluno extends AppCompatActivity {
 
         bloquearEdicaoEntrega();
 
-        Boolean avaliado = documento.getBoolean("avaliado");
-        String comentarioAluno = documento.getString("comentarioAluno");
-
-        if (comentarioAluno != null) {
-            edtComentarioAluno.setText(comentarioAluno);
+        if (entrega.comentarioAluno != null) {
+            edtComentarioAluno.setText(entrega.comentarioAluno);
         }
 
-        String arquivoNomeEnviado = documento.getString("arquivoNome");
-
-        if (arquivoNomeEnviado != null && !arquivoNomeEnviado.isEmpty()) {
-            btnSelecionarArquivoAluno.setText(arquivoNomeEnviado);
+        if (entrega.arquivoNome != null && !entrega.arquivoNome.isEmpty()) {
+            btnSelecionarArquivoAluno.setText(entrega.arquivoNome);
         }
 
-        if (Boolean.TRUE.equals(avaliado)) {
+        // Decisão D4: a entrega atrasada é aceita e mostra os dias de atraso
+        String atraso = entrega.atrasada()
+                ? " (" + entrega.diasAtraso + (entrega.diasAtraso == 1 ? " dia" : " dias") + " de atraso)"
+                : "";
 
-            tvStatusEntregaAluno.setText("Avaliada");
+        if (entrega.avaliada()) {
+
+            tvStatusEntregaAluno.setText("Avaliada" + atraso);
             tvStatusEntregaAluno.setBackgroundResource(R.drawable.bg_pill_verde);
             tvStatusEntregaAluno.setTextColor(getColor(R.color.verde_sucesso));
 
             layoutEnvioAluno.setVisibility(View.GONE);
             layoutAvaliacaoAluno.setVisibility(View.VISIBLE);
 
-            Double nota = documento.getDouble("nota");
-            String comentarioProfessor = documento.getString("comentarioProfessor");
-
             ((TextView) findViewById(R.id.tvNotaAluno)).setText(
-                    nota != null ? String.valueOf(nota) : "—"
+                    entrega.nota != null ? String.valueOf(entrega.nota) : "—"
             );
 
             ((TextView) findViewById(R.id.tvComentarioProfessorAluno)).setText(
-                    comentarioProfessor != null && !comentarioProfessor.isEmpty()
-                            ? comentarioProfessor
+                    entrega.comentarioProfessor != null && !entrega.comentarioProfessor.isEmpty()
+                            ? entrega.comentarioProfessor
                             : "—"
             );
 
         } else {
 
-            tvStatusEntregaAluno.setText("Entregue — aguardando avaliação");
+            tvStatusEntregaAluno.setText("Entregue — aguardando avaliação" + atraso);
             tvStatusEntregaAluno.setBackgroundResource(R.drawable.bg_card_branco);
             tvStatusEntregaAluno.setTextColor(getColor(R.color.roxo_primario));
 
@@ -281,7 +285,7 @@ public class TelaAtividadeAluno extends AppCompatActivity {
             return;
         }
 
-        if (alunoId == null || documentoEntregaId == null) {
+        if (aluno == null) {
 
             Toast.makeText(this, "Não foi possível identificar o aluno.", Toast.LENGTH_SHORT).show();
             return;
@@ -319,112 +323,55 @@ public class TelaAtividadeAluno extends AppCompatActivity {
         // Evita um segundo envio enquanto o primeiro ainda está em andamento
         btnFazerEntrega.setEnabled(false);
 
-        Map<String, Object> entrega = new HashMap<>();
+        Servicos servicos = Servicos.get(this);
+        Uri uri = arquivoAlunoUri;
+        String nome = nomeArquivoAluno;
+        String tipo = tipoArquivoAluno;
 
-        entrega.put("atividadeId", atividadeId);
-        entrega.put("alunoId", alunoId);
-        entrega.put("comentarioAluno", comentario);
-        entrega.put("avaliado", false);
-        // Usado para notificar o professor sobre a nova entrega
-        entrega.put("enviadoEm", com.google.firebase.firestore.FieldValue.serverTimestamp());
-        AnoLetivoUtil.marcar(entrega);
-
-        if (arquivoAlunoUri != null) {
-
-            enviarArquivo(entrega);
-
-        } else {
-
-            salvarEntrega(entrega);
+        if (uri != null) {
+            Toast.makeText(this, "Enviando arquivo...", Toast.LENGTH_SHORT).show();
         }
-    }
 
-    private void enviarArquivo(Map<String, Object> entrega) {
+        Tarefas.executar(this, () -> {
 
-        Toast.makeText(this, "Enviando arquivo...", Toast.LENGTH_SHORT).show();
+            String caminho = null;
 
-        CloudinaryUtil.enviar(
-                getContentResolver(),
-                arquivoAlunoUri,
-                nomeArquivoAluno,
-                "entregas/" + atividadeId,
-                new CloudinaryUtil.Callback() {
+            if (uri != null) {
 
-                    @Override
-                    public void onSucesso(String url) {
+                byte[] conteudo;
 
-                        entrega.put("arquivoNome", nomeArquivoAluno);
-                        entrega.put("arquivoUrl", url);
-
-                        salvarEntrega(entrega);
-                    }
-
-                    @Override
-                    public void onErro(String mensagem) {
-
-                        btnFazerEntrega.setEnabled(true);
-
-                        Toast.makeText(
-                                TelaAtividadeAluno.this,
-                                "Erro ao enviar arquivo: " + mensagem,
-                                Toast.LENGTH_LONG
-                        ).show();
-                    }
-                }
-        );
-    }
-
-    private void salvarEntrega(Map<String, Object> entrega) {
-
-        db.collection("entregas")
-                .document(documentoEntregaId)
-                .set(entrega, com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener(unused -> {
-
-                    Toast.makeText(this, "Entrega enviada!", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-
-                    btnFazerEntrega.setEnabled(true);
-
-                    Toast.makeText(
-                            this, "Erro ao enviar entrega: " + e.getMessage(), Toast.LENGTH_LONG
-                    ).show();
-                });
-    }
-
-    private String obterNomeArquivo(Uri uri) {
-
-        String resultado = null;
-
-        if ("content".equals(uri.getScheme())) {
-
-            Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-
-            try {
-
-                if (cursor != null && cursor.moveToFirst()) {
-
-                    int indice = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-
-                    if (indice >= 0) {
-                        resultado = cursor.getString(indice);
-                    }
+                try {
+                    conteudo = ArquivoUtil.ler(getContentResolver(), uri);
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
                 }
 
-            } finally {
-
-                if (cursor != null) {
-                    cursor.close();
-                }
+                caminho = Arquivos.caminhoEntrega(atividadeId, aluno.id, tipo);
+                servicos.arquivos.enviar(Arquivos.BUCKET_ENTREGAS, caminho, conteudo, tipo);
             }
-        }
 
-        if (resultado == null) {
-            resultado = uri.getLastPathSegment();
-        }
+            // Se a gravação falhar, o arquivo enviado fica sem dono: o aluno não tem
+            // permissão de apagar no Storage, e a exclusão da trilha limpa a pasta depois
+            servicos.atividades.entregar(atividadeId, comentario, caminho, uri != null ? nome : null);
 
-        return resultado;
+            return null;
+
+        }, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object resultado) {
+
+                Toast.makeText(TelaAtividadeAluno.this, "Entrega enviada!", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+
+                btnFazerEntrega.setEnabled(true);
+
+                Toast.makeText(TelaAtividadeAluno.this,
+                        "Erro ao enviar entrega: " + erro.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }

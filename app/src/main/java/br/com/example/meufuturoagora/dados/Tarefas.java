@@ -7,8 +7,8 @@ import android.os.Looper;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-// Rede fora da thread principal, resultado de volta nela (como o CloudinaryUtil
-// já fazia). Se a tela fechou enquanto a requisição corria, o resultado é
+// Rede fora da thread principal, resultado de volta nela. Se a tela fechou
+// enquanto a requisição corria, o resultado é
 // descartado em vez de mexer numa Activity destruída.
 public final class Tarefas {
 
