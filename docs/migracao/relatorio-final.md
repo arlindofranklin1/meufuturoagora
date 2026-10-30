@@ -1,7 +1,7 @@
 # Relatório final da migração Firebase + Cloudinary → Supabase
 
-Data: 30/10/2026. Branch `migracao-supabase` (26 commits à frente da `main`, 177 arquivos
-alterados: +18.679 / −6.395 linhas). **Nada foi enviado ao GitHub.**
+Data: 30/10/2026. Branch `migracao-supabase` (26 commits à frente da `main`, 179 arquivos
+alterados: +18.954 / −6.395 linhas). **Nada foi enviado ao GitHub.**
 
 ## 1. Resumo
 
