@@ -232,6 +232,30 @@ enxerga na função `novidades_desde`).
 | 8.7 | Aluno | Desligar as notificações em Configurações | Nada aparece na barra do celular, mas o sino continua enchendo | | pendente |
 | 8.8 | Aluno | Sair e entrar com outra conta no mesmo celular | Cada conta vê só a própria lista | | pendente |
 
+## Módulo 9: telas iniciais, disciplinas e utilitários antigos
+
+Migradas: `TelaInicialAluno`, `TelaInicialProfessor`, `TelaDisciplinaAluno`,
+`TelaDisciplinaProfessor` (inclui renomear e desativar) e `InfoDisciplinaDialog`. O cartão do
+bimestre das duas telas iniciais vem de `PeriodoAtual`. Saíram `AnoLetivoUtil`,
+`BimestreUtil`, `DisciplinaUtil`, `FotoUtil` e os testes e falsos do Firestore. Do código do
+app só restam o `PonteFirebase` e os três pontos que o chamam (`Splash`, `TelaEntrar`,
+`ConfiguracoesActivity`), que saem na Fase 6. `MeuFuturoActivity`, `CursoDetalheActivity` e
+`SobreActivity` não usavam Firebase.
+
+Automático (30/10/2026): 10 testes de tela (`TelasIniciaisEDisciplinasTest`).
+
+| # | Perfil | Ação | Esperado | Obtido | Resultado |
+|---|---|---|---|---|---|
+| 9.1 | Aluno | Tela inicial | "Olá, <nome>!", pontuação, posição, frequência e as 2 trilhas mais recentes das disciplinas ativas | | pendente |
+| 9.2 | Aluno | Tela inicial antes de o admin definir bimestres | "Bimestre não definido"; tudo o mais carrega | | pendente |
+| 9.3 | Professor | Tela inicial | Nome, foto e número de disciplinas ativas dele; "Criar trilha" sem disciplina só avisa | | pendente |
+| 9.4 | Aluno | Disciplinas → buscar pelo nome | Só as ativas em que está matriculado; a busca filtra | | pendente |
+| 9.5 | Aluno | (i) numa disciplina | Professor com foto e e-mail, turma e lista de participantes ordenada | | pendente |
+| 9.6 | Professor | Disciplinas | Só as dele, "Nome (turma)" e "N alunos" (sem contar o professor) | | pendente |
+| 9.7 | Professor | Menu → Editar → mudar o nome | "Disciplina atualizada!"; o nome novo aparece | | pendente |
+| 9.8 | Professor | Menu → Excluir | Pede confirmação; a disciplina some e os alunos deixam de vê-la | | pendente |
+| 9.9 | Aluno | Voltar à tela inicial depois de entregar uma trilha | A frequência e as trilhas recarregam ao voltar | | pendente |
+
 ## Segurança: login só com Google (decisão D15)
 
 Conferir sempre que mexer em autenticação, na revisão final (Fase 7) e ao criar o

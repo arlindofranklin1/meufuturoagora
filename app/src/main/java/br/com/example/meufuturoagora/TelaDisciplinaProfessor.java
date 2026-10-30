@@ -26,28 +26,20 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldPath;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+
+import br.com.example.meufuturoagora.dados.ErroApi;
+import br.com.example.meufuturoagora.dados.Participante;
+import br.com.example.meufuturoagora.dados.Perfil;
+import br.com.example.meufuturoagora.dados.Servicos;
+import br.com.example.meufuturoagora.dados.Tarefas;
 
 public class TelaDisciplinaProfessor extends AppCompatActivity {
 
-    private FirebaseFirestore db;
+    private EditText edtBuscar;
 
     private RecyclerView recyclerDisciplinas;
 
@@ -71,12 +63,6 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
         InsetsUtil.aplicarInsetsTopo(this);
 
         // =========================
-        // FIRESTORE
-        // =========================
-
-        db = FirebaseFirestore.getInstance();
-
-        // =========================
         // RECYCLERVIEW
         // =========================
 
@@ -93,7 +79,7 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
 
         recyclerDisciplinas.setAdapter(adapter);
 
-        EditText edtBuscar =
+        edtBuscar =
                 findViewById(R.id.edtBuscar);
 
         edtBuscar.addTextChangedListener(
@@ -214,177 +200,66 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
     // CARREGAR DISCIPLINAS DO PROFESSOR
     // =====================================================
 
-    private void carregarDisciplinas() {
+    private static final class Carga {
 
-        FirebaseUser usuario =
-                FirebaseAuth.getInstance().getCurrentUser();
+        final List<Disciplina> disciplinas;
 
-        if (usuario == null) {
-
-            android.util.Log.e(
-                    "DISCIPLINAS",
-                    "Nenhum usuário está logado."
-            );
-
-            return;
+        Carga(List<Disciplina> disciplinas) {
+            this.disciplinas = disciplinas;
         }
-
-        String uidProfessor = usuario.getUid();
-
-        android.util.Log.d(
-                "DISCIPLINAS",
-                "UID LOGADO: " + uidProfessor
-        );
-
-        db.collection("disciplinas")
-                .whereEqualTo(
-                        "professorId",
-                        uidProfessor
-                )
-                .whereEqualTo(
-                        "ativo",
-                        true
-                )
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-
-                    android.util.Log.d(
-                            "DISCIPLINAS",
-                            "Quantidade encontrada: "
-                                    + querySnapshot.size()
-                    );
-
-                    listaDisciplinas.clear();
-                    listaDisciplinasOriginal.clear();
-
-                    for (QueryDocumentSnapshot documento :
-                            querySnapshot) {
-
-                        String id =
-                                documento.getId();
-
-                        String nome =
-                                documento.getString("nome");
-
-                        android.util.Log.d(
-                                "DISCIPLINAS",
-                                "ID: " + id
-                        );
-
-                        android.util.Log.d(
-                                "DISCIPLINAS",
-                                "NOME: " + nome
-                        );
-
-                        if (nome != null) {
-
-                            String cor = gerarCorDisciplina(id);
-
-                            Disciplina disciplina =
-                                    new Disciplina(
-                                            id,
-                                            nome,
-                                            cor
-                                    );
-
-                            disciplina.turmaNome =
-                                    documento.getString("turmaNome");
-
-                            listaDisciplinas.add(disciplina);
-                            listaDisciplinasOriginal.add(disciplina);
-                        }
-                    }
-
-                    adapter.notifyDataSetChanged();
-
-                    carregarQuantidadeAlunos();
-                })
-                .addOnFailureListener(e -> {
-
-                    android.util.Log.e(
-                            "DISCIPLINAS",
-                            "ERRO AO BUSCAR DISCIPLINAS",
-                            e
-                    );
-                });
     }
 
-    // Conta os alunos matriculados em cada disciplina. Só entram alunos que
-    // ainda existem na coleção "alunos" (aluno excluído não é contado).
-    private void carregarQuantidadeAlunos() {
+    private void carregarDisciplinas() {
 
-        List<Task<QuerySnapshot>> consultas = new ArrayList<>();
+        Servicos servicos = Servicos.get(this);
 
-        for (int i = 0; i < listaDisciplinasOriginal.size(); i += 10) {
+        Tarefas.executar(this, () -> {
 
-            List<String> lote = new ArrayList<>();
+            Perfil eu = servicos.perfis.meu();
+            List<Disciplina> lista = new ArrayList<>();
 
-            for (Disciplina disciplina : listaDisciplinasOriginal.subList(
-                    i, Math.min(i + 10, listaDisciplinasOriginal.size()))) {
-                lote.add(disciplina.id);
-            }
+            // O RLS devolve as do professor (o admin vê todas); só as ativas e as dele
+            for (br.com.example.meufuturoagora.dados.Disciplina d : servicos.disciplinas.listar()) {
 
-            consultas.add(db.collection("matriculas").whereIn("disciplinaId", lote).get());
-        }
-
-        Tasks.whenAllSuccess(consultas).addOnSuccessListener(this, resultados -> {
-
-            Map<String, Set<String>> alunosPorDisciplina = new HashMap<>();
-            Set<String> idsAlunos = new HashSet<>();
-
-            for (Object resultado : resultados) {
-                for (DocumentSnapshot matricula : ((QuerySnapshot) resultado).getDocuments()) {
-
-                    String disciplinaId = matricula.getString("disciplinaId");
-                    String alunoId = matricula.getString("alunoId");
-
-                    if (disciplinaId != null && alunoId != null) {
-                        alunosPorDisciplina
-                                .computeIfAbsent(disciplinaId, k -> new HashSet<>())
-                                .add(alunoId);
-                        idsAlunos.add(alunoId);
-                    }
+                if (!d.ativo || !eu.id.equals(d.professorId) || d.nome == null) {
+                    continue;
                 }
-            }
 
-            List<String> listaIds = new ArrayList<>(idsAlunos);
-            List<Task<QuerySnapshot>> consultasAlunos = new ArrayList<>();
+                Disciplina disciplina = new Disciplina(d.id, d.nome, gerarCorDisciplina(d.id));
+                disciplina.turmaNome = d.turmaNome;
 
-            for (int i = 0; i < listaIds.size(); i += 10) {
-                consultasAlunos.add(db.collection("alunos")
-                        .whereIn(FieldPath.documentId(),
-                                new ArrayList<>(listaIds.subList(i, Math.min(i + 10, listaIds.size()))))
-                        .get());
-            }
+                // Só alunos de verdade: o professor também aparece entre os participantes
+                int alunos = 0;
 
-            Tasks.whenAllSuccess(consultasAlunos).addOnSuccessListener(this, alunos -> {
+                for (Participante p : servicos.disciplinas.participantes(d.id)) {
 
-                Set<String> existentes = new HashSet<>();
-
-                for (Object resultado : alunos) {
-                    for (DocumentSnapshot aluno : ((QuerySnapshot) resultado).getDocuments()) {
-                        existentes.add(aluno.getId());
+                    if ("aluno".equals(p.tipo)) {
+                        alunos++;
                     }
                 }
 
-                for (Disciplina disciplina : listaDisciplinasOriginal) {
+                disciplina.qtdAlunos = alunos;
+                lista.add(disciplina);
+            }
 
-                    int quantidade = 0;
-                    Set<String> matriculados = alunosPorDisciplina.get(disciplina.id);
+            return new Carga(lista);
 
-                    if (matriculados != null) {
-                        for (String alunoId : matriculados) {
-                            if (existentes.contains(alunoId)) {
-                                quantidade++;
-                            }
-                        }
-                    }
+        }, new Tarefas.Retorno<Carga>() {
+            @Override
+            public void sucesso(Carga carga) {
 
-                    disciplina.qtdAlunos = quantidade;
-                }
+                listaDisciplinas.clear();
+                listaDisciplinasOriginal.clear();
+                listaDisciplinasOriginal.addAll(carga.disciplinas);
 
-                adapter.notifyDataSetChanged();
-            });
+                filtrarDisciplinas(edtBuscar.getText().toString());
+            }
+
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(TelaDisciplinaProfessor.this,
+                        "Erro ao carregar disciplinas.", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -675,27 +550,25 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
             String novoNome
     ) {
 
-        db.collection("disciplinas")
-                .document(disciplina.id)
-                .update("nome", novoNome)
-                .addOnSuccessListener(unused -> {
+        Servicos servicos = Servicos.get(this);
 
-                    Toast.makeText(
-                            this,
-                            "Disciplina atualizada!",
-                            Toast.LENGTH_SHORT
-                    ).show();
+        Tarefas.executar(this, () -> {
+            servicos.disciplinas.renomear(disciplina.id, novoNome);
+            return null;
+        }, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object resultado) {
 
-                    carregarDisciplinas();
-                })
-                .addOnFailureListener(e -> {
+                Toast.makeText(TelaDisciplinaProfessor.this, "Disciplina atualizada!", Toast.LENGTH_SHORT).show();
+                carregarDisciplinas();
+            }
 
-                    Toast.makeText(
-                            this,
-                            "Erro ao atualizar disciplina.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(TelaDisciplinaProfessor.this, "Erro ao atualizar disciplina: " + erro.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     // =====================================================
@@ -724,31 +597,29 @@ public class TelaDisciplinaProfessor extends AppCompatActivity {
 
     private void excluirDisciplina(Disciplina disciplina) {
 
-        // Exclusão lógica: a disciplina deixa de aparecer em
-        // todas as telas (que filtram por "ativo"), mas as
-        // atividades e aulas vinculadas continuam preservadas.
-        db.collection("disciplinas")
-                .document(disciplina.id)
-                .update("ativo", false)
-                .addOnSuccessListener(unused -> {
+        // Exclusão lógica: a disciplina deixa de aparecer em todas as telas
+        // (o servidor só mostra as ativas), mas as atividades e aulas vinculadas ficam.
+        Servicos servicos = Servicos.get(this);
 
-                    Toast.makeText(
-                            this,
-                            "Disciplina excluída!",
-                            Toast.LENGTH_SHORT
-                    ).show();
+        Tarefas.executar(this, () -> {
+            servicos.disciplinas.desativar(disciplina.id);
+            return null;
+        }, new Tarefas.Retorno<Object>() {
+            @Override
+            public void sucesso(Object resultado) {
 
-                    carregarDisciplinas();
-                })
-                .addOnFailureListener(e -> {
+                Toast.makeText(TelaDisciplinaProfessor.this, "Disciplina excluída!", Toast.LENGTH_SHORT).show();
+                carregarDisciplinas();
+            }
 
-                    Toast.makeText(
-                            this,
-                            "Erro ao excluir disciplina.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
+            @Override
+            public void erro(ErroApi erro) {
+                Toast.makeText(TelaDisciplinaProfessor.this, "Erro ao excluir disciplina: " + erro.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
 
     // =====================================================
     // COR ALEATÓRIA

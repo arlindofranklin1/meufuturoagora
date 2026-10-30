@@ -92,23 +92,6 @@ class PerfilFotoUtil {
         });
     }
 
-    // TEMPORÁRIO até o módulo 9: telas que ainda leem a foto (URL) do Firestore
-    static void mostrar(Activity activity, String fotoUrl, ImageView imageView) {
-        carregarNoGlide(activity, fotoUrl, null, imageView);
-    }
-
-    // TEMPORÁRIO até o módulo 9 (InfoDisciplinaDialog ainda lê o Firestore)
-    static String fotoDoDocumento(com.google.firebase.firestore.DocumentSnapshot documento) {
-
-        if (documento == null || !documento.exists()) {
-            return null;
-        }
-
-        String foto = documento.getString("fotoUrl");
-
-        return foto != null && !foto.isEmpty() ? foto : null;
-    }
-
     // Reduz a imagem escolhida, envia e salva como nova foto de perfil.
     // depois recebe o perfil com o caminho novo.
     static void trocarFoto(Activity activity, Uri uri, Perfil perfil, ImageView imageView,

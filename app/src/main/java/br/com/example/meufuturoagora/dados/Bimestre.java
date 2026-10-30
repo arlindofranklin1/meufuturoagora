@@ -18,7 +18,7 @@ public final class Bimestre {
         this.fim = fim;
     }
 
-    // O último dia conta inteiro (BimestreUtil.fimDoDia)
+    // O último dia conta inteiro (o fim do bimestre vale o dia inteiro)
     public boolean contem(LocalDate data) {
         return data != null && !data.isBefore(inicio) && !data.isAfter(fim);
     }

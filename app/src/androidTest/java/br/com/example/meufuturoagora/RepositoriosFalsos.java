@@ -280,11 +280,25 @@ final class RepositoriosFalsos {
         @Override
         public void renomear(String id, String nome) {
             chamadas.add("disciplinas.renomear " + id + " " + nome);
+            trocarDisciplina(id, nome, true);
         }
 
         @Override
         public void desativar(String id) {
             chamadas.add("disciplinas.desativar " + id);
+            trocarDisciplina(id, null, false);
+        }
+
+
+        // nome null mantém o nome atual
+        private void trocarDisciplina(String id, String nome, boolean ativo) {
+            for (int i = 0; i < disciplinas.size(); i++) {
+                Disciplina d = disciplinas.get(i);
+                if (d.id.equals(id)) {
+                    disciplinas.set(i, new Disciplina(d.id, nome != null ? nome : d.nome, d.turmaId, d.turmaNome,
+                            d.professorId, d.anoLetivo, d.bimestre, ativo, d.criadoEm));
+                }
+            }
         }
 
         @Override
