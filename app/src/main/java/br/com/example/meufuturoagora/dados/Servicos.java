@@ -24,12 +24,13 @@ public final class Servicos {
     public final DiarioRepositorio diario;
     public final NovidadeRepositorio novidades;
     public final ArquivoRepositorio arquivos;
+    public final HistoricoRepositorio historico;
 
     public Servicos(AuthRepositorio auth, PerfilRepositorio perfis, EscolaRepositorio escola,
                     DisciplinaRepositorio disciplinas, AtividadeRepositorio atividades,
                     FrequenciaRepositorio frequencias, RankingRepositorio ranking,
                     DiarioRepositorio diario, NovidadeRepositorio novidades,
-                    ArquivoRepositorio arquivos) {
+                    ArquivoRepositorio arquivos, HistoricoRepositorio historico) {
         this.auth = auth;
         this.perfis = perfis;
         this.escola = escola;
@@ -40,6 +41,7 @@ public final class Servicos {
         this.diario = diario;
         this.novidades = novidades;
         this.arquivos = arquivos;
+        this.historico = historico;
     }
 
     public static synchronized Servicos get(Context context) {
@@ -87,7 +89,8 @@ public final class Servicos {
                 new RankingRepositorioSupabase(rest),
                 new DiarioRepositorioSupabase(rest),
                 new NovidadeRepositorioSupabase(rest),
-                new StorageSupabase(cliente)
+                new StorageSupabase(cliente),
+                new HistoricoRepositorioSupabase(rest)
         );
     }
 

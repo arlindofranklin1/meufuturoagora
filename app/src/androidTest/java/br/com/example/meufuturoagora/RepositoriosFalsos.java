@@ -23,6 +23,10 @@ import br.com.example.meufuturoagora.dados.ErroApiDeTeste;
 import br.com.example.meufuturoagora.dados.EscolaRepositorio;
 import br.com.example.meufuturoagora.dados.Frequencia;
 import br.com.example.meufuturoagora.dados.FrequenciaRepositorio;
+import br.com.example.meufuturoagora.dados.HistoricoAluno;
+import br.com.example.meufuturoagora.dados.HistoricoEntrega;
+import br.com.example.meufuturoagora.dados.HistoricoRepositorio;
+import br.com.example.meufuturoagora.dados.HistoricoTrilha;
 import br.com.example.meufuturoagora.dados.LinhaRanking;
 import br.com.example.meufuturoagora.dados.Novidade;
 import br.com.example.meufuturoagora.dados.NovidadeRepositorio;
@@ -55,6 +59,10 @@ final class RepositoriosFalsos {
     final List<Bimestre> bimestres = new ArrayList<>();
     int pontuacao;
     PosicaoRanking posicao;
+    final List<Integer> historicoAnos = new ArrayList<>();
+    final List<HistoricoAluno> historicoAlunos = new ArrayList<>();
+    final List<HistoricoTrilha> historicoTrilhas = new ArrayList<>();
+    final List<HistoricoEntrega> historicoEntregas = new ArrayList<>();
 
     // Próxima chamada de cadastro devolve este erro (ex.: e-mail repetido)
     ErroApi erroNoCadastro;
@@ -63,7 +71,7 @@ final class RepositoriosFalsos {
 
     void instalar() {
         Servicos.substituir(new Servicos(auth, new Perfis(), new Escola(), new Disciplinas(), new Atividades(),
-                new Frequencias(), new Ranking(), new Diario(), new Novidades(), new Arquivos()));
+                new Frequencias(), new Ranking(), new Diario(), new Novidades(), new Arquivos(), new Historico()));
     }
 
     boolean chamou(String chamada) {
@@ -498,6 +506,33 @@ final class RepositoriosFalsos {
         @Override
         public List<Novidade> desde(OffsetDateTime momento) {
             return new ArrayList<>();
+        }
+    }
+
+    // Devolve as listas montadas pelo teste, sem filtrar por período, e anota o período pedido
+    final class Historico implements HistoricoRepositorio {
+
+        @Override
+        public List<Integer> anos() {
+            return new ArrayList<>(historicoAnos);
+        }
+
+        @Override
+        public List<HistoricoAluno> alunos(int ano, int bimestre) {
+            chamadas.add("historico.alunos " + ano + " " + bimestre);
+            return new ArrayList<>(historicoAlunos);
+        }
+
+        @Override
+        public List<HistoricoTrilha> trilhas(int ano, int bimestre) {
+            chamadas.add("historico.trilhas " + ano + " " + bimestre);
+            return new ArrayList<>(historicoTrilhas);
+        }
+
+        @Override
+        public List<HistoricoEntrega> entregas(int ano, int bimestre) {
+            chamadas.add("historico.entregas " + ano + " " + bimestre);
+            return new ArrayList<>(historicoEntregas);
         }
     }
 

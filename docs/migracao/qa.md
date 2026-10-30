@@ -89,3 +89,30 @@ da exclusão. Achados, já corrigidos:
 - Indicador padrão da lista expansível desenhado por cima do título dos
   grupos em "Usuários" (já existia antes da migração).
 - "(1 alunos)" no título da turma.
+
+## Módulo 3: estrutura escolar
+
+Telas: Definir ano letivo, Definir bimestres, Criar disciplina (professor) e
+Histórico dos anos letivos (admin). Telas que ainda leem o Firestore (ranking,
+telas iniciais, trilhas) continuam com a configuração de ano antiga até o
+módulo delas: o ano definido aqui vale para o Supabase.
+
+| # | Perfil | Ação | Esperado | Obtido | Resultado |
+|---|---|---|---|---|---|
+| 3.1 | Admin | Área do admin → Definir ano letivo; digitar o ano atual e salvar | "Esse já é o ano letivo atual." | | pendente |
+| 3.2 | Admin | Digitar um ano novo (ex.: 2027) e salvar | Janela de confirmação **sem campo de senha**; ao confirmar, "Ano letivo alterado!" | | pendente |
+| 3.3 | Admin | Voltar para a área do admin | Mostra "Ano letivo 2027" e "Fora de bimestre / não definido" | | pendente |
+| 3.4 | Admin | Definir bimestres: preencher só o início do 1º e salvar | "Informe o início e o fim do 1º bimestre." | | pendente |
+| 3.5 | Admin | Preencher 1º e 2º bimestres sobrepostos e salvar | Aviso de ordem e sobreposição; nada é gravado | | pendente |
+| 3.6 | Admin | Preencher os 4 bimestres válidos e salvar | "Bimestres salvos!"; ao reabrir a tela, as datas voltam | | pendente |
+| 3.7 | Admin | Definir o ano letivo de volta para 2026 | Os bimestres de 2026 voltam; a pontuação do ano atual volta a contar | | pendente |
+| 3.8 | Admin | Histórico → conferir ano, bimestre e turma | Lista de anos com "(atual)"; trocar o bimestre mostra "(dd/mm/aaaa a dd/mm/aaaa)" | | pendente |
+| 3.9 | Admin | Histórico → abas Alunos, Trilhas e Entregas | Entregas atrasadas mostram "N dia(s) de atraso"; pendentes mostram "Pendente" | | pendente |
+| 3.10 | Admin | Histórico → pesquisar um nome | A lista filtra sem recarregar | | pendente |
+| 3.11 | Professor | Perfil → Disciplinas → criar disciplina numa turma | "Disciplina criada!"; os alunos da turma já enxergam (sem novo login) | | pendente |
+| 3.12 | Professor comum | Tentar abrir o histórico do admin | Não há botão da área do admin; o servidor também recusa (403) | | pendente |
+
+Testes automáticos: pgTAP `110_historico` (22 testes), `BimestresTest`,
+`HistoricoRepositorioTest`, `EstruturaEscolarTest` (repositórios falsos) e 3
+testes novos em `E2eSupabaseLocalTest`. Os de tela ainda **não rodaram**
+(emulador desligado por falta de memória).

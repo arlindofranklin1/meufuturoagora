@@ -198,6 +198,123 @@ public class E2eSupabaseLocalTest {
         }
     }
 
+    // Muda o ano atual para 2027 e devolve 2026 no fim: os outros testes deste
+    // arquivo contam com 2026, e a ordem de execução não é garantida
+    @Test
+    public void adminTrocaOAnoLetivoSemSenhaEDefineOsBimestresDoAnoNovo() throws Exception {
+        local.entrar(ADMIN);
+
+        try {
+            ActivityScenario.launch(DefinirAnoLetivoActivity.class);
+            Espera.ate(() -> onView(withId(R.id.edtAnoLetivo)).check(matches(withText("2026"))));
+            onView(withId(R.id.edtAnoLetivo)).perform(replaceText("2027"), closeSoftKeyboard());
+            onView(withId(R.id.btnSalvarAnoLetivo)).perform(click());
+            Captura.salvar("32_confirmar_ano_letivo");
+            onView(withText("Confirmar")).perform(click());
+
+            Espera.ate(() -> {
+                try {
+                    assertEquals(2027, local.servicos.escola.anoAtual().ano);
+                } catch (ErroApi e) {
+                    throw new AssertionError(e);
+                }
+            });
+
+            assertEquals("o ano novo começa sem bimestres", 0, local.servicos.escola.bimestres(2027).size());
+
+            local.servicos.escola.definirBimestres(2027, java.util.Arrays.asList(
+                    new br.com.example.meufuturoagora.dados.Bimestre(2027, 1,
+                            java.time.LocalDate.of(2027, 2, 1), java.time.LocalDate.of(2027, 4, 30)),
+                    new br.com.example.meufuturoagora.dados.Bimestre(2027, 2,
+                            java.time.LocalDate.of(2027, 5, 3), java.time.LocalDate.of(2027, 7, 9))));
+            assertEquals(2, local.servicos.escola.bimestres(2027).size());
+
+            try {
+                local.servicos.escola.definirBimestres(2027, java.util.Arrays.asList(
+                        new br.com.example.meufuturoagora.dados.Bimestre(2027, 1,
+                                java.time.LocalDate.of(2027, 2, 1), java.time.LocalDate.of(2027, 5, 10)),
+                        new br.com.example.meufuturoagora.dados.Bimestre(2027, 2,
+                                java.time.LocalDate.of(2027, 5, 3), java.time.LocalDate.of(2027, 7, 9))));
+                fail("O servidor devia recusar bimestres sobrepostos");
+            } catch (ErroApi esperado) {
+                assertEquals("Os bimestres precisam estar em ordem e sem sobreposição.", esperado.getMessage());
+            }
+
+        } finally {
+            local.servicos.escola.definirAnoLetivo(2026);
+        }
+    }
+
+    @Test
+    public void historicoDoAdminAbreEProfessorNaoPodeConsultar() throws Exception {
+        local.entrar(MARTA);
+
+        try {
+            local.servicos.historico.anos();
+            fail("Professor não pode consultar o histórico");
+        } catch (ErroApi esperado) {
+            assertTrue(esperado.semPermissao());
+        }
+
+        local.entrar(ADMIN);
+
+        ActivityScenario.launch(HistoricoAnoLetivoActivity.class);
+
+        Espera.ate(() -> onView(withId(R.id.tvResumoHistorico))
+                .check(matches(withText("Nenhum registro em 2026 — ano inteiro"))));
+        Captura.salvar("33_historico_vazio");
+    }
+
+    // A disciplina criada é desativada no fim (como o professor faria): os outros
+    // testes contam as disciplinas da Marta e da Lia, que só enxergam as ativas
+    @Test
+    public void professoraCriaDisciplinaEOsAlunosDaTurmaSaoMatriculados() throws Exception {
+        local.entrar(MARTA);
+
+        try {
+            ActivityScenario.launch(CriarDisciplinaActivity.class);
+
+            Espera.ate(() -> onView(withId(R.id.spinnerTurmaDisciplina))
+                    .check(matches(withSpinnerText("1º ano Informática"))));
+            onView(withId(R.id.edtNomeDisciplina)).perform(replaceText("Física E2E"), closeSoftKeyboard());
+            Captura.salvar("34_criar_disciplina");
+            onView(withId(R.id.btnSalvarDisciplina)).perform(click());
+
+            Espera.ate(() -> {
+                try {
+                    assertTrue(contem(local.servicos.disciplinas.listar(), "Física E2E"));
+                } catch (ErroApi e) {
+                    throw new AssertionError(e);
+                }
+            });
+
+            // Entrada da turma no banco: a Lia (1º ano) já enxerga a disciplina nova
+            local.entrar(LIA);
+            assertTrue("matrícula automática (D9)", contem(local.servicos.disciplinas.listar(), "Física E2E"));
+
+        } finally {
+
+            local.entrar(MARTA);
+
+            for (br.com.example.meufuturoagora.dados.Disciplina d : local.servicos.disciplinas.listar()) {
+                if ("Física E2E".equals(d.nome)) {
+                    local.servicos.disciplinas.desativar(d.id);
+                }
+            }
+        }
+    }
+
+    private static boolean contem(List<br.com.example.meufuturoagora.dados.Disciplina> lista, String nome) {
+
+        for (br.com.example.meufuturoagora.dados.Disciplina d : lista) {
+            if (nome.equals(d.nome)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @Test
     public void professorComumNaoTemAreaDoAdministrador() throws Exception {
         local.entrar(JOAO);

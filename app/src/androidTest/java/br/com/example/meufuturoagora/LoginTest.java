@@ -45,7 +45,7 @@ public class LoginTest {
     @Before
     public void preparar() {
         auth = new AuthFalso();
-        Servicos.substituir(new Servicos(auth, null, null, null, null, null, null, null, null, null));
+        Servicos.substituir(new Servicos(auth, null, null, null, null, null, null, null, null, null, null));
 
         Intents.init();
         // As telas de destino não abrem de verdade (a de abertura do teste, sim)

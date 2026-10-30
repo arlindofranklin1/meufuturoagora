@@ -74,7 +74,8 @@ public final class SupabaseLocal {
                 new RankingRepositorioSupabase(rest),
                 new DiarioRepositorioSupabase(rest),
                 new NovidadeRepositorioSupabase(rest),
-                new StorageSupabase(cliente)
+                new StorageSupabase(cliente),
+                new HistoricoRepositorioSupabase(rest)
         );
     }
 
