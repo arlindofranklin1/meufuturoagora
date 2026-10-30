@@ -165,7 +165,7 @@ public class PerfisEAdminTest {
 
         ActivityScenario.launch(ListaUsuariosActivity.class);
 
-        Espera.ate(() -> onView(withText("Turma 6º ano A (1 alunos)")).perform(click()));
+        Espera.ate(() -> onView(withText("Turma 6º ano A (1 aluno)")).perform(click()));
         onView(withId(R.id.btnMenuPessoa)).perform(click());
         onView(withText("Excluir")).inRoot(isPlatformPopup()).perform(click());
         onView(withText("Excluir")).perform(click());

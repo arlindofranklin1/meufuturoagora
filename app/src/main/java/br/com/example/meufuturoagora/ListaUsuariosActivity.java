@@ -55,6 +55,10 @@ public class ListaUsuariosActivity extends AppCompatActivity {
         expandableUsuarios = findViewById(R.id.expandableUsuarios);
         tvSemUsuarios = findViewById(R.id.tvSemUsuarios);
 
+        // A seta do próprio item (imgSetaGrupo) já indica aberto/fechado; o
+        // indicador padrão do Android ficava desenhado por cima do título
+        expandableUsuarios.setGroupIndicator(null);
+
         adapter = new GrupoAdapter();
         expandableUsuarios.setAdapter(adapter);
 
@@ -142,7 +146,8 @@ public class ListaUsuariosActivity extends AppCompatActivity {
         }
 
         for (Grupo grupo : gruposPorTurmaId.values()) {
-            grupo.titulo = grupo.titulo + " (" + grupo.pessoas.size() + " alunos)";
+            int alunos = grupo.pessoas.size();
+            grupo.titulo = grupo.titulo + " (" + alunos + (alunos == 1 ? " aluno)" : " alunos)");
             grupos.add(grupo);
         }
 

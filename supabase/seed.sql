@@ -37,3 +37,39 @@ insert into public.atividades (disciplina_id, nome, descricao, pontos, prazo) va
 insert into public.aulas (disciplina_id, data, quantidade, descricao) values
   ('00000000-0000-4000-8000-000000000d01', '2026-10-26', 2, 'Introdução a algoritmos'),
   ('00000000-0000-4000-8000-000000000d02', '2026-10-27', 1, 'Frações equivalentes');
+
+-- Contas de login FICTÍCIAS, só para os testes de ponta a ponta no banco local
+-- (androidTest/.../E2eSupabaseLocalTest). Entram com e-mail e senha pelo
+-- código de teste; o app de verdade só tem login com Google. Este arquivo
+-- nunca vai para o projeto remoto (o db push não leva seeds).
+-- A última conta não tem cadastro: o teste a cadastra como aluno pela tela.
+do $$
+declare
+  v_email text;
+  v_id uuid;
+begin
+  foreach v_email in array array[
+    'coordenacao@exemplo.test',
+    'professora.marta@exemplo.test',
+    'professor.joao@exemplo.test',
+    'aluna.lia@exemplo.test',
+    'aluno.rui@exemplo.test',
+    'aluno.novo@exemplo.test'
+  ] loop
+    v_id := gen_random_uuid();
+
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+                            raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+                            confirmation_token, recovery_token, email_change_token_new, email_change)
+    values ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', v_email,
+            extensions.crypt('senha-local-de-teste', extensions.gen_salt('bf')), now(),
+            '{"provider": "email", "providers": ["email"]}', '{}', now(), now(), '', '', '', '');
+
+    insert into auth.identities (id, user_id, provider_id, identity_data, provider,
+                                 last_sign_in_at, created_at, updated_at)
+    values (gen_random_uuid(), v_id, v_id::text,
+            jsonb_build_object('sub', v_id::text, 'email', v_email, 'email_verified', true),
+            'email', now(), now(), now());
+  end loop;
+end
+$$;

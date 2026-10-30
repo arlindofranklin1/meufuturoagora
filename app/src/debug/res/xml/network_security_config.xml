@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Só na versão debug: os testes de ponta a ponta falam com o Supabase local
+   do computador (http://10.0.2.2:54321, o "localhost" do PC visto de dentro
+   do emulador). Todo o resto continua exigindo HTTPS, e a versão release não
+   tem este arquivo.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

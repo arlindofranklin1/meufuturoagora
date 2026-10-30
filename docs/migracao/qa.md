@@ -57,3 +57,35 @@ Testes automáticos que cobrem o roteamento com dados falsos: `LoginTest` e
 | 2.10 | Admin | Lista de usuários → Pedidos de exclusão → Recusar | O pedido some da lista | | pendente |
 | 2.11 | Admin | Lista de usuários → aluno → Excluir → Excluir | O aluno some; ao tentar entrar com a conta dele, acesso recusado | | pendente |
 | 2.12 | Admin | Excluir a si mesmo (único admin) | "É preciso haver ao menos um administrador ativo." | | pendente |
+
+## Testes de ponta a ponta no Supabase local
+
+`E2eSupabaseLocalTest`: telas de verdade, camada de dados de verdade e o banco
+local (RLS, gatilhos, funções), com as contas fictícias do `supabase/seed.sql`
+(senha `senha-local-de-teste`, só no banco local). Entram com e-mail e senha
+pelo código de teste; o app continua só com Google. Cada teste salva capturas
+de tela em `/sdcard/Android/data/br.com.example.meufuturoagora/files/qa/`.
+
+Como rodar (emulador ligado, Supabase local no ar):
+
+```
+supabase db reset --local
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:installDebug :app:installDebugAndroidTest
+adb shell am instrument -w -r -e supabaseChaveLocal <PUBLISHABLE_KEY do supabase status> \
+  br.com.example.meufuturoagora.test/androidx.test.runner.AndroidJUnitRunner
+adb pull /sdcard/Android/data/br.com.example.meufuturoagora/files/qa/ .
+```
+
+Pelo `adb` e não pelo `connectedAndroidTest`, que desinstala o app no fim e
+apaga as capturas. Sem a chave local, esses testes são pulados.
+
+### Resultado em 29/10/2026 (módulos 1 e 2)
+
+31 testes de tela passando (7 de ponta a ponta). Capturas conferidas: perfil
+da professora, da aluna (turma e matrícula automática), do admin, área do
+admin (ano e bimestre), cadastro, pedido de exclusão e lista antes e depois
+da exclusão. Achados, já corrigidos:
+
+- Indicador padrão da lista expansível desenhado por cima do título dos
+  grupos em "Usuários" (já existia antes da migração).
+- "(1 alunos)" no título da turma.
