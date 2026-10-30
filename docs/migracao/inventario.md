@@ -530,3 +530,18 @@ admin. A frequência vai junto (cascata) e, como o desconto de 5 pontos por dia
 de falta é calculado da frequência, os alunos que faltaram nesse dia recuperam
 os pontos. No app antigo a frequência ficava órfã e os pontos continuavam
 descontados. A tela avisa disso antes de excluir. Testes: pgTAP `120_excluir_aula`.
+
+### 8.3 Login por e-mail e senha no projeto remoto
+
+Em 30/10/2026 o projeto de desenvolvimento aceita cadastro por e-mail e senha
+(`/auth/v1/settings`: `external.email = true`, `disable_signup = false`), com
+confirmação de e-mail obrigatória (`mailer_autoconfirm = false`). O app só usa
+Google. A confirmação obrigatória já protege o `vincular_conta`, que recusa
+conta sem `email_confirmed_at`, mas o caminho nem deveria existir.
+
+**Recomendação (painel, a critério do dono do projeto):** Authentication → Sign
+In / Providers → Email → desligar o provedor de e-mail. Isso também resolve o
+aviso `auth_leaked_password_protection` do Security Advisor, que só existe por
+causa das senhas. Os testes de ponta a ponta usam senha apenas no Supabase
+**local** e não são afetados. Fazer o mesmo no projeto de produção quando ele
+for criado.
