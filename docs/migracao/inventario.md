@@ -508,9 +508,14 @@ e por quê. Nenhum ajuste muda uma decisão da Seção 7.
 ### 8.1 Avisos aceitos do Security Advisor (projeto remoto)
 
 O advisor do projeto remoto, que é mais novo que o da CLI local, aponta
-`authenticated_security_definer_function_executable` (lint 0029) para as 16
+`authenticated_security_definer_function_executable` (lint 0029) para as 20
 RPCs de `public`. É intencional: essas funções são a API do app e precisam ser
 `security definer` para gravar em tabelas que o usuário não grava direto
 (notas, frequência, ano letivo, exclusões). Cada uma confere no início quem
 está chamando, e os testes pgTAP cobrem a recusa (42501) de cada uma.
 Nenhum outro aviso de segurança ou desempenho apareceu.
+
+O histórico do admin (migração `20261030001031`) acrescentou 4 funções ao
+mesmo aviso: `historico_anos`, `historico_alunos`, `historico_trilhas` e
+`historico_entregas`. Todas chamam `privado.exigir_admin()` na primeira linha, e
+o pgTAP `110_historico` confere a recusa de professor, aluno e anônimo.
