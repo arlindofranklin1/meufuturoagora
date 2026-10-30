@@ -263,9 +263,9 @@ projeto de produção. Não precisa de login.
 
 | # | Verificação | Esperado | Resultado |
 |---|---|---|---|
-| S.1 | `curl -H "apikey: <chave pública>" https://<ref>.supabase.co/auth/v1/settings` | `"external": {"email": false, "google": true, "phone": false, "anonymous_users": false}` | ok em 29/10/2026 |
-| S.2 | `POST /auth/v1/token?grant_type=password` com qualquer e-mail e senha | `422 email_provider_disabled` | ok em 29/10/2026 |
-| S.3 | `POST /auth/v1/signup` com e-mail e senha | `400 email_provider_disabled` | ok em 29/10/2026 |
+| S.1 | `curl -H "apikey: <chave pública>" https://<ref>.supabase.co/auth/v1/settings` | `"external": {"email": false, "google": true, "phone": false, "anonymous_users": false}` | ok em 29/10 e 30/10/2026 |
+| S.2 | `POST /auth/v1/token?grant_type=password` com qualquer e-mail e senha | `422 email_provider_disabled` | ok em 29/10 e 30/10/2026 |
+| S.3 | `POST /auth/v1/signup` com e-mail e senha | `400 email_provider_disabled` | ok em 29/10 e 30/10/2026 |
 | S.4 | No celular: Entrar com o Google com a conta do admin | Entra normalmente (o Google segue ligado) | **pendente** (testar amanhã) |
 
 Nunca rodar `supabase config push`: o `config.toml` local liga e-mail para os testes.
