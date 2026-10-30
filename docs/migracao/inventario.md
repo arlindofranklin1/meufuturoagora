@@ -482,6 +482,7 @@ repositório de arquivos existir. Até lá aparece só a foto do Google.
 | D13 | Antes de excluir um professor, as disciplinas dele **precisam ser transferidas** para outro professor. A exclusão é bloqueada enquanto houver disciplina sem transferir |
 | D14 | Não é possível excluir nem desativar o **último admin ativo** |
 | D9 | **Matrícula automática** por trigger: ao criar uma disciplina (ou mudá-la de turma), os alunos ativos da turma são matriculados na hora; ao cadastrar um aluno ou mudá-lo de turma, ele é matriculado nas disciplinas ativas dela |
+| D15 | **O app aceita apenas login com Google.** O provedor de e-mail e senha fica desligado em todo projeto Supabase (desenvolvimento e produção). Ver a Seção 8.3 |
 
 Todas as dúvidas foram respondidas. **Portão 1 aprovado em 29/10/2026.**
 
@@ -531,17 +532,31 @@ de falta é calculado da frequência, os alunos que faltaram nesse dia recuperam
 os pontos. No app antigo a frequência ficava órfã e os pontos continuavam
 descontados. A tela avisa disso antes de excluir. Testes: pgTAP `120_excluir_aula`.
 
-### 8.3 Login por e-mail e senha no projeto remoto
+### 8.3 Login só com Google (decisão D15)
 
-Em 29/10/2026 o projeto de desenvolvimento aceita cadastro por e-mail e senha
-(`/auth/v1/settings`: `external.email = true`, `disable_signup = false`), com
-confirmação de e-mail obrigatória (`mailer_autoconfirm = false`). O app só usa
-Google. A confirmação obrigatória já protege o `vincular_conta`, que recusa
-conta sem `email_confirmed_at`, mas o caminho nem deveria existir.
+**Regra do projeto: o app aceita apenas login com Google.** Nenhum projeto
+Supabase (desenvolvimento ou produção) pode aceitar e-mail e senha.
 
-**Recomendação (painel, a critério do dono do projeto):** Authentication → Sign
-In / Providers → Email → desligar o provedor de e-mail. Isso também resolve o
-aviso `auth_leaked_password_protection` do Security Advisor, que só existe por
-causa das senhas. Os testes de ponta a ponta usam senha apenas no Supabase
-**local** e não são afetados. Fazer o mesmo no projeto de produção quando ele
-for criado.
+- **Estado em 29/10/2026 (noite):** o projeto de desenvolvimento aceitava cadastro
+  e login por e-mail e senha (`external.email = true`, `disable_signup = false`),
+  com confirmação obrigatória (`mailer_autoconfirm = false`). A confirmação já
+  protegia o `vincular_conta`, que recusa conta sem `email_confirmed_at`, mas o
+  caminho não devia existir. **Foi desligado** pela API de gerenciamento
+  (`PATCH /v1/projects/{ref}/config/auth` com `external_email_enabled: false`).
+- **Verificação feita:** `/auth/v1/settings` passou a mostrar `email: false` e
+  `google: true`. Login por senha responde `422 email_provider_disabled` e
+  cadastro responde `400 email_provider_disabled`.
+- **Como conferir de novo (só leitura, sem login):**
+  `curl -H "apikey: <chave pública>" https://<ref>.supabase.co/auth/v1/settings`
+  e olhar `"external": {"email": false, "google": true, ...}`. Conferir também na
+  Fase 7 (revisão de segurança) e ao criar o projeto de produção.
+- **O que não pode acontecer:** ligar o provedor de e-mail de novo, e rodar
+  `supabase config push` (o `config.toml` local liga e-mail para os testes, sem
+  confirmação, e reabriria a brecha no remoto). O aviso está no próprio
+  `config.toml`.
+- **Local:** os testes de ponta a ponta entram com senha **só no banco local**
+  (contas fictícias do `seed.sql`, que o `db push` nunca leva). Nada muda neles.
+- O aviso `auth_leaked_password_protection` do Security Advisor deixa de fazer
+  sentido sem senhas.
+- Efeito colateral de segurança desejável: sem senha, não existe conta criada
+  por terceiros com o e-mail de um aluno ou do admin.

@@ -218,6 +218,11 @@ web3 = 30
 # secret = ""
 
 [auth.email]
+# ATENÇÃO: o app aceita APENAS login com Google. E-mail e senha ficam ligados só
+# aqui, no banco LOCAL, porque os testes de ponta a ponta entram com senha
+# (contas fictícias do seed.sql). No projeto remoto o provedor de e-mail está
+# DESLIGADO e nunca deve ser ligado. NÃO rode `supabase config push`: este arquivo
+# reabriria o cadastro por e-mail no remoto, sem confirmação (inventário, 8.3).
 # Allow/disallow new user signups via email to your project.
 enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email

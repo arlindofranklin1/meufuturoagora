@@ -133,3 +133,17 @@ testes novos em `E2eSupabaseLocalTest`. Os de tela ainda **não rodaram**
 | 4.10 | Professor | Excluir uma aula com faltas | Aviso de que a frequência também é apagada; depois o aluno recupera os pontos | | pendente |
 | 4.11 | Professor | Sem internet, salvar a frequência | Mensagem de erro e o botão volta a funcionar (antes mostrava "salva" mesmo falhando) | | pendente |
 | 4.12 | Outro professor | Tentar excluir ou registrar frequência numa aula alheia | Recusado (403) | | pendente |
+
+## Segurança: login só com Google (decisão D15)
+
+Conferir sempre que mexer em autenticação, na revisão final (Fase 7) e ao criar o
+projeto de produção. Não precisa de login.
+
+| # | Verificação | Esperado | Resultado |
+|---|---|---|---|
+| S.1 | `curl -H "apikey: <chave pública>" https://<ref>.supabase.co/auth/v1/settings` | `"external": {"email": false, "google": true, "phone": false, "anonymous_users": false}` | ok em 29/10/2026 |
+| S.2 | `POST /auth/v1/token?grant_type=password` com qualquer e-mail e senha | `422 email_provider_disabled` | ok em 29/10/2026 |
+| S.3 | `POST /auth/v1/signup` com e-mail e senha | `400 email_provider_disabled` | ok em 29/10/2026 |
+| S.4 | No celular: Entrar com o Google com a conta do admin | Entra normalmente (o Google segue ligado) | **pendente** (testar amanhã) |
+
+Nunca rodar `supabase config push`: o `config.toml` local liga e-mail para os testes.
