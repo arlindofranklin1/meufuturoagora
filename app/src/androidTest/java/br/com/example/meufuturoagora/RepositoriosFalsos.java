@@ -53,6 +53,8 @@ final class RepositoriosFalsos {
     final List<Atividade> atividades = new ArrayList<>();
     final List<Entrega> entregas = new ArrayList<>();
     final List<Aula> aulas = new ArrayList<>();
+    final List<EntradaDiario> diario = new ArrayList<>();
+    ErroApi erroNoDiario;
     final List<Frequencia> frequencias = new ArrayList<>();
     final List<Participante> participantes = new ArrayList<>();
     final List<SolicitacaoExclusao> pedidos = new ArrayList<>();
@@ -488,23 +490,46 @@ final class RepositoriosFalsos {
 
         @Override
         public List<EntradaDiario> entradas() {
-            return new ArrayList<>();
+            List<EntradaDiario> lista = new ArrayList<>(diario);
+            java.util.Collections.reverse(lista);
+            return lista;
         }
 
         @Override
-        public EntradaDiario escrever(String texto) {
+        public EntradaDiario escrever(String texto) throws ErroApi {
             chamadas.add("diario.escrever " + texto);
-            return new EntradaDiario("entrada-nova", texto, OffsetDateTime.now(), OffsetDateTime.now());
+            falharSeNecessario();
+            EntradaDiario nova = new EntradaDiario("entrada-" + (diario.size() + 1), texto,
+                    OffsetDateTime.now(), OffsetDateTime.now());
+            diario.add(nova);
+            return nova;
         }
 
         @Override
-        public void editar(String id, String texto) {
-            chamadas.add("diario.editar " + id);
+        public void editar(String id, String texto) throws ErroApi {
+            chamadas.add("diario.editar " + id + " " + texto);
+            falharSeNecessario();
+            for (int i = 0; i < diario.size(); i++) {
+                if (diario.get(i).id.equals(id)) {
+                    EntradaDiario antiga = diario.get(i);
+                    diario.set(i, new EntradaDiario(id, texto, antiga.criadoEm, OffsetDateTime.now()));
+                }
+            }
         }
 
         @Override
-        public void apagar(String id) {
+        public void apagar(String id) throws ErroApi {
             chamadas.add("diario.apagar " + id);
+            falharSeNecessario();
+            diario.removeIf(e -> e.id.equals(id));
+        }
+
+        private void falharSeNecessario() throws ErroApi {
+            if (erroNoDiario != null) {
+                ErroApi erro = erroNoDiario;
+                erroNoDiario = null;
+                throw erro;
+            }
         }
     }
 

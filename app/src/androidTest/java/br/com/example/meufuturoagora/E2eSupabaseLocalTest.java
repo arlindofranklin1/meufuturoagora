@@ -520,6 +520,44 @@ public class E2eSupabaseLocalTest {
     }
 
     @Test
+    public void diarioEPrivadoDoDonoEAsPaginasCriamEditamEApagam() throws Exception {
+        local.entrar(LIA);
+        br.com.example.meufuturoagora.dados.EntradaDiario pagina =
+                local.servicos.diario.escrever("E2E: meu sonho");
+        boolean apagada = false;
+
+        try {
+
+            assertEquals("E2E: meu sonho", local.servicos.diario.entradas().get(0).texto);
+
+            local.servicos.diario.editar(pagina.id, "E2E: meu sonho maior");
+            assertEquals("E2E: meu sonho maior", local.servicos.diario.entradas().get(0).texto);
+
+            // Nem professor nem admin leem o diário de um aluno (D8)
+            for (String outro : new String[]{MARTA, ADMIN}) {
+                local.entrar(outro);
+                for (br.com.example.meufuturoagora.dados.EntradaDiario e : local.servicos.diario.entradas()) {
+                    assertTrue("diário alheio visível para " + outro, !e.id.equals(pagina.id));
+                }
+            }
+
+            local.entrar(LIA);
+            assertEquals("a página segue lá", pagina.id, local.servicos.diario.entradas().get(0).id);
+
+            local.servicos.diario.apagar(pagina.id);
+            apagada = true;
+            assertTrue(local.servicos.diario.entradas().isEmpty());
+
+        } finally {
+
+            if (!apagada) {
+                local.entrar(LIA);
+                local.servicos.diario.apagar(pagina.id);
+            }
+        }
+    }
+
+    @Test
     public void professorComumNaoTemAreaDoAdministrador() throws Exception {
         local.entrar(JOAO);
 

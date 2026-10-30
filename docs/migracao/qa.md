@@ -165,6 +165,22 @@ calendário do prazo.
 | 5.14 | Professor | Excluir uma trilha com entregas | O aviso diz quantas entregas e arquivos serão apagados; depois some tudo | | pendente |
 | 5.15 | Outro professor | Tentar abrir/baixar arquivos de uma trilha alheia | Recusado | | pendente |
 
+## Módulo 6: diário do aluno
+
+Sem tempo real (N2): a lista recarrega ao abrir a tela e depois de cada gravação. Não há
+"puxar para atualizar" (a tela não tem esse componente). Automático (30/10/2026): 7 testes
+de tela (`DiarioTest`) e 1 de ponta a ponta (`diarioEPrivadoDoDono...`: professor e admin
+não leem o diário do aluno). Aluno contra aluno: pgTAP 090.
+
+| # | Perfil | Ação | Esperado | Obtido | Resultado |
+|---|---|---|---|---|---|
+| 6.1 | Aluno | Abrir o Diário | "Oi, <primeiro nome>!"; páginas da mais nova para a mais antiga, com a data por extenso | | pendente |
+| 6.2 | Aluno | Escrever e guardar uma página | "Guardado no seu diário"; o campo limpa e a página aparece | | pendente |
+| 6.3 | Aluno | Guardar sem internet | Aviso de erro; o texto continua no campo (antes parecia guardado e se perdia) | | pendente |
+| 6.4 | Aluno | Tocar numa página, editar e salvar | O texto novo aparece | | pendente |
+| 6.5 | Aluno | Apagar uma página | Pede confirmação; depois a página some | | pendente |
+| 6.6 | Aluno | Fechar e reabrir o app | As páginas continuam lá | | pendente |
+
 ## Segurança: login só com Google (decisão D15)
 
 Conferir sempre que mexer em autenticação, na revisão final (Fase 7) e ao criar o
